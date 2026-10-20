@@ -1,0 +1,1193 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+<meta charset="utf-8">
+<title>autoBA 控制台</title>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<style>
+  :root { --bg:#f6f7f9; --card:#fff; --line:#e3e6ea; --txt:#2a2f36; --sub:#7a828c;
+          --acc:#4a7dbe; --ok:#3a9d5d; --err:#c0564f; --gold:#c79a2e; }
+  * { box-sizing:border-box; }
+  body { margin:0; background:var(--bg); color:var(--txt);
+         font:14px/1.6 "Segoe UI","Microsoft YaHei",sans-serif; }
+  .wrap { max-width:900px; margin:24px auto; padding:0 16px; }
+  h1 { font-size:20px; margin:8px 0 16px; }
+  h2 { font-size:15px; margin:0 0 12px; color:var(--sub); }
+  .card { background:var(--card); border:1px solid var(--line); border-radius:10px;
+          padding:16px 20px; margin-bottom:16px; }
+  input { padding:8px 10px; border:1px solid var(--line); border-radius:6px;
+          font-size:14px; width:220px; }
+  button { padding:8px 16px; border:0; border-radius:6px; background:var(--acc);
+           color:#fff; font-size:14px; cursor:pointer; }
+  button + button { margin-left:8px; }
+  button:disabled { background:#aab4c0; cursor:not-allowed; }
+  button.ghost { background:#fff; color:var(--acc); border:1px solid var(--acc); }
+  button.sm { padding:4px 10px; font-size:12px; }
+  button.sm.active { background:var(--acc); color:#fff; border-color:var(--acc); }
+  button.danger { background:var(--err); }
+  .row { display:flex; align-items:center; gap:8px; margin:8px 0; flex-wrap:wrap; }
+  .msg { margin:8px 0 0; min-height:20px; }
+  .ok { color:var(--ok); } .err { color:var(--err); } .sub { color:var(--sub); font-size:12px; }
+  table { border-collapse:collapse; width:100%; font-size:13px; }
+  th,td { border-bottom:1px solid var(--line); padding:6px 8px; text-align:left; vertical-align:top; }
+  .pill { display:inline-block; padding:1px 8px; border-radius:10px; font-size:12px; }
+  .pill.ok { background:#e3f2e8; color:var(--ok); }
+  .pill.no { background:#f7e6e5; color:var(--err); }
+  .pill.r1 { background:#e6eefb; color:var(--acc); }
+  .pill.r2 { background:#fbf1dc; color:var(--gold); }
+  .pill.r3 { background:#eceef1; color:var(--sub); }
+  .hidden { display:none; }
+  code { background:#eef1f4; padding:1px 6px; border-radius:4px; }
+  .stu-list { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:2px 12px;
+              max-height:300px; overflow:auto; border:1px solid var(--line);
+              border-radius:8px; padding:8px; margin-top:8px; }
+  .stu { display:flex; align-items:center; gap:6px; padding:3px 4px; border-radius:5px;
+         cursor:pointer; font-size:13px; }
+  .stu:hover { background:#f2f5f8; }
+  .stu.on { background:#e8f1fb; }
+  .stu.on:hover { background:#dfeaf8; }
+  .stu input { width:15px; height:15px; margin:0; accent-color:var(--acc); }
+  .stu .nm { flex:1; min-width:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+  .stu .st { color:var(--gold); font-size:12px; }
+  .stu.capped .nm { color:var(--sub); }
+  .tag { font-size:11px; padding:0 5px; border-radius:8px; background:#eceef1; color:var(--sub); }
+  .tag.full { background:#f7e6e5; color:var(--err); }
+  .tag.fes { background:#efe7fb; color:#7a5ab5; }
+  .confirm { display:flex; align-items:center; gap:10px; flex-wrap:wrap;
+             background:#fbf1dc; border:1px solid #ecd9a8; border-radius:8px;
+             padding:8px 12px; margin-top:10px; font-size:13px; }
+  .confirm.hidden { display:none; }
+  .idx { display:inline-block; min-width:18px; height:18px; line-height:18px; text-align:center;
+         border-radius:9px; background:var(--acc); color:#fff; font-size:11px; padding:0 4px; }
+  .chips { display:flex; flex-wrap:wrap; gap:6px; margin:6px 0 2px; }
+  .chip { display:inline-flex; align-items:center; gap:4px; background:#eef4fb;
+          border:1px solid #d6e4f5; border-radius:14px; padding:2px 6px 2px 8px; font-size:12px; }
+  .chip b { color:var(--acc); font-weight:600; }
+  button.mini { padding:0 5px; height:18px; line-height:16px; font-size:12px;
+                background:#fff; color:var(--acc); border:1px solid #c9d8ea; border-radius:5px; }
+  button.mini:disabled { color:#c3cbd5; border-color:#e3e6ea; }
+  .cafe-head { display:flex; align-items:baseline; gap:10px; margin:14px 0 4px; }
+  .cafe-head h3 { font-size:14px; margin:0; }
+  .card-head { display:flex; align-items:center; gap:10px; flex-wrap:wrap; }
+  .card-head h2 { margin:0; }
+  .card-head .spacer { flex:1; }
+  button.fold { width:26px; height:26px; padding:0; background:#eef2f7; color:var(--txt);
+                border:1px solid var(--line); font-size:13px; }
+  .subsec { border:1px solid var(--line); border-radius:8px; padding:8px 12px;
+            margin:10px 0; background:#fbfcfd; }
+  .subsec > summary { cursor:pointer; font-size:13px; color:var(--sub); outline:none;
+                      user-select:none; }
+  .subsec[open] > summary { color:var(--txt); }
+  .zone-scroll { max-height:380px; overflow:auto; }
+  .alert { display:flex; align-items:center; gap:10px; flex-wrap:wrap;
+           background:#fbf1dc; border:1px solid #ecd9a8; border-radius:10px;
+           padding:10px 14px; margin-bottom:16px; font-size:13px; color:#8a6a1f; }
+  .alert.hidden { display:none; }
+  .alert .spacer { flex:1; }
+  #oplog div { border-bottom:1px dashed #eef1f4; padding:2px 0; }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <h1>autoBA 控制台</h1>
+
+  <div id="resourceAlert" class="alert hidden">
+    <span id="resourceAlertText"></span>
+    <span class="spacer"></span>
+    <button class="ghost sm" onclick="ackResource()">知道了</button>
+  </div>
+
+  <!-- 登录卡片 -->
+  <div class="card" id="loginCard">
+    <h2>账号登录（yostar）</h2>
+    <div class="row">
+      <input id="phone" placeholder="手机号" maxlength="11">
+      <input id="code" placeholder="短信验证码" maxlength="6" style="width:130px">
+      <button id="btnSend" onclick="sendSms()">发送验证码</button>
+      <button id="btnLogin" onclick="doLogin()">登录</button>
+    </div>
+    <div class="msg" id="loginMsg"></div>
+    <div class="sub">滑块验证由腾讯天御承载，点击“发送验证码”后弹出。AppID 来自服务端配置。</div>
+  </div>
+
+  <!-- 会话卡片 -->
+  <div class="card">
+    <h2>游戏会话（gsqc）</h2>
+    <div class="row">
+      <button class="ghost" onclick="refreshSession()">刷新会话状态</button>
+      <span id="sessMsg" class="sub"></span>
+    </div>
+  </div>
+
+  <!-- 一键清票 -->
+  <div class="card" id="planCard">
+    <div class="card-head">
+      <button class="fold" id="planFold" onclick="toggleFold('plan')" title="折叠">▾</button>
+      <h2>学园日程 · 一键清票</h2>
+      <span id="planSummary" class="sub">未生成方案</span>
+      <span class="spacer"></span>
+      <button onclick="makePlan()">生成清票方案</button>
+      <button class="danger" id="btnClear" onclick="clearTickets()">一键清票</button>
+    </div>
+    <div id="planBody">
+      <div class="row" style="margin-top:10px">
+        <button class="ghost" onclick="loadRoster(true)">刷新学生名册</button>
+        <span id="rosterMsg" class="sub"></span>
+      </div>
+      <details class="subsec">
+        <summary>指定学生（可选，第一轮优先；满好感的不入选）</summary>
+        <div id="schPicker"></div>
+      </details>
+      <details class="subsec" id="zoneSec" ontoggle="onZoneToggle(this)">
+        <summary>Zone 列表（今日访客）</summary>
+        <div id="zoneView" class="sub">展开后加载…</div>
+      </details>
+      <div id="planMsg" class="sub" style="margin-top:8px"></div>
+      <div id="confirmBar" class="confirm hidden">
+        <span id="confirmText"></span>
+        <button class="danger sm" onclick="doClear()">确认执行</button>
+        <button class="ghost sm" onclick="hideConfirm()">取消</button>
+      </div>
+      <div id="planView"></div>
+    </div>
+  </div>
+
+  <!-- 咖啡厅 -->
+  <div class="card" id="cafeCard">
+    <div class="card-head">
+      <button class="fold" id="cafeFold" onclick="toggleFold('cafe')" title="折叠">▾</button>
+      <h2>咖啡厅 · 摸头 + 邀请</h2>
+      <span id="cafeSummary" class="sub">尚未加载</span>
+      <span class="spacer"></span>
+      <button onclick="makeCafePlan()">生成邀请方案</button>
+      <button class="danger" id="btnCafeRun" onclick="runCafe()">一键摸头 + 邀请</button>
+    </div>
+    <div id="cafeBody">
+      <div class="row" style="margin-top:10px">
+        <button class="ghost" onclick="loadCafe()">刷新咖啡厅</button>
+        <span id="cafeMsg" class="sub"></span>
+      </div>
+      <details class="subsec">
+        <summary id="cafe1Title">1 号厅访客</summary>
+        <div id="cafe1View"></div>
+      </details>
+      <details class="subsec">
+        <summary id="cafe2Title">2 号厅访客</summary>
+        <div id="cafe2View"></div>
+      </details>
+      <details class="subsec">
+        <summary>指定学生（勾选顺序 = 邀请券优先级）</summary>
+        <div id="cafePicker"></div>
+      </details>
+      <div id="cafePlanMsg" class="sub" style="margin-top:8px"></div>
+      <div id="cafeConfirm" class="confirm hidden">
+        <span id="cafeConfirmText"></span>
+        <button class="danger sm" onclick="doCafeRun()">确认执行</button>
+        <button class="ghost sm" onclick="hideCafeConfirm()">取消</button>
+      </div>
+      <div id="cafePlanView"></div>
+    </div>
+  </div>
+
+  <!-- 悬赏通缉 -->
+  <div class="card" id="bountyCard">
+    <div class="card-head">
+      <button class="fold" id="bountyFold" onclick="toggleFold('bounty')" title="折叠">▾</button>
+      <h2>悬赏通缉</h2>
+      <span id="bountySummary" class="sub">尚未加载</span>
+      <span class="spacer"></span>
+      <button class="danger" id="btnBounty" onclick="bountySweep()">一键扫荡</button>
+    </div>
+    <div id="bountyBody">
+      <div class="row" style="margin-top:10px">
+        <button class="ghost" onclick="loadBounty()">刷新</button>
+        <span id="bountyMsg" class="sub"></span>
+      </div>
+      <div id="bountyView"><span class="sub">尚未加载</span></div>
+      <div class="row" style="margin-top:8px">
+        <span id="bountyTotal" class="sub"></span>
+        <label id="bountyForceWrap" class="sub hidden">
+          <input type="checkbox" id="bountyForce"> 数据已更新/新关未三星，仍要执行
+        </label>
+      </div>
+      <div id="bountyConfirm" class="confirm hidden">
+        <span id="bountyConfirmText"></span>
+        <button class="danger sm" onclick="doBountySweep()">确认扫荡</button>
+        <button class="ghost sm" onclick="hideBountyConfirm()">取消</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- 学院交流会 -->
+  <div class="card" id="scrimCard">
+    <div class="card-head">
+      <button class="fold" id="scrimFold" onclick="toggleFold('scrim')" title="折叠">▾</button>
+      <h2>学院交流会</h2>
+      <span id="scrimSummary" class="sub">尚未加载</span>
+      <span class="spacer"></span>
+      <button class="danger" id="btnScrim" onclick="scrimmageSweep()">一键扫荡</button>
+    </div>
+    <div id="scrimBody">
+      <div class="row" style="margin-top:10px">
+        <button class="ghost" onclick="loadScrim()">刷新</button>
+        <span id="scrimMsg" class="sub"></span>
+      </div>
+      <div id="scrimView"><span class="sub">尚未加载</span></div>
+      <div class="row" style="margin-top:8px">
+        <span id="scrimTotal" class="sub"></span>
+        <label id="scrimForceWrap" class="sub hidden">
+          <input type="checkbox" id="scrimForce"> 数据已更新/新关未三星，仍要执行
+        </label>
+      </div>
+      <div id="scrimConfirm" class="confirm hidden">
+        <span id="scrimConfirmText"></span>
+        <button class="danger sm" onclick="doScrimSweep()">确认扫荡</button>
+        <button class="ghost sm" onclick="hideScrimConfirm()">取消</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- 社交小组 -->
+  <div class="card" id="clanCard">
+    <div class="card-head">
+      <button class="fold" id="clanFold" onclick="toggleFold('clan')" title="折叠">▾</button>
+      <h2>社交小组 · 签到</h2>
+      <span id="clanSummary" class="sub">尚未加载</span>
+      <span class="spacer"></span>
+      <button id="btnClan" onclick="clanCheckin()">签到</button>
+    </div>
+    <div id="clanBody">
+      <div class="row" style="margin-top:10px">
+        <button class="ghost" onclick="loadClan()">刷新</button>
+        <span id="clanMsg" class="sub"></span>
+      </div>
+      <div id="clanView"><span class="sub">尚未加载</span></div>
+    </div>
+  </div>
+
+  <div class="card">
+    <h2>操作日志</h2>
+    <div id="oplog" class="sub" style="max-height:240px;overflow:auto"></div>
+  </div>
+</div>
+
+<script src="https://turing.captcha.qcloud.com/TCaptcha.js"></script>
+<script>
+const $ = id => document.getElementById(id);
+function log(s, cls) {
+  const d = document.createElement('div');
+  if (cls) d.className = cls;
+  d.textContent = new Date().toTimeString().slice(0,8) + '  ' + s;
+  $('oplog').prepend(d);
+}
+async function api(path, opts) {
+  const r = await fetch(path, opts);
+  const j = await r.json().catch(() => ({ detail: r.statusText }));
+  if (!r.ok) throw new Error(typeof j.detail === 'string' ? j.detail : JSON.stringify(j));
+  return j;
+}
+
+// ---------- 折叠 ----------
+function applyFold(key, collapsed) {
+  const body = $(key + 'Body'), btn = $(key + 'Fold');
+  if (!body || !btn) return;
+  body.classList.toggle('hidden', collapsed);
+  btn.textContent = collapsed ? '▸' : '▾';
+  btn.title = collapsed ? '展开' : '折叠';
+  localStorage.setItem('autoba.fold.' + key, collapsed ? '1' : '0');
+}
+function toggleFold(key) {
+  applyFold(key, !$(key + 'Body').classList.contains('hidden'));
+}
+function ensureExpanded(key) {
+  const body = $(key + 'Body');
+  if (body && body.classList.contains('hidden')) applyFold(key, false);
+}
+function restoreFolds() {
+  ['plan', 'cafe', 'bounty', 'scrim', 'clan'].forEach(k => {
+    if (localStorage.getItem('autoba.fold.' + k) === '1') applyFold(k, true);
+  });
+}
+
+// ---------- 滑块（TCaptcha） ----------
+let captchaCfg = null;
+async function ensureCaptcha() {
+  if (captchaCfg) return captchaCfg;
+  captchaCfg = await api('/api/captcha-config');
+  return captchaCfg;
+}
+function showCaptcha(appid, onOk) {
+  const cap = new TencentCaptcha(appid, res => {
+    if (res.ret === 0) onOk(res.ticket, res.randstr);
+    else log('滑块取消/失败 ret=' + res.ret, 'err');
+  });
+  cap.show();
+}
+async function sendSms() {
+  const phone = $('phone').value.trim();
+  if (!/^\d{11}$/.test(phone)) { $('loginMsg').textContent = '手机号格式不对'; $('loginMsg').className = 'msg err'; return; }
+  $('btnSend').disabled = true;
+  $('loginMsg').textContent = '拉取滑块配置…';
+  try {
+    const cfg = await ensureCaptcha();
+    if (!cfg.enable) throw new Error('服务端滑块未启用？直接发码');
+    log('滑块 AppID=' + cfg.appid);
+    showCaptcha(cfg.appid, async (ticket, randstr) => {
+      log('滑块通过，发送验证码…');
+      $('loginMsg').textContent = '发送中…';
+      try {
+        await api('/api/send-sms', { method:'POST',
+          headers:{'Content-Type':'application/json'},
+          body: JSON.stringify({ phone, ticket, randstr }) });
+        $('loginMsg').textContent = '验证码已发送，请查收短信';
+        $('loginMsg').className = 'msg ok';
+        log('send-sms OK', 'ok');
+      } catch (e) {
+        $('loginMsg').textContent = '发送失败: ' + e.message;
+        $('loginMsg').className = 'msg err';
+        log('send-sms 失败: ' + e.message, 'err');
+      }
+      $('btnSend').disabled = false;
+    });
+  } catch (e) {
+    $('loginMsg').textContent = '滑块配置失败: ' + e.message;
+    $('loginMsg').className = 'msg err';
+    $('btnSend').disabled = false;
+  }
+}
+async function doLogin() {
+  const phone = $('phone').value.trim(), code = $('code').value.trim();
+  if (!/^\d{11}$/.test(phone) || !code) { $('loginMsg').textContent = '手机号/验证码没填全'; return; }
+  $('btnLogin').disabled = true;
+  try {
+    const j = await api('/api/login', { method:'POST',
+      headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({ phone, code }) });
+    $('loginMsg').textContent = `登录成功 UID=${j.uid}，token 已存档`;
+    $('loginMsg').className = 'msg ok';
+    log(`login OK uid=${j.uid} token=${j.token.slice(0,16)}…`, 'ok');
+  } catch (e) {
+    $('loginMsg').textContent = '登录失败: ' + e.message;
+    $('loginMsg').className = 'msg err';
+  }
+  $('btnLogin').disabled = false;
+}
+
+async function refreshSession() {
+  $('sessMsg').textContent = '探测中…';
+  try {
+    const j = await api('/api/session/status');
+    $('sessMsg').textContent = j.ok
+      ? `有效 ✓ uid=${j.uid} rid=${j.rid} N=${j.n} zones=${j.zones}`
+      : '无效: ' + j.error;
+    if (j.ok) { loadRoster(); loadCafe(); loadBounty(); loadScrim(); loadClan(); checkResource(); }
+  } catch (e) { $('sessMsg').textContent = '探测失败: ' + e.message; }
+}
+
+// ---------- 学生名册 / 选择器 ----------
+let ALL = [];
+
+class StudentPicker {
+  constructor(rootId, storageKey, opts = {}) {
+    this.root = document.getElementById(rootId);
+    this.key = storageKey;
+    this.ordered = !!opts.ordered;
+    this.onChange = opts.onChange || null;
+    this.filter = 'all';
+    this.sel = JSON.parse(localStorage.getItem(storageKey) || '[]').map(String);
+    this.build();
+    this.render();
+  }
+
+  build() {
+    this.root.innerHTML = `
+      <div class="row" style="margin-top:4px">
+        <input class="p-search" placeholder="搜索学生…" style="width:200px">
+        <button class="ghost sm active" data-f="all">全部</button>
+        <button class="ghost sm" data-f="fav">收藏</button>
+        <button class="ghost sm" data-f="fes">FES</button>
+        <button class="ghost sm" data-f="open">未满好感</button>
+      </div>
+      <div class="row" style="margin:2px 0 0">
+        <button class="ghost sm p-all" title="选中当前筛选/搜索结果里的全部学生">全选当前</button>
+        <button class="ghost sm p-clear">清空已选</button>
+        <span class="sub p-count">已指定 0 人</span>
+      </div>
+      <div class="chips p-order"></div>
+      <div class="stu-list p-list"></div>`;
+    this.$search = this.root.querySelector('.p-search');
+    this.$list = this.root.querySelector('.p-list');
+    this.$order = this.root.querySelector('.p-order');
+    this.$count = this.root.querySelector('.p-count');
+    this.$all = this.root.querySelector('.p-all');
+    this.$clear = this.root.querySelector('.p-clear');
+
+    this.$search.addEventListener('input', () => this.renderList());
+    this.root.querySelectorAll('[data-f]').forEach(b => b.addEventListener('click', () => {
+      this.filter = b.dataset.f;
+      this.root.querySelectorAll('[data-f]').forEach(x => x.classList.toggle('active', x === b));
+      this.renderList();
+    }));
+    this.$all.addEventListener('click', () => this.selectVisible());
+    this.$clear.addEventListener('click', () => this.clear());
+    this.$list.addEventListener('change', e => this.onCheck(e));
+    this.$order.addEventListener('click', e => this.onChip(e));
+  }
+
+  save() { localStorage.setItem(this.key, JSON.stringify(this.sel)); }
+  has(uid) { return this.sel.includes(String(uid)); }
+  fire() { if (this.onChange) this.onChange(); }
+  get ids() { return this.sel.map(Number); }
+
+  visible() {
+    const kw = (this.$search.value || '').trim();
+    let list = ALL.slice().sort((a, b) =>
+      (b.favorite - a.favorite) || (b.fes - a.fes) || (a.capped - b.capped) ||
+      (b.rank - a.rank) || a.name.localeCompare(b.name));
+    if (this.filter === 'fav') list = list.filter(c => c.favorite);
+    if (this.filter === 'fes') list = list.filter(c => c.fes);
+    if (this.filter === 'open') list = list.filter(c => !c.capped);
+    if (kw) list = list.filter(c => c.name.includes(kw) || String(c.uid) === kw);
+    return list;
+  }
+
+  render() { this.renderList(); this.renderOrder(); this.renderMeta(); }
+
+  renderList() {
+    const list = this.visible();
+    this.$list.innerHTML = list.map(c => {
+      const on = this.has(c.uid);
+      const idx = this.sel.indexOf(String(c.uid));
+      return `
+      <label class="stu ${c.capped ? 'capped' : ''} ${on ? 'on' : ''}">
+        <input type="checkbox" data-uid="${c.uid}" ${on ? 'checked' : ''}>
+        ${this.ordered && idx >= 0 ? `<span class="idx">${idx + 1}</span>` : ''}
+        <span class="nm">${c.favorite ? '<span class="st">★</span> ' : ''}${c.name}</span>
+        ${c.fes ? '<span class="tag fes">FES</span>' : ''}
+        <span class="sub">R${c.rank}/${c.cap}</span>
+        ${c.capped ? '<span class="tag full">满</span>' : ''}
+      </label>`;
+    }).join('') || '<span class="sub">没有匹配的学生</span>';
+    this.renderMeta();
+  }
+
+  renderOrder() {
+    if (!this.sel.length) {
+      this.$order.innerHTML = '<span class="sub">未指定学生</span>';
+      return;
+    }
+    this.$order.innerHTML = this.sel.map((uid, i) => {
+      const c = ALL.find(x => String(x.uid) === uid);
+      const name = c ? c.name : '#' + uid;
+      const nav = this.ordered
+        ? `<button class="mini" data-act="up" data-i="${i}" ${i === 0 ? 'disabled' : ''}>↑</button>
+           <button class="mini" data-act="down" data-i="${i}" ${i === this.sel.length - 1 ? 'disabled' : ''}>↓</button>`
+        : '';
+      return `<span class="chip">${this.ordered ? `<b>${i + 1}</b>` : ''}${name}${nav}
+        <button class="mini" data-act="del" data-uid="${uid}">×</button></span>`;
+    }).join('');
+  }
+
+  renderMeta() {
+    this.$count.textContent = `已指定 ${this.sel.length} 人`;
+    this.$clear.disabled = this.sel.length === 0;
+    const list = this.visible();
+    const allSel = list.length > 0 && list.every(c => this.has(c.uid));
+    this.$all.textContent = allSel ? '取消全选' : '全选当前';
+    this.$all.disabled = list.length === 0;
+  }
+
+  onCheck(e) {
+    const cb = e.target.closest('input[type=checkbox]');
+    if (!cb) return;
+    const uid = cb.dataset.uid;
+    if (cb.checked) { if (!this.sel.includes(uid)) this.sel.push(uid); }
+    else { this.sel = this.sel.filter(x => x !== uid); }
+    this.save();
+    const sc = this.$list.scrollTop;
+    this.render();
+    this.$list.scrollTop = sc;
+    this.fire();
+  }
+
+  onChip(e) {
+    const b = e.target.closest('button[data-act]');
+    if (!b) return;
+    const act = b.dataset.act;
+    if (act === 'del') {
+      this.sel = this.sel.filter(x => x !== b.dataset.uid);
+    } else {
+      const i = Number(b.dataset.i), j = i + (act === 'up' ? -1 : 1);
+      if (j < 0 || j >= this.sel.length) return;
+      const t = this.sel[i]; this.sel[i] = this.sel[j]; this.sel[j] = t;
+    }
+    this.save(); this.render(); this.fire();
+  }
+
+  selectVisible() {
+    const list = this.visible();
+    if (!list.length) return;
+    if (list.every(c => this.has(c.uid))) {
+      const rm = new Set(list.map(c => String(c.uid)));
+      this.sel = this.sel.filter(u => !rm.has(u));
+    } else {
+      for (const c of list) if (!this.has(c.uid)) this.sel.push(String(c.uid));
+    }
+    this.save(); this.render(); this.fire();
+  }
+
+  clear() {
+    this.sel = [];
+    this.save(); this.render(); this.fire();
+  }
+}
+
+const schPicker = new StudentPicker('schPicker', 'autoba.selected',
+  { onChange: () => invalidatePlan() });
+const cafePicker = new StudentPicker('cafePicker', 'autoba.cafeSelected',
+  { ordered: true, onChange: () => invalidateCafePlan() });
+
+async function loadRoster(force) {
+  $('rosterMsg').textContent = '加载中…';
+  try {
+    const j = await api('/api/characters' + (force ? '?refresh=1' : ''));
+    ALL = j.characters;
+    $('rosterMsg').textContent =
+      `已解锁 ${j.count} 人 · FES ${ALL.filter(c => c.fes).length} 人 · 收藏 ${ALL.filter(c => c.favorite).length} 人`;
+    schPicker.render();
+    cafePicker.render();
+    log(`名册加载 ${j.count} 人（FES ${ALL.filter(c => c.fes).length}）`, 'ok');
+  } catch (e) {
+    $('rosterMsg').textContent = '加载失败: ' + e.message;
+    log('名册加载失败: ' + e.message, 'err');
+  }
+}
+
+function invalidatePlan() {
+  LAST_PLAN = null;
+  hideConfirm();
+  $('planView').innerHTML = '';
+  $('planMsg').textContent = schPicker.sel.length ? '指定学生已变更，请重新生成方案' : '';
+}
+
+let LAST_PLAN = null;
+let CLEARING = false;
+
+async function makePlan() {
+  ensureExpanded('plan');
+  $('planMsg').textContent = '生成中…';
+  hideConfirm();
+  try {
+    const j = await api('/api/schedule/plan', {
+      method: 'POST', headers: {'Content-Type':'application/json'},
+      body: JSON.stringify({ students: schPicker.ids }) });
+    LAST_PLAN = j;
+    renderPlan(j);
+    $('planMsg').textContent =
+      `今日已用 ${j.tickets.used} / ${j.tickets.daily}，预计余票 ${j.tickets.estimated}`;
+    $('planSummary').textContent =
+      `已用 ${j.tickets.used}/${j.tickets.daily} · 余票约 ${j.tickets.estimated}`;
+    return j;
+  } catch (e) {
+    LAST_PLAN = null;
+    $('planMsg').textContent = '生成失败: ' + e.message;
+    log('生成方案失败: ' + e.message, 'err');
+  }
+}
+
+function renderPlan(j) {
+  if (!j.plan.length) {
+    $('planView').innerHTML = '<div class="sub" style="margin-top:10px">没有可执行的 Zone（可能今日已全部用完或没有可涨好感的学生）。</div>';
+    return;
+  }
+  const rows = j.plan.map((p, i) => `
+    <tr>
+      <td>${i + 1}</td>
+      <td><span class="pill r${p.round}">${p.roundLabel}</span></td>
+      <td><code>${p.zone}</code><br><span class="sub">${p.locationName}</span></td>
+      <td>${p.targets.map(t => `${t.name}${t.favorite ? ' ★' : ''} <span class="sub">R${t.rank}/${t.cap}</span>`).join('<br>')}</td>
+      <td>${p.gain} 人<br><span class="sub">预期 +${p.favor}</span></td>
+    </tr>`).join('');
+  $('planView').innerHTML = `<table style="margin-top:12px">
+    <tr><th>#</th><th>轮次</th><th>Zone</th><th>目标学生</th><th>可涨 / 预期好感</th></tr>${rows}</table>`;
+}
+
+function hideConfirm() {
+  $('confirmBar').classList.add('hidden');
+  $('btnClear').disabled = false;
+}
+
+async function clearTickets() {
+  if (CLEARING) return;
+  ensureExpanded('plan');
+  if (!LAST_PLAN) {
+    log('未生成方案，先拉一份…', 'sub');
+    await makePlan();
+  }
+  if (!LAST_PLAN) { $('planMsg').textContent = '方案生成失败，无法执行'; return; }
+  if (!LAST_PLAN.plan.length) { $('planMsg').textContent = '没有可执行的 Zone'; return; }
+  const t = LAST_PLAN.tickets;
+  $('confirmText').textContent =
+    `将执行 ${LAST_PLAN.plan.length} 个 Zone（预计余票 ${t.estimated}）` +
+    (t.estimated === 0 ? '，按推算余票为 0，仍可尝试' : '') + '，确认后立即扣券。';
+  $('confirmBar').classList.remove('hidden');
+  $('btnClear').disabled = true;
+}
+
+async function doClear() {
+  if (CLEARING) return;
+  hideConfirm();
+  CLEARING = true;
+  $('btnClear').disabled = true;
+  $('planMsg').textContent = '执行中…';
+  log('开始执行清票方案…');
+  try {
+    const j = await api('/api/schedule/clear', {
+      method: 'POST', headers: {'Content-Type':'application/json'},
+      body: JSON.stringify({ students: schPicker.ids }) });
+    if (!j.steps.length) log('未执行任何 Zone：' + (j.stopped || '方案为空'), 'err');
+    for (const s of j.steps) {
+      const ch = s.characters.map(c => `${c.name} R${c.rank}`).join('、') || '无入账';
+      log(`[${s.roundLabel}] Zone ${s.zone} ${s.locationName} → ${ch}；券余 ${s.tickets}`, 'ok');
+    }
+    if (j.stopped) log('停止：' + j.stopped, 'err');
+    $('planMsg').textContent = `执行 ${j.steps.length} 次，券余 ${j.tickets ?? '?'}${j.stopped ? '（' + j.stopped + '）' : ''}`;
+    $('planSummary').textContent = `执行 ${j.steps.length} 次 · 券余 ${j.tickets ?? '?'}`;
+  } catch (e) {
+    $('planMsg').textContent = '执行失败: ' + e.message;
+    log('清票失败: ' + e.message, 'err');
+  }
+  CLEARING = false;
+  $('btnClear').disabled = false;
+  LAST_PLAN = null;
+  $('planView').innerHTML = '';
+  ZONES_LOADED = false;
+  if ($('zoneSec') && $('zoneSec').open) loadZones(true);
+  await loadRoster(true);
+}
+
+// ---------- Zone 列表 ----------
+let ZONES_LOADED = false;
+
+function onZoneToggle(el) {
+  if (el.open) loadZones();
+}
+
+async function loadZones(force) {
+  if (ZONES_LOADED && !force) return;
+  $('zoneView').innerHTML = '<span class="sub">加载中…</span>';
+  try {
+    const j = await api('/api/academy/zones');
+    ZONES_LOADED = true;
+    renderZones(j);
+  } catch (e) {
+    $('zoneView').innerHTML = '<span class="err">加载失败: ' + e.message + '</span>';
+  }
+}
+
+function renderZones(j) {
+  const rows = j.zones.map(z => {
+    const status = z.used ? '<span class="pill no">已用</span>'
+      : z.openCount ? `<span class="pill ok">可涨 ${z.openCount}</span>`
+      : '<span class="pill">无收益</span>';
+    const mem = z.members.map(m => m.owned
+      ? `${m.favorite ? '★' : ''}${m.name} <span class="sub">R${m.rank}/${m.cap}</span>${m.capped ? ' <span class="tag full">满</span>' : ''}`
+      : `<span class="sub">${m.name}✗</span>`).join('、');
+    return `<tr><td><code>${z.zone}</code><br><span class="sub">${z.locationName}</span></td>
+      <td>${status}</td><td>${mem}</td></tr>`;
+  }).join('');
+  $('zoneView').innerHTML = `<div class="sub" style="margin:6px 0">共 ${j.total} 个 Zone，已用 ${j.used}</div>
+    <div class="zone-scroll"><table><tr><th>Zone</th><th>状态</th><th>学生</th></tr>${rows}</table></div>`;
+}
+
+// ---------- 咖啡厅 ----------
+let CAFE_STATE = null, CAFE_PLAN = null, CAFE_RUNNING = false;
+
+function fmtCd(sec) {
+  if (!sec) return '';
+  const h = Math.floor(sec / 3600), m = Math.round((sec % 3600) / 60);
+  return h ? `${h}h${m}m` : `${m}m`;
+}
+
+async function loadCafe() {
+  $('cafeMsg').textContent = '读取中…';
+  try {
+    const j = await api('/api/cafe/state');
+    CAFE_STATE = j;
+    renderCafe();
+    const ready = j.cafes.filter(c => c.summonReady).length;
+    const pets = j.cafes.reduce((n, c) => n + c.visitors.filter(v => v.petReady).length, 0);
+    $('cafeMsg').textContent = `可摸 ${pets} 人 · 邀请券就绪 ${ready}/2`;
+    $('cafeSummary').textContent = `可摸 ${pets} 人 · 邀请券 ${ready}/2`;
+  } catch (e) {
+    $('cafeMsg').textContent = '读取失败: ' + e.message;
+    log('咖啡厅读取失败: ' + e.message, 'err');
+  }
+}
+
+function renderCafe() {
+  if (!CAFE_STATE) return;
+  CAFE_STATE.cafes.forEach(c => {
+    const box = $('cafe' + c.cafeId + 'View');
+    const title = $('cafe' + c.cafeId + 'Title');
+    if (!box || !title) return;
+    const pets = c.visitors.filter(v => v.petReady).length;
+    title.textContent = `${c.cafeId} 号厅 · ${c.visitors.length} 人 · 可摸 ${pets}` +
+      ` · Rank ${c.rank ?? '?'} · 邀请券 ${c.summonReady ? '就绪' : fmtCd(c.summonCooldown) + ' 后'}`;
+    const rows = c.visitors.map(v => {
+      const status = !v.owned ? '<span class="pill no">未拥有</span>'
+        : v.capped ? '<span class="pill no">好感满</span>'
+        : v.petReady ? '<span class="pill ok">可摸</span>'
+        : `<span class="pill">${fmtCd(v.petCooldown)}</span>`;
+      const favor = v.owned ? `R${v.rank}/${v.cap}` : '—';
+      return `<tr>
+        <td>${v.favorite ? '<span class="st">★</span> ' : ''}${v.name}${v.fes ? ' <span class="tag fes">FES</span>' : ''}</td>
+        <td>${favor}</td>
+        <td>${status}</td>
+        <td>${v.petReady ? `<button class="ghost sm" onclick="petOne(${c.cafeId},${v.uid},'${v.name}',this)">摸头</button>` : ''}</td>
+      </tr>`;
+    }).join('');
+    box.innerHTML = `<table><tr><th>学生</th><th>好感</th><th>状态</th><th></th></tr>${rows}</table>`;
+  });
+}
+
+async function petOne(cafeId, uid, name, btn) {
+  btn.disabled = true;
+  try {
+    const j = await api('/api/cafe/pet', {
+      method: 'POST', headers: {'Content-Type':'application/json'},
+      body: JSON.stringify({ cafeId, uid }) });
+    log(`[摸头] ${cafeId} 号厅 ${name} → R${j.rank} Exp${j.exp}`, 'ok');
+  } catch (e) {
+    log(`[摸头] ${cafeId} 号厅 ${name} 失败: ${e.message}`, 'err');
+  }
+  await loadCafe();
+  await loadRoster(true);
+}
+
+function invalidateCafePlan() {
+  CAFE_PLAN = null;
+  hideCafeConfirm();
+  $('cafePlanView').innerHTML = '';
+  $('cafePlanMsg').textContent = '';
+}
+
+async function makeCafePlan() {
+  ensureExpanded('cafe');
+  hideCafeConfirm();
+  $('cafePlanMsg').textContent = '生成中…';
+  try {
+    const j = await api('/api/cafe/plan', {
+      method: 'POST', headers: {'Content-Type':'application/json'},
+      body: JSON.stringify({ students: cafePicker.ids }) });
+    CAFE_PLAN = j;
+    renderCafePlan(j);
+    $('cafePlanMsg').textContent =
+      `可摸 ${j.petReady} 人 · 邀请 ${j.plan.length} 次（就绪券位 ${j.slots.join('、') || '无'}）`;
+    $('cafeSummary').textContent = `可摸 ${j.petReady} 人 · 计划邀请 ${j.plan.length} 次`;
+    return j;
+  } catch (e) {
+    CAFE_PLAN = null;
+    $('cafePlanMsg').textContent = '生成失败: ' + e.message;
+    log('咖啡厅方案失败: ' + e.message, 'err');
+  }
+}
+
+function renderCafePlan(j) {
+  const parts = [];
+  if (j.plan.length) {
+    parts.push(`<table style="margin-top:10px">
+      <tr><th>#</th><th>动作</th><th>学生</th><th>目标厅</th><th>说明</th></tr>` +
+      j.plan.map(p => `<tr><td>${p.order}</td>
+        <td>${p.action === 'invite' ? '邀请' : '挪厅'}</td>
+        <td>${p.name}</td><td>${p.cafeId} 号厅</td>
+        <td class="sub">${p.reason}</td></tr>`).join('') + `</table>`);
+  } else {
+    parts.push('<div class="sub" style="margin-top:10px">没有需要邀请/挪厅的指定学生。</div>');
+  }
+  if (j.notes && j.notes.length) {
+    parts.push('<div class="sub" style="margin-top:6px">跳过：' +
+      j.notes.map(n => `uid ${n.uid}（${n.reason}）`).join('、') + '</div>');
+  }
+  $('cafePlanView').innerHTML = parts.join('');
+}
+
+function hideCafeConfirm() {
+  $('cafeConfirm').classList.add('hidden');
+  $('btnCafeRun').disabled = false;
+}
+
+async function runCafe() {
+  if (CAFE_RUNNING) return;
+  ensureExpanded('cafe');
+  if (!CAFE_PLAN) await makeCafePlan();
+  if (!CAFE_PLAN) { $('cafePlanMsg').textContent = '方案生成失败，无法执行'; return; }
+  const p = CAFE_PLAN;
+  $('cafeConfirmText').textContent =
+    `将摸头 ${p.petReady} 人，并执行 ${p.plan.length} 次邀请/挪厅（每厅 20h 一次）。确认后立即执行。`;
+  $('cafeConfirm').classList.remove('hidden');
+  $('btnCafeRun').disabled = true;
+}
+
+async function doCafeRun() {
+  if (CAFE_RUNNING) return;
+  hideCafeConfirm();
+  CAFE_RUNNING = true;
+  $('btnCafeRun').disabled = true;
+  $('cafePlanMsg').textContent = '执行中…';
+  log('开始咖啡厅摸头 + 邀请…');
+  try {
+    const j = await api('/api/cafe/run', {
+      method: 'POST', headers: {'Content-Type':'application/json'},
+      body: JSON.stringify({ students: cafePicker.ids }) });
+    for (const s of j.steps) {
+      const tag = s.type === 'pet' ? '摸头' : (s.type === 'invite' ? '邀请' : '挪厅');
+      if (s.ok) {
+        const tail = s.type === 'pet' ? ` → R${s.rank} Exp${s.exp}` : ` → ${s.cafeId} 号厅`;
+        log(`[${tag}] ${s.name}${tail}`, 'ok');
+      } else {
+        log(`[${tag}] ${s.name} 失败：${s.error}`, 'err');
+      }
+    }
+    if (j.stopped) log('停止：' + j.stopped, 'err');
+    $('cafePlanMsg').textContent =
+      `完成 ${j.steps.filter(s => s.ok).length} 步${j.stopped ? '（' + j.stopped + '）' : ''}`;
+  } catch (e) {
+    $('cafePlanMsg').textContent = '执行失败: ' + e.message;
+    log('咖啡厅执行失败: ' + e.message, 'err');
+  }
+  CAFE_RUNNING = false;
+  $('btnCafeRun').disabled = false;
+  CAFE_PLAN = null;
+  $('cafePlanView').innerHTML = '';
+  await loadCafe();
+  await loadRoster(true);
+}
+
+// ---------- 悬赏通缉 ----------
+let BOUNTY = null, BOUNTY_RUNNING = false;
+
+async function loadBounty() {
+  $('bountyMsg').textContent = '读取中…';
+  try {
+    const j = await api('/api/bounty/state');
+    BOUNTY = j;
+    renderBounty(j);
+    const parts = j.maps.map(m => `${m.short} ${m.sweepableLabel ?? '—'}`);
+    $('bountySummary').textContent = `每日 ${j.dailyTickets} 张 · ${parts.join(' / ')}`;
+    $('bountyMsg').textContent = j.resource.outdated ? '数据版本落后，扫荡默认锁定' : '';
+  } catch (e) {
+    $('bountyMsg').textContent = '读取失败: ' + e.message;
+    log('悬赏通缉读取失败: ' + e.message, 'err');
+  }
+}
+
+function renderBounty(j) {
+  const rows = j.maps.map(m => {
+    const badge = m.noSweepable ? '<span class="pill no">无可扫</span>'
+      : m.newNotCleared ? `<span class="pill no">新关 ${m.released} 未三星</span>`
+      : '<span class="pill ok">就绪</span>';
+    return `<tr>
+      <td>${m.name}</td>
+      <td>${m.sweepable ? `<code>${m.sweepable}</code>（${m.sweepableLabel ?? '?'}）` : '—'}${m.released && m.released !== m.sweepable
+        ? `<br><span class="sub">已开放 ${m.released}（${m.releasedLabel ?? '?'}）</span>` : ''}</td>
+      <td>${badge}</td>
+      <td><input class="bounty-n" data-key="${m.key}" type="number" min="0" max="6" value="0"
+                 style="width:70px" oninput="updateBountyTotal()"></td>
+    </tr>`;
+  }).join('');
+  let extra = '';
+  if (j.resource.outdated) {
+    extra += `<div class="sub" style="margin-top:6px;color:var(--err)">客户端数据 ${j.resource.local} → 服务器 ${j.resource.server}，可能新增关卡；扫荡默认锁定。</div>`;
+  }
+  if (j.unknownStages && j.unknownStages.length) {
+    extra += `<div class="sub" style="color:var(--err)">通关历史出现表外关卡：${j.unknownStages.join('、')}</div>`;
+  }
+  $('bountyView').innerHTML =
+    `<table style="margin-top:6px"><tr><th>地图</th><th>可扫关</th><th>状态</th><th>票数</th></tr>${rows}</table>` + extra;
+  const needForce = j.resource.outdated || j.maps.some(m => m.newNotCleared) || (j.unknownStages || []).length;
+  $('bountyForceWrap').classList.toggle('hidden', !needForce);
+  updateBountyTotal();
+}
+
+function bountyCounts() {
+  const out = {};
+  document.querySelectorAll('.bounty-n').forEach(i => {
+    out[i.dataset.key] = Math.max(0, parseInt(i.value || '0', 10) || 0);
+  });
+  return out;
+}
+
+function updateBountyTotal() {
+  const total = Object.values(bountyCounts()).reduce((a, b) => a + b, 0);
+  const daily = BOUNTY ? BOUNTY.dailyTickets : 6;
+  const el = $('bountyTotal');
+  el.textContent = `已分配 ${total} / ${daily} 张` +
+    (total > 0 && total < daily ? '（未满，仍可执行）' : '');
+  el.className = total > daily ? 'sub err' : 'sub';
+  $('btnBounty').disabled = total === 0 || total > daily;
+}
+
+function hideBountyConfirm() {
+  $('bountyConfirm').classList.add('hidden');
+  updateBountyTotal();
+}
+
+async function bountySweep() {
+  ensureExpanded('bounty');
+  if (BOUNTY_RUNNING) return;
+  if (!BOUNTY) await loadBounty();
+  if (!BOUNTY) return;
+  const c = bountyCounts();
+  const total = Object.values(c).reduce((a, b) => a + b, 0);
+  const daily = BOUNTY.dailyTickets;
+  if (total <= 0 || total > daily) return;
+  const parts = BOUNTY.maps.filter(m => c[m.key] > 0)
+    .map(m => `${m.name} ×${c[m.key]}（${m.sweepable ?? '无可扫'}${m.sweepableLabel ? ` ${m.sweepableLabel}` : ''}）`);
+  const left = daily - total;
+  $('bountyConfirmText').textContent =
+    `将扫荡：${parts.join('，')}。合计 ${total} 张${left ? `，还剩 ${left} 张未分配` : ''}。`;
+  $('bountyConfirm').classList.remove('hidden');
+  $('btnBounty').disabled = true;
+}
+
+async function doBountySweep() {
+  hideBountyConfirm();
+  BOUNTY_RUNNING = true;
+  $('btnBounty').disabled = true;
+  const force = $('bountyForce').checked;
+  $('bountyMsg').textContent = '扫荡中…';
+  log('开始扫荡悬赏通缉…');
+  try {
+    const j = await api('/api/bounty/sweep', {
+      method: 'POST', headers: {'Content-Type':'application/json'},
+      body: JSON.stringify({ counts: bountyCounts(), force }) });
+    for (const s of j.steps) {
+      if (s.ok) {
+        const rw = (s.rewards || []).slice(0, 6).map(r => `${r.name}×${r.amount}`).join('、');
+        log(`[悬赏] ${s.map} ${s.stage}${s.stageLabel ? `（${s.stageLabel}）` : ''} ×${s.count} → 券余 ${s.tickets}；${rw}`, 'ok');
+      } else {
+        log(`[悬赏] ${s.map} 失败：${s.error}`, 'err');
+      }
+    }
+    if (j.stopped) log('[悬赏] 停止：' + j.stopped, 'err');
+    $('bountyMsg').textContent =
+      `完成${j.tickets != null ? ` · 券余 ${j.tickets}` : ''}${j.stopped ? `（${j.stopped}）` : ''}`;
+  } catch (e) {
+    $('bountyMsg').textContent = '扫荡失败: ' + e.message;
+    log('[悬赏] 失败: ' + e.message, 'err');
+  }
+  BOUNTY_RUNNING = false;
+  await loadBounty();
+}
+
+// ---------- 学院交流会 ----------
+let SCRIM = null, SCRIM_RUNNING = false;
+
+async function loadScrim() {
+  $('scrimMsg').textContent = '读取中…';
+  try {
+    const j = await api('/api/scrimmage/state');
+    SCRIM = j;
+    renderScrim(j);
+    const parts = j.maps.map(m => `${m.short} ${m.sweepableLabel ?? '—'}`);
+    $('scrimSummary').textContent = `每日 ${j.dailyTickets} 张 · ${parts.join(' / ')}`;
+    $('scrimMsg').textContent = j.resource.outdated ? '数据版本落后，扫荡默认锁定' : '';
+  } catch (e) {
+    $('scrimMsg').textContent = '读取失败: ' + e.message;
+    log('学院交流会读取失败: ' + e.message, 'err');
+  }
+}
+
+function renderScrim(j) {
+  const rows = j.maps.map(m => {
+    const badge = m.noSweepable ? '<span class="pill no">无可扫</span>'
+      : m.newNotCleared ? `<span class="pill no">新关 ${m.released} 未三星</span>`
+      : '<span class="pill ok">就绪</span>';
+    return `<tr>
+      <td>${m.name}</td>
+      <td>${m.sweepable ? `<code>${m.sweepable}</code>（${m.sweepableLabel ?? '?'}）` : '—'}${m.ap != null ? ` <span class="tag">体力 ${m.ap}</span>` : ''}${m.released && m.released !== m.sweepable
+        ? `<br><span class="sub">已开放 ${m.released}（${m.releasedLabel ?? '?'}）</span>` : ''}</td>
+      <td>${badge}</td>
+      <td><input class="scrim-n" data-key="${m.key}" type="number" min="0" max="6" value="0"
+                 style="width:70px" oninput="updateScrimTotal()"></td>
+    </tr>`;
+  }).join('');
+  let extra = `<div class="sub" style="margin-top:6px">${j.note}</div>`;
+  if (j.resource.outdated) {
+    extra += `<div class="sub" style="color:var(--err)">客户端数据 ${j.resource.local} → 服务器 ${j.resource.server}，可能新增关卡；扫荡默认锁定。</div>`;
+  }
+  if (j.unknownStages && j.unknownStages.length) {
+    extra += `<div class="sub" style="color:var(--err)">通关历史出现表外关卡：${j.unknownStages.join('、')}</div>`;
+  }
+  $('scrimView').innerHTML =
+    `<table style="margin-top:6px"><tr><th>地图</th><th>可扫关</th><th>状态</th><th>票数</th></tr>${rows}</table>` + extra;
+  const needForce = j.resource.outdated || j.maps.some(m => m.newNotCleared) || (j.unknownStages || []).length;
+  $('scrimForceWrap').classList.toggle('hidden', !needForce);
+  updateScrimTotal();
+}
+
+function scrimCounts() {
+  const out = {};
+  document.querySelectorAll('.scrim-n').forEach(i => {
+    out[i.dataset.key] = Math.max(0, parseInt(i.value || '0', 10) || 0);
+  });
+  return out;
+}
+
+function updateScrimTotal() {
+  const total = Object.values(scrimCounts()).reduce((a, b) => a + b, 0);
+  const daily = SCRIM ? SCRIM.dailyTickets : 6;
+  const el = $('scrimTotal');
+  el.textContent = `已分配 ${total} / ${daily} 张` + (total > 0 && total < daily ? '（未满，仍可执行）' : '');
+  el.className = total > daily ? 'sub err' : 'sub';
+  $('btnScrim').disabled = total === 0 || total > daily;
+}
+
+function hideScrimConfirm() {
+  $('scrimConfirm').classList.add('hidden');
+  updateScrimTotal();
+}
+
+async function scrimmageSweep() {
+  ensureExpanded('scrim');
+  if (SCRIM_RUNNING) return;
+  if (!SCRIM) await loadScrim();
+  if (!SCRIM) return;
+  const c = scrimCounts();
+  const total = Object.values(c).reduce((a, b) => a + b, 0);
+  const daily = SCRIM.dailyTickets;
+  if (total <= 0 || total > daily) return;
+  const parts = SCRIM.maps.filter(m => c[m.key] > 0)
+    .map(m => `${m.name} ×${c[m.key]}（${m.sweepable ?? '无可扫'}${m.sweepableLabel ? ` ${m.sweepableLabel}` : ''}）`);
+  const left = daily - total;
+  const ap = SCRIM.maps.reduce((n, m) => n + (c[m.key] || 0) * (m.ap || 0), 0);
+  $('scrimConfirmText').textContent =
+    `将扫荡：${parts.join('，')}。合计 ${total} 张${left ? `，还剩 ${left} 张未分配` : ''}，预计消耗体力 ${ap}。`;
+  $('scrimConfirm').classList.remove('hidden');
+  $('btnScrim').disabled = true;
+}
+
+async function doScrimSweep() {
+  hideScrimConfirm();
+  SCRIM_RUNNING = true;
+  $('btnScrim').disabled = true;
+  const force = $('scrimForce').checked;
+  $('scrimMsg').textContent = '扫荡中…';
+  log('开始扫荡学院交流会…');
+  try {
+    const j = await api('/api/scrimmage/sweep', {
+      method: 'POST', headers: {'Content-Type':'application/json'},
+      body: JSON.stringify({ counts: scrimCounts(), force }) });
+    for (const s of j.steps) {
+      if (s.ok) {
+        const rw = (s.rewards || []).slice(0, 6).map(r => `${r.name}×${r.amount}`).join('、');
+        log(`[交流会] ${s.map} ${s.stage}${s.stageLabel ? `（${s.stageLabel}）` : ''} ×${s.count} → 券余 ${s.tickets}；${rw}`, 'ok');
+      } else {
+        log(`[交流会] ${s.map} 失败：${s.error}`, 'err');
+      }
+    }
+    if (j.stopped) log('[交流会] 停止：' + j.stopped, 'err');
+    $('scrimMsg').textContent =
+      `完成${j.tickets != null ? ` · 券余 ${j.tickets}` : ''}${j.stopped ? `（${j.stopped}）` : ''}`;
+  } catch (e) {
+    $('scrimMsg').textContent = '扫荡失败: ' + e.message;
+    log('[交流会] 失败: ' + e.message, 'err');
+  }
+  SCRIM_RUNNING = false;
+  await loadScrim();
+}
+
+// ---------- 社交小组 ----------
+let CLAN = null;
+
+async function loadClan() {
+  $('clanMsg').textContent = '读取中…';
+  try {
+    const j = await api('/api/clan/state');
+    applyClan(j);
+    $('clanMsg').textContent = j.gained ? `签到成功，出勤 +${j.gained}`
+      : (j.checkedToday ? '今日已签到' : '今日未签到');
+    if (j.gained) log(`[签到] ${j.clan.name} 出勤 ${j.me.attendance} 天（+${j.gained}）`, 'ok');
+  } catch (e) {
+    $('clanMsg').textContent = '读取失败: ' + e.message;
+    log('社交小组读取失败: ' + e.message, 'err');
+  }
+}
+
+function applyClan(j) {
+  CLAN = j;
+  renderClan(j);
+  $('clanSummary').textContent =
+    `${j.clan.name} · 出勤 ${j.me.attendance} 天 · ${j.checkedToday ? '今日已签到' : '今日未签到'}`;
+  $('btnClan').textContent = j.checkedToday ? '已签到' : '签到';
+}
+
+function renderClan(j) {
+  const c = j.clan, m = j.me;
+  const rows = [
+    ['社团', `${c.name}（${c.memberCount ?? '?'}/50）`],
+    ['会长', c.president || '—'],
+    ['我的昵称', m.nick || '—'],
+    ['出勤', `${m.attendance} 天${j.gained ? `（本次 +${j.gained}）` : ''}`],
+    ['社交等级', m.socialGrade ?? '—'],
+    ['加入日期', (m.joinDate || '').slice(0, 10)],
+    ['最近登录', (m.lastLogin || '').slice(0, 16).replace('T', ' ')],
+  ].map(([k, v]) => `<tr><th style="width:90px">${k}</th><td>${v}</td></tr>`).join('');
+  $('clanView').innerHTML = `<table>${rows}</table>` +
+    (c.notice ? `<div class="sub" style="margin-top:8px;white-space:pre-wrap">公告：${c.notice}</div>` : '');
+}
+
+async function clanCheckin() {
+  ensureExpanded('clan');
+  const btn = $('btnClan');
+  btn.disabled = true;
+  $('clanMsg').textContent = '签到中…';
+  try {
+    const j = await api('/api/clan/checkin', { method: 'POST' });
+    applyClan(j);
+    $('clanMsg').textContent = j.gained ? `签到成功，出勤 +${j.gained}`
+      : (j.checkedToday ? '今日已签到（出勤无新增）' : '未检测到出勤增加，可能已签过');
+    log(`[签到] 完成 · 出勤 ${j.me.attendance} 天${j.gained ? '（+' + j.gained + '）' : ''}`, 'ok');
+  } catch (e) {
+    $('clanMsg').textContent = '签到失败: ' + e.message;
+    log('[签到] 失败: ' + e.message, 'err');
+  }
+  btn.disabled = false;
+}
+
+// ---------- 数据版本预警 ----------
+async function checkResource() {
+  try {
+    const j = await api('/api/resource/status');
+    if (j.outdated) {
+      $('resourceAlertText').textContent =
+        `游戏数据已更新：本地表 ${j.local} → 服务器 ${j.server}。` +
+        `可能新增关卡/内容，建议先更新 tables 再刷票。`;
+      $('resourceAlert').classList.remove('hidden');
+      log(`[版本] 服务器数据版本 ${j.server} > 本地 ${j.local}，可能有新内容`, 'err');
+    } else {
+      $('resourceAlert').classList.add('hidden');
+    }
+  } catch (e) { /* 版本探测失败不打扰 */ }
+}
+
+async function ackResource() {
+  try {
+    const j = await api('/api/resource/status');
+    await api('/api/resource/ack', {
+      method: 'POST', headers: {'Content-Type':'application/json'},
+      body: JSON.stringify({ version: j.server || '' }) });
+    $('resourceAlert').classList.add('hidden');
+    log('[版本] 已忽略本次更新提示（下次版本变化会再提醒）', 'sub');
+  } catch (e) {
+    log('[版本] 忽略失败: ' + e.message, 'err');
+  }
+}
+
+// 首屏
+restoreFolds();
+refreshSession();
+</script>
+</body>
+</html>

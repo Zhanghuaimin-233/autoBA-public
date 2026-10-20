@@ -1,0 +1,4836 @@
+{
+ "/api/academy/attendschedule": {
+  "protocol": 24001,
+  "obf": "OUUT4DK7VK32GDTKX6IKZ5I4GQ",
+  "samples": 21,
+  "cn": "学园日程·执行（地点+100经验，掉对应学校技术笔记）",
+  "request_fields": {
+   "ZoneId": {
+    "types": [
+     "int"
+    ],
+    "example": "16"
+   }
+  },
+  "response_packet_keys": {
+   "AcademyDB": {
+    "types": [
+     "object"
+    ]
+   },
+   "BattlePassMissionProgressDBDict": {
+    "types": [
+     "object"
+    ]
+   },
+   "ExtraRewards": {
+    "types": [
+     "array"
+    ]
+   },
+   "MissionProgressDBs": {
+    "types": [
+     "array"
+    ]
+   },
+   "ParcelResultDB": {
+    "types": [
+     "object"
+    ]
+   },
+   "Protocol": {
+    "types": [
+     "int"
+    ]
+   },
+   "RequestId": {
+    "types": [
+     "str"
+    ]
+   },
+   "ServerNotification": {
+    "types": [
+     "int"
+    ]
+   },
+   "ServerTimeTicks": {
+    "types": [
+     "int"
+    ]
+   },
+   "SessionKey": {
+    "types": [
+     "object"
+    ]
+   }
+  },
+  "first_call_N_today": null
+ },
+ "/api/academy/getinfo": {
+  "protocol": 24000,
+  "obf": "KKVAEXLS5QIIB36RQW27XRTJGI",
+  "samples": 8,
+  "cn": "学园日程信息",
+  "request_fields": {},
+  "response_packet_keys": {
+   "AcademyDB": {
+    "types": [
+     "null",
+     "object"
+    ]
+   },
+   "AcademyLocationDBs": {
+    "types": [
+     "array",
+     "null"
+    ]
+   },
+   "Protocol": {
+    "types": [
+     "int"
+    ]
+   },
+   "RequestId": {
+    "types": [
+     "str"
+    ]
+   },
+   "ServerNotification": {
+    "types": [
+     "int"
+    ]
+   },
+   "ServerTimeTicks": {
+    "types": [
+     "int"
+    ]
+   },
+   "SessionKey": {
+    "types": [
+     "object"
+    ]
+   }
+  },
+  "first_call_N_today": 2
+ },
+ "/api/account/auth": {
+  "protocol": 1002,
+  "obf": "AHTQLQI65FWJGGGK4KL5AEF57A",
+  "samples": 5,
+  "cn": "登录认证（Token 换会话）",
+  "request_fields": {
+   "AccessIP": {
+    "types": [
+     "null"
+    ],
+    "example": "null"
+   },
+   "AdvertisementId": {
+    "types": [
+     "null"
+    ],
+    "example": "null"
+   },
+   "DevId": {
+    "types": [
+     "str"
+    ],
+    "example": "\"1011499471\""
+   },
+   "DeviceModel": {
+    "types": [
+     "str"
+    ],
+    "example": "\"Xiaomi 24031PN0DC\""
+   },
+   "DeviceSystemMemorySize": {
+    "types": [
+     "int"
+    ],
+    "example": "8961"
+   },
+   "DeviceUniqueId": {
+    "types": [
+     "str"
+    ],
+    "example": "\"d3ffbb0cf1cd97e4e6d5b7b0a7847406\""
+   },
+   "IMEI": {
+    "types": [
+     "int"
+    ],
+    "example": "0"
+   },
+   "MarketId": {
+    "types": [
+     "null"
+    ],
+    "example": "null"
+   },
+   "OSVersion": {
+    "types": [
+     "str"
+    ],
+    "example": "\"Android OS 12 / API-32 (V417IR/1747)\""
+   },
+   "ResUrl": {
+    "types": [
+     "str"
+    ],
+    "example": "\"https://static.bluearchive-cn.com/prodm39\""
+   },
+   "SdkPid": {
+    "types": [
+     "str"
+    ],
+    "example": "\"CN-BA\""
+   },
+   "SubChannel": {
+    "types": [
+     "str"
+    ],
+    "example": "\"\""
+   },
+   "Token": {
+    "types": [
+     "str"
+    ],
+    "example": "\"dededede…\""
+   },
+   "UserType": {
+    "types": [
+     "null"
+    ],
+    "example": "null"
+   },
+   "Version": {
+    "types": [
+     "int"
+    ],
+    "example": "0"
+   }
+  },
+  "response_packet_keys": {
+   "AccountDB": {
+    "types": [
+     "object"
+    ]
+   },
+   "AccountLimitedFlashSaleDBs": {
+    "types": [
+     "array"
+    ]
+   },
+   "AccountRestrictionsDB": {
+    "types": [
+     "object"
+    ]
+   },
+   "AttendanceBookRewards": {
+    "types": [
+     "array"
+    ]
+   },
+   "AttendanceHistoryDBs": {
+    "types": [
+     "array"
+    ]
+   },
+   "BattleValidation": {
+    "types": [
+     "bool"
+    ]
+   },
+   "BiweeklyProductMail": {
+    "types": [
+     "array"
+    ]
+   },
+   "BiweeklyProductParcel": {
+    "types": [
+     "array"
+    ]
+   },
+   "CurrentVersion": {
+    "types": [
+     "int"
+    ]
+   },
+   "DailyRecordDBs": {
+    "types": [
+     "array"
+    ]
+   },
+   "EncryptedUID": {
+    "types": [
+     "str"
+    ]
+   },
+   "FunctionClose": {
+    "types": [
+     "object"
+    ]
+   },
+   "IsArenaAnonymous": {
+    "types": [
+     "bool"
+    ]
+   },
+   "IsDevelopment": {
+    "types": [
+     "bool"
+    ]
+   },
+   "IsNew": {
+    "types": [
+     "bool"
+    ]
+   },
+   "IssueAlertInfos": {
+    "types": [
+     "array"
+    ]
+   },
+   "MinimumVersion": {
+    "types": [
+     "int"
+    ]
+   },
+   "MissionProgressDBs": {
+    "types": [
+     "array"
+    ]
+   },
+   "MonthlyProductMail": {
+    "types": [
+     "null"
+    ]
+   },
+   "MonthlyProductParcel": {
+    "types": [
+     "null"
+    ]
+   },
+   "NewlyAddedShopCashIds": {
+    "types": [
+     "array"
+    ]
+   },
+   "OpenConditions": {
+    "types": [
+     "null"
+    ]
+   },
+   "OptionDB": {
+    "types": [
+     "object"
+    ]
+   },
+   "Protocol": {
+    "types": [
+     "int"
+    ]
+   },
+   "RepurchasableMonthlyProductCountDBs": {
+    "types": [
+     "null"
+    ]
+   },
+   "RequestId": {
+    "types": [
+     "str"
+    ]
+   },
+   "ServerNotification": {
+    "types": [
+     "int"
+    ]
+   },
+   "ServerTimeTicks": {
+    "types": [
+     "int"
+    ]
+   },
+   "SessionKey": {
+    "types": [
+     "object"
+    ]
+   },
+   "TTSCdnUri": {
+    "types": [
+     "str"
+    ]
+   },
+   "UpdateRequired": {
+    "types": [
+     "bool"
+    ]
+   },
+   "WeeklyProductMail": {
+    "types": [
+     "array"
+    ]
+   },
+   "WeeklyProductParcel": {
+    "types": [
+     "array"
+    ]
+   }
+  },
+  "first_call_N_today": 1
+ },
+ "/api/account/gettutorial": {
+  "protocol": 1005,
+  "obf": "TE4UJH3A6CSOJSPVNXXIBGYIIA",
+  "samples": 5,
+  "cn": "教程完成状态查询",
+  "request_fields": {},
+  "response_packet_keys": {
+   "Protocol": {
+    "types": [
+     "int"
+    ]
+   },
+   "RequestId": {
+    "types": [
+     "str"
+    ]
+   },
+   "ServerNotification": {
+    "types": [
+     "int"
+    ]
+   },
+   "ServerTimeTicks": {
+    "types": [
+     "int"
+    ]
+   },
+   "SessionKey": {
+    "types": [
+     "object"
+    ]
+   },
+   "TutorialIds": {
+    "types": [
+     "array"
+    ]
+   }
+  },
+  "first_call_N_today": 9
+ },
+ "/api/account/loginsync": {
+  "protocol": 1017,
+  "obf": "P3OMQZD2FXV7XXEGA7ETCXIJ4Q",
+  "samples": 5,
+  "cn": "登录同步（批量拉取变更）",
+  "request_fields": {
+   "SkillCutInOption": {
+    "types": [
+     "str"
+    ],
+    "example": "\"OnceADay\""
+   },
+   "SyncProtocols": {
+    "types": [
+     "array"
+    ],
+    "example": "[20000, 1003, 2000, 3000, 5000, 12000, 6000, 22001, 17018, 2…"
+   }
+  },
+  "response_packet_keys": {
+   "AccountCurrencySyncResponse": {
+    "types": [
+     "object"
+    ]
+   },
+   "AccountLevelRewardIds": {
+    "types": [
+     "array"
+    ]
+   },
+   "ArenaLoginResponse": {
+    "types": [
+     "object"
+    ]
+   },
+   "AttachmentEmblemListResponse": {
+    "types": [
+     "object"
+    ]
+   },
+   "AttachmentGetResponse": {
+    "types": [
+     "object"
+    ]
+   },
+   "BillingPurchaseListByYostarResponse": {
+    "types": [
+     "object"
+    ]
+   },
+   "CafeGetInfoResponse": {
+    "types": [
+     "object"
+    ]
+   },
+   "CampaignListResponse": {
+    "types": [
+     "object"
+    ]
+   },
+   "CharacterGearListResponse": {
+    "types": [
+     "object"
+    ]
+   },
+   "CharacterListResponse": {
+    "types": [
+     "object"
+    ]
+   },
+   "ClanLoginResponse": {
+    "types": [
+     "object"
+    ]
+   },
+   "ContentSweepMultiSweepPresetListResponse": {
+    "types": [
+     "object"
+    ]
+   },
+   "CraftInfoListResponse": {
+    "types": [
+     "object"
+    ]
+   },
+   "EchelonListResponse": {
+    "types": [
+     "object"
+    ]
+   },
+   "EliminateRaidLoginResponse": {
+    "types": [
+     "object"
+    ]
+   },
+   "EquipmentItemListResponse": {
+    "types": [
+     "object"
+    ]
+   },
+   "EventContentPermanentListResponse": {
+    "types": [
+     "object"
+    ]
+   },
+   "FriendCode": {
+    "types": [
+     "str"
+    ]
+   },
+   "FriendCount": {
+    "types": [
+     "int"
+    ]
+   },
+   "ItemListResponse": {
+    "types": [
+     "null"
+    ]
+   },
+   "MemoryLobbyListResponse": {
+    "types": [
+     "object"
+    ]
+   },
+   "MomoTalkOutLineResponse": {
+    "types": [
+     "object"
+    ]
+   },
+   "MultiFloorRaidLoginResponse": {
+    "types": [
+     "object"
+    ]
+   },
+   "MultiFloorRaidSyncResponse": {
+    "types": [
+     "object"
+    ]
+   },
+   "PickupFirstGetHistoryDBs": {
+    "types": [
+     "array"
+    ]
+   },
+   "Protocol": {
+    "types": [
+     "int"
+    ]
+   },
+   "RaidLoginResponse": {
+    "types": [
+     "object"
+    ]
+   },
+   "RequestId": {
+    "types": [
+     "str"
+    ]
+   },
+   "ScenarioListResponse": {
+    "types": [
+     "object"
+    ]
+   },
+   "ServerNotification": {
+    "types": [
+     "int"
+    ]
+   },
+   "ServerTimeTicks": {
+    "types": [
+     "int"
+    ]
+   },
+   "SessionKey": {
+    "types": [
+     "object"
+    ]
+   },
+   "ShopGachaRecruitListResponse": {
+    "types": [
+     "object"
+    ]
+   },
+   "StickerListResponse": {
+    "types": [
+     "object"
+    ]
+   },
+   "TimeAttackDungeonLoginResponse": {
+    "types": [
+     "object"
+    ]
+   }
+  },
+  "first_call_N_today": 3
+ },
+ "/api/account/settutorial": {
+  "protocol": 1006,
+  "obf": "3KUKWHN3VDLAXVS4YDYBTTVZ2Y",
+  "samples": 1,
+  "cn": "教程完成状态上报",
+  "request_fields": {
+   "TutorialIds": {
+    "types": [
+     "array"
+    ],
+    "example": "[1, 2, 3, 4, 5, 22, 8]"
+   }
+  },
+  "response_packet_keys": {
+   "Protocol": {
+    "types": [
+     "int"
+    ]
+   },
+   "RequestId": {
+    "types": [
+     "str"
+    ]
+   },
+   "ServerNotification": {
+    "types": [
+     "int"
+    ]
+   },
+   "ServerTimeTicks": {
+    "types": [
+     "int"
+    ]
+   },
+   "SessionKey": {
+    "types": [
+     "object"
+    ]
+   }
+  },
+  "first_call_N_today": null
+ },
+ "/api/arena/cumulativetimereward": {
+  "protocol": 22008,
+  "obf": "5N7BAP2FPLZHH7VN5BZYRBXPWQ",
+  "samples": 1,
+  "cn": "战术对抗赛·累计时数奖励",
+  "request_fields": {},
+  "response_packet_keys": {
+   "MissionProgressDBs": {
+    "types": [
+     "array"
+    ]
+   },
+   "ParcelResult": {
+    "types": [
+     "object"
+    ]
+   },
+   "Protocol": {
+    "types": [
+     "int"
+    ]
+   },
+   "RequestId": {
+    "types": [
+     "str"
+    ]
+   },
+   "ServerNotification": {
+    "types": [
+     "int"
+    ]
+   },
+   "ServerTimeTicks": {
+    "types": [
+     "int"
+    ]
+   },
+   "SessionKey": {
+    "types": [
+     "object"
+    ]
+   },
+   "TimeRewardAmount": {
+    "types": [
+     "int"
+    ]
+   },
+   "TimeRewardLastUpdateTime": {
+    "types": [
+     "str"
+    ]
+   }
+  },
+  "first_call_N_today": null
+ },
+ "/api/arena/dailyreward": {
+  "protocol": 22009,
+  "obf": "UGNFRQJ3JRBLNH67INDEVWKU7Y",
+  "samples": 3,
+  "cn": "战术对抗赛·每日奖励领取",
+  "request_fields": {},
+  "response_packet_keys": {
+   "DailyRewardActiveTime": {
+    "types": [
+     "str"
+    ]
+   },
+   "ParcelResult": {
+    "types": [
+     "object"
+    ]
+   },
+   "Protocol": {
+    "types": [
+     "int"
+    ]
+   },
+   "RequestId": {
+    "types": [
+     "str"
+    ]
+   },
+   "ServerNotification": {
+    "types": [
+     "int"
+    ]
+   },
+   "ServerTimeTicks": {
+    "types": [
+     "int"
+    ]
+   },
+   "SessionKey": {
+    "types": [
+     "object"
+    ]
+   }
+  },
+  "first_call_N_today": null
+ },
+ "/api/arena/enterbattle": {
+  "protocol": 22004,
+  "obf": "NWNNGWMRJC2VPSFJD5RJKSXOZA",
+  "samples": 4,
+  "cn": "战术对抗赛·开始战斗",
+  "request_fields": {
+   "OpponentAccountServerId": {
+    "types": [
+     "int"
+    ],
+    "example": "10007689668"
+   },
+   "OpponentIndex": {
+    "types": [
+     "int"
+    ],
+    "example": "0"
+   },
+   "OpponentRank": {
+    "types": [
+     "int"
+    ],
+    "example": "42"
+   }
+  },
+  "response_packet_keys": {
+   "AccountCurrencyDB": {
+    "types": [
+     "object"
+    ]
+   },
+   "AllTimeRewards": {
+    "types": [
+     "null"
+    ]
+   },
+   "ArenaBattleDB": {
+    "types": [
+     "object"
+    ]
+   },
+   "ArenaPlayerInfoDB": {
+    "types": [
+     "object"
+    ]
+   },
+   "BattlePassMissionProgressDBDict": {
+    "types": [
+     "object"
+    ]
+   },
+   "BattleServerError": {
+    "types": [
+     "bool"
+    ]
+   },
+   "BattleSetting": {
+    "types": [
+     "object"
+    ]
+   },
+   "MissionProgressDBs": {
+    "types": [
+     "array"
+    ]
+   },
+   "Protocol": {
+    "types": [
+     "int"
+    ]
+   },
+   "RequestId": {
+    "types": [
+     "str"
+    ]
+   },
+   "SeasonRewards": {
+    "types": [
+     "null"
+    ]
+   },
+   "ServerNotification": {
+    "types": [
+     "int"
+    ]
+   },
+   "ServerTimeTicks": {
+    "types": [
+     "int"
+    ]
+   },
+   "SessionKey": {
+    "types": [
+     "object"
+    ]
+   },
+   "VictoryRewards": {
+    "types": [
+     "null",
+     "object"
+    ]
+   }
+  },
+  "first_call_N_today": null
+ },
+ "/api/arena/enterlobby": {
+  "protocol": 22000,
+  "obf": "A2FUPZASWN3KLFFCK5RS2Z3UQI",
+  "samples": 5,
+  "cn": "战术对抗赛·进入大厅",
+  "request_fields": {},
+  "response_packet_keys": {
+   "ArenaPlayerInfoDB": {
+    "types": [
+     "object"
+    ]
+   },
+   "AutoRefreshTime": {
+    "types": [
+     "str"
+    ]
+   },
+   "IsServerRunBattle": {
+    "types": [
+     "bool"
+    ]
+   },
+   "MapId": {
+    "types": [
+     "int"
+    ]
+   },
+   "OpponentUserDBs": {
+    "types": [
+     "array"
+    ]
+   },
+   "Protocol": {
+    "types": [
+     "int"
+    ]
+   },
+   "RequestId": {
+    "types": [
+     "str"
+    ]
+   },
+   "ServerNotification": {
+    "types": [
+     "int"
+    ]
+   },
+   "ServerTimeTicks": {
+    "types": [
+     "int"
+    ]
+   },
+   "SessionKey": {
+    "types": [
+     "object"
+    ]
+   }
+  },
+  "first_call_N_today": null
+ },
+ "/api/arena/opponentlist": {
+  "protocol": 22003,
+  "obf": "PO5IN3RWHZDBLMRS4DLY4YK3ZY",
+  "samples": 5,
+  "cn": "战术对抗赛·对手列表",
+  "request_fields": {},
+  "response_packet_keys": {
+   "AutoRefreshTime": {
+    "types": [
+     "str"
+    ]
+   },
+   "OpponentUserDBs": {
+    "types": [
+     "array"
+    ]
+   },
+   "PlayerRank": {
+    "types": [
+     "int"
+    ]
+   },
+   "Protocol": {
+    "types": [
+     "int"
+    ]
+   },
+   "RequestId": {
+    "types": [
+     "str"
+    ]
+   },
+   "ServerNotification": {
+    "types": [
+     "int"
+    ]
+   },
+   "ServerTimeTicks": {
+    "types": [
+     "int"
+    ]
+   },
+   "SessionKey": {
+    "types": [
+     "object"
+    ]
+   }
+  },
+  "first_call_N_today": null
+ },
+ "/api/arena/syncechelonsettingtime": {
+  "protocol": 22016,
+  "obf": "EY7QMLA3SYLSYEV3NNLI2CY3ZQ",
+  "samples": 4,
+  "cn": "战术对抗赛·同步防守编队",
+  "request_fields": {},
+  "response_packet_keys": {
+   "EchelonSettingTime": {
+    "types": [
+     "str"
+    ]
+   },
+   "Protocol": {
+    "types": [
+     "int"
+    ]
+   },
+   "RequestId": {
+    "types": [
+     "str"
+    ]
+   },
+   "ServerNotification": {
+    "types": [
+     "int"
+    ]
+   },
+   "ServerTimeTicks": {
+    "types": [
+     "int"
+    ]
+   },
+   "SessionKey": {
+    "types": [
+     "object"
+    ]
+   }
+  },
+  "first_call_N_today": null
+ },
+ "/api/attendance/reward": {
+  "protocol": 9002,
+  "obf": "AZELQARARQP5L57ZML5KM3BRJ4",
+  "samples": 2,
+  "cn": "出勤奖励（签到）",
+  "request_fields": {
+   "AttendanceBookUniqueId": {
+    "types": [
+     "int"
+    ],
+    "example": "0"
+   },
+   "Day": {
+    "types": [
+     "int"
+    ],
+    "example": "0"
+   },
+   "DayByBookUniqueId": {
+    "types": [
+     "object"
+    ],
+    "example": "{\"1\": 3}"
+   }
+  },
+  "response_packet_keys": {
+   "AttendanceBookRewards": {
+    "types": [
+     "array"
+    ]
+   },
+   "AttendanceHistoryDBs": {
+    "types": [
+     "array"
+    ]
+   },
+   "ParcelResultDB": {
+    "types": [
+     "null"
+    ]
+   },
+   "Protocol": {
+    "types": [
+     "int"
+    ]
+   },
+   "RequestId": {
+    "types": [
+     "str"
+    ]
+   },
+   "ServerNotification": {
+    "types": [
+     "int"
+    ]
+   },
+   "ServerTimeTicks": {
+    "types": [
+     "int"
+    ]
+   },
+   "SessionKey": {
+    "types": [
+     "object"
+    ]
+   }
+  },
+  "first_call_N_today": null
+ },
+ "/api/battlepass/check": {
+  "protocol": 51006,
+  "obf": "JGJG65UANK2HFSVER3AX232FMM",
+  "samples": 58,
+  "cn": "通行证·任务进度检查",
+  "request_fields": {
+   "BattlePassId": {
+    "types": [
+     "int"
+    ],
+    "example": "1"
+   }
+  },
+  "response_packet_keys": {
+   "HasCompleteMission": {
+    "types": [
+     "bool"
+    ]
+   },
+   "HasNotReceiveReward": {
+    "types": [
+     "bool"
+    ]
+   },
+   "Protocol": {
+    "types": [
+     "int"
+    ]
+   },
+   "RequestId": {
+    "types": [
+     "str"
+    ]
+   },
+   "ServerNotification": {
+    "types": [
+     "int"
+    ]
+   },
+   "ServerTimeTicks": {
+    "types": [
+     "int"
+    ]
+   },
+   "SessionKey": {
+    "types": [
+     "object"
+    ]
+   }
+  },
+  "first_call_N_today": 17
+ },
+ "/api/battlepass/getinfo": {
+  "protocol": 51000,
+  "obf": "IQLINGRIPTDDWVURJU6WQJY25E",
+  "samples": 9,
+  "cn": "通行证·信息",
+  "request_fields": {
+   "BattlePassId": {
+    "types": [
+     "int"
+    ],
+    "example": "1"
+   }
+  },
+  "response_packet_keys": {
+   "BattlePassInfo": {
+    "types": [
+     "object"
+    ]
+   },
+   "Protocol": {
+    "types": [
+     "int"
+    ]
+   },
+   "RequestId": {
+    "types": [
+     "str"
+    ]
+   },
+   "ServerNotification": {
+    "types": [
+     "int"
+    ]
+   },
+   "ServerTimeTicks": {
+    "types": [
+     "int"
+    ]
+   },
+   "SessionKey": {
+    "types": [
+     "object"
+    ]
+   }
+  },
+  "first_call_N_today": 7
+ },
+ "/api/battlepass/missionlist": {
+  "protocol": 51003,
+  "obf": "DM356GTN7BIX2KUOSIR6RHO2DQ",
+  "samples": 7,
+  "cn": "通行证·任务列表",
+  "request_fields": {
+   "BattlePassId": {
+    "types": [
+     "int"
+    ],
+    "example": "1"
+   }
+  },
+  "response_packet_keys": {
+   "MissionHistoryUniqueIds": {
+    "types": [
+     "array"
+    ]
+   },
+   "ProgressDBs": {
+    "types": [
+     "array"
+    ]
+   },
+   "Protocol": {
+    "types": [
+     "int"
+    ]
+   },
+   "RequestId": {
+    "types": [
+     "str"
+    ]
+   },
+   "ServerNotification": {
+    "types": [
+     "int"
+    ]
+   },
+   "ServerTimeTicks": {
+    "types": [
+     "int"
+    ]
+   },
+   "SessionKey": {
+    "types": [
+     "object"
+    ]
+   }
+  },
+  "first_call_N_today": 15
+ },
+ "/api/battlepass/missionmultiplereward": {
+  "protocol": 51005,
+  "obf": "5LQOU6YFWHYRBRI2OHKI37DHRE",
+  "samples": 1,
+  "cn": "通行证·批量领取任务奖励",
+  "request_fields": {
+   "BattlePassId": {
+    "types": [
+     "int"
+    ],
+    "example": "1"
+   },
+   "MissionCategory": {
+    "types": [
+     "int"
+    ],
+    "example": "5"
+   }
+  },
+  "response_packet_keys": {
+   "AddedHistoryDBs": {
+    "types": [
+     "array"
+    ]
+   },
+   "BattlePassInfo": {
+    "types": [
+     "object"
+    ]
+   },
+   "ParcelResultDB": {
+    "types": [
+     "object"
+    ]
+   },
+   "Protocol": {
+    "types": [
+     "int"
+    ]
+   },
+   "RequestId": {
+    "types": [
+     "str"
+    ]
+   },
+   "ServerNotification": {
+    "types": [
+     "int"
+    ]
+   },
+   "ServerTimeTicks": {
+    "types": [
+     "int"
+    ]
+   },
+   "SessionKey": {
+    "types": [
+     "object"
+    ]
+   }
+  },
+  "first_call_N_today": null
+ },
+ "/api/battlepass/receivereward": {
+  "protocol": 51002,
+  "obf": "QTVDCGVGII6VQBQQIAXJQD4M4Q",
+  "samples": 1,
+  "cn": "通行证·领取等级奖励",
+  "request_fields": {
+   "BattlePassId": {
+    "types": [
+     "int"
+    ],
+    "example": "1"
+   }
+  },
+  "response_packet_keys": {
+   "BattlePassInfo": {
+    "types": [
+     "object"
+    ]
+   },
+   "ParcelResult": {
+    "types": [
+     "object"
+    ]
+   },
+   "Protocol": {
+    "types": [
+     "int"
+    ]
+   },
+   "RequestId": {
+    "types": [
+     "str"
+    ]
+   },
+   "ServerNotification": {
+    "types": [
+     "int"
+    ]
+   },
+   "ServerTimeTicks": {
+    "types": [
+     "int"
+    ]
+   },
+   "SessionKey": {
+    "types": [
+     "object"
+    ]
+   }
+  },
+  "first_call_N_today": null
+ },
+ "/api/billing/purchasefreeproduct": {
+  "protocol": 29003,
+  "obf": "EG2DYZYABN6E5CHUSZPXOI7BPQ",
+  "samples": 3,
+  "cn": "商城·免费商品领取",
+  "request_fields": {
+   "ShopCashId": {
+    "types": [
+     "int"
+    ],
+    "example": "900000"
+   }
+  },
+  "response_packet_keys": {
+   "MailDB": {
+    "types": [
+     "null"
+    ]
+   },
+   "MissionProgressDBs": {
+    "types": [
+     "array"
+    ]
+   },
+   "ParcelResult": {
+    "types": [
+     "object"
+    ]
+   },
+   "Protocol": {
+    "types": [
+     "int"
+    ]
+   },
+   "PurchaseProduct": {
+    "types": [
+     "object"
+    ]
+   },
+   "RequestId": {
+    "types": [
+     "str"
+    ]
+   },
+   "ServerNotification": {
+    "types": [
+     "int"
+    ]
+   },
+   "ServerTimeTicks": {
+    "types": [
+     "int"
+    ]
+   },
+   "SessionKey": {
+    "types": [
+     "object"
+    ]
+   }
+  },
+  "first_call_N_today": null
+ },
+ "/api/billing/purchaselistbyyostar": {
+  "protocol": 29002,
+  "obf": "UXIHQC2AXRZCEBTL2NPBMBBI6I",
+  "samples": 11,
+  "cn": "商城·商品列表查询",
+  "request_fields": {},
+  "response_packet_keys": {
+   "CountList": {
+    "types": [
+     "array"
+    ]
+   },
+   "MonthlyProductList": {
+    "types": [
+     "array"
+    ]
+   },
+   "OrderList": {
+    "types": [
+     "array"
+    ]
+   },
+   "Protocol": {
+    "types": [
+     "int"
+    ]
+   },
+   "RequestId": {
+    "types": [
+     "str"
+    ]
+   },
+   "ServerNotification": {
+    "types": [
+     "int"
+    ]
+   },
+   "ServerTimeTicks": {
+    "types": [
+     "int"
+    ]
+   },
+   "SessionKey": {
+    "types": [
+     "object"
+    ]
+   }
+  },
+  "first_call_N_today": 29
+ },
+ "/api/cafe/ack": {
+  "protocol": 20001,
+  "obf": "ZSN5XTRP4BTJ7F2HAHOTGZLHLU",
+  "samples": 6,
+  "cn": "咖啡厅·状态确认",
+  "request_fields": {
+   "CafeDBId": {
+    "types": [
+     "int"
+    ],
+    "example": "100000000001"
+   }
+  },
+  "response_packet_keys": {
+   "CafeDB": {
+    "types": [
+     "object"
+    ]
+   },
+   "Protocol": {
+    "types": [
+     "int"
+    ]
+   },
+   "RequestId": {
+    "types": [
+     "str"
+    ]
+   },
+   "ServerNotification": {
+    "types": [
+     "int"
+    ]
+   },
+   "ServerTimeTicks": {
+    "types": [
+     "int"
+    ]
+   },
+   "SessionKey": {
+    "types": [
+     "object"
+    ]
+   }
+  },
+  "first_call_N_today": null
+ },
+ "/api/cafe/interact": {
+  "protocol": 20006,
+  "obf": "MBDIB333KNPPUQNJEQNI3P6SIM",
+  "samples": 30,
+  "cn": "咖啡厅·互动（摸头/送礼）",
+  "request_fields": {
+   "CafeDBId": {
+    "types": [
+     "int"
+    ],
+    "example": "100000000001"
+   },
+   "CharacterId": {
+    "types": [
+     "int"
+    ],
+    "example": "10060"
+   }
+  },
+  "response_packet_keys": {
+   "BattlePassMissionProgressDBDict": {
+    "types": [
+     "object"
+    ]
+   },
+   "CafeDB": {
+    "types": [
+     "object"
+    ]
+   },
+   "CharacterDB": {
+    "types": [
+     "object"
+    ]
+   },
+   "MissionProgressDBs": {
+    "types": [
+     "array"
+    ]
+   },
+   "ParcelResultDB": {
+    "types": [
+     "object"
+    ]
+   },
+   "Protocol": {
+    "types": [
+     "int"
+    ]
+   },
+   "RequestId": {
+    "types": [
+     "str"
+    ]
+   },
+   "ServerNotification": {
+    "types": [
+     "int"
+    ]
+   },
+   "ServerTimeTicks": {
+    "types": [
+     "int"
+    ]
+   },
+   "SessionKey": {
+    "types": [
+     "object"
+    ]
+   }
+  },
+  "first_call_N_today": 44
+ },
+ "/api/cafe/receivecurrency": {
+  "protocol": 20013,
+  "obf": "MLB5WYXD67ETPMTGRWOTNKAWHM",
+  "samples": 2,
+  "cn": "咖啡厅·领取体力和信用点",
+  "request_fields": {
+   "AccountServerId": {
+    "types": [
+     "int"
+    ],
+    "example": "10000000000"
+   },
+   "CafeDBId": {
+    "types": [
+     "int"
+    ],
+    "example": "0"
+   }
+  },
+  "response_packet_keys": {
+   "CafeDBs": {
+    "types": [
+     "array"
+    ]
+   },
+   "MissionProgressDBs": {
+    "types": [
+     "array"
+    ]
+   },
+   "ParcelResultDB": {
+    "types": [
+     "object"
+    ]
+   },
+   "Protocol": {
+    "types": [
+     "int"
+    ]
+   },
+   "RequestId": {
+    "types": [
+     "str"
+    ]
+   },
+   "ServerNotification": {
+    "types": [
+     "int"
+    ]
+   },
+   "ServerTimeTicks": {
+    "types": [
+     "int"
+    ]
+   },
+   "SessionKey": {
+    "types": [
+     "object"
+    ]
+   }
+  },
+  "first_call_N_today": null
+ },
+ "/api/cafe/summoncharacter": {
+  "protocol": 20015,
+  "obf": "LL3NMLO43N76H3G47UKV3CNSRQ",
+  "samples": 4,
+  "cn": "咖啡厅·邀请学生入店",
+  "request_fields": {
+   "CafeDBId": {
+    "types": [
+     "int"
+    ],
+    "example": "100000000001"
+   },
+   "CharacterServerId": {
+    "types": [
+     "int"
+    ],
+    "example": "1753765"
+   }
+  },
+  "response_packet_keys": {
+   "CafeDB": {
+    "types": [
+     "object"
+    ]
+   },
+   "CafeDBs": {
+    "types": [
+     "array"
+    ]
+   },
+   "Protocol": {
+    "types": [
+     "int"
+    ]
+   },
+   "RequestId": {
+    "types": [
+     "str"
+    ]
+   },
+   "ServerNotification": {
+    "types": [
+     "int"
+    ]
+   },
+   "ServerTimeTicks": {
+    "types": [
+     "int"
+    ]
+   },
+   "SessionKey": {
+    "types": [
+     "object"
+    ]
+   }
+  },
+  "first_call_N_today": 43
+ },
+ "/api/campaign/list": {
+  "protocol": 6000,
+  "obf": "ZJSFR7GZ6IM2NYYNJKECP42SRI",
+  "samples": 3,
+  "cn": "关卡开放信息（活动副本列表）",
+  "request_fields": {},
+  "response_packet_keys": {
+   "CampaignChapterClearRewardHistoryDBs": {
+    "types": [
+     "array"
+    ]
+   },
+   "CurrentScenarioId": {
+    "types": [
+     "int"
+    ]
+   },
+   "Protocol": {
+    "types": [
+     "int"
+    ]
+   },
+   "RequestId": {
+    "types": [
+     "str"
+    ]
+   },
+   "ServerNotification": {
+    "types": [
+     "int"
+    ]
+   },
+   "ServerTimeTicks": {
+    "types": [
+     "int"
+    ]
+   },
+   "SessionKey": {
+    "types": [
+     "object"
+    ]
+   },
+   "StageHistoryDBs": {
+    "types": [
+     "array"
+    ]
+   },
+   "StrategyObjecthistoryDBs": {
+    "types": [
+     "array"
+    ]
+   }
+  },
+  "first_call_N_today": 99
+ },
+ "/api/clan/chat/records": {
+  "protocol": 90009,
+  "obf": "2OX7WGNGTJCQGYBAT5VZY5VWIM",
+  "samples": 5,
+  "cn": "社团·聊天记录",
+  "request_fields": {
+   "ClanDBId": {
+    "types": [
+     "int"
+    ],
+    "example": "12828"
+   },
+   "LastChatId": {
+    "types": [
+     "int"
+    ],
+    "example": "320197"
+   }
+  },
+  "response_packet_keys": {
+   "ChatRecords": {
+    "types": [
+     "array"
+    ]
+   },
+   "Protocol": {
+    "types": [
+     "int"
+    ]
+   },
+   "RequestId": {
+    "types": [
+     "str"
+    ]
+   },
+   "ServerNotification": {
+    "types": [
+     "int"
+    ]
+   },
+   "ServerTimeTicks": {
+    "types": [
+     "int"
+    ]
+   },
+   "SessionKey": {
+    "types": [
+     "object"
+    ]
+   }
+  },
+  "first_call_N_today": null
+ },
+ "/api/clan/check": {
+  "protocol": 28019,
+  "obf": "QXX6AAJZW2CU4X57SL7FCM72XA",
+  "samples": 43,
+  "cn": "社团·状态检查",
+  "request_fields": {},
+  "response_packet_keys": {
+   "Protocol": {
+    "types": [
+     "int"
+    ]
+   },
+   "RequestId": {
+    "types": [
+     "str"
+    ]
+   },
+   "ServerNotification": {
+    "types": [
+     "int"
+    ]
+   },
+   "ServerTimeTicks": {
+    "types": [
+     "int"
+    ]
+   },
+   "SessionKey": {
+    "types": [
+     "object"
+    ]
+   }
+  },
+  "first_call_N_today": 25
+ },
+ "/api/clan/lobby": {
+  "protocol": 28000,
+  "obf": "NAIKTHZMYTUJ7XJ2SOQQWSXWTQ",
+  "samples": 3,
+  "cn": "社团·大厅",
+  "request_fields": {},
+  "response_packet_keys": {
+   "AccountClanDB": {
+    "types": [
+     "object"
+    ]
+   },
+   "AccountClanMemberDB": {
+    "types": [
+     "object"
+    ]
+   },
+   "ClanMemberDBs": {
+    "types": [
+     "array"
+    ]
+   },
+   "DefaultExposedClanDBs": {
+    "types": [
+     "array"
+    ]
+   },
+   "MissionProgressDBs": {
+    "types": [
+     "array"
+    ]
+   },
+   "Protocol": {
+    "types": [
+     "int"
+    ]
+   },
+   "RequestId": {
+    "types": [
+     "str"
+    ]
+   },
+   "ServerNotification": {
+    "types": [
+     "int"
+    ]
+   },
+   "ServerTimeTicks": {
+    "types": [
+     "int"
+    ]
+   },
+   "SessionKey": {
+    "types": [
+     "object"
+    ]
+   }
+  },
+  "first_call_N_today": null
+ },
+ "/api/contentsave/get": {
+  "protocol": 26000,
+  "obf": "A5HZKUZQNB2GVPTZL5ATLZLLQ4",
+  "samples": 5,
+  "cn": "云存档读取",
+  "request_fields": {},
+  "response_packet_keys": {
+   "ContentSaveDB": {
+    "types": [
+     "null"
+    ]
+   },
+   "EventContentChangeDB": {
+    "types": [
+     "null"
+    ]
+   },
+   "HasValidData": {
+    "types": [
+     "bool"
+    ]
+   },
+   "Protocol": {
+    "types": [
+     "int"
+    ]
+   },
+   "RequestId": {
+    "types": [
+     "str"
+    ]
+   },
+   "ServerNotification": {
+    "types": [
+     "int"
+    ]
+   },
+   "ServerTimeTicks": {
+    "types": [
+     "int"
+    ]
+   },
+   "SessionKey": {
+    "types": [
+     "object"
+    ]
+   }
+  },
+  "first_call_N_today": 6
+ },
+ "/api/contentsweep/multisweep": {
+  "protocol": 27001,
+  "obf": "WQDUVIBUUZOJDJ35372OWS2QHQ",
+  "samples": 3,
+  "cn": "扫荡·多关卡批量扫荡",
+  "request_fields": {
+   "MultiSweepParameters": {
+    "types": [
+     "array"
+    ],
+    "example": "[{\"EventContentId\": null, \"ContentType\": 1, \"StageId\": 11021…"
+   }
+  },
+  "response_packet_keys": {
+   "BattlePassMissionProgressDBDict": {
+    "types": [
+     "object"
+    ]
+   },
+   "BonusParcels": {
+    "types": [
+     "array"
+    ]
+   },
+   "CampaignStageHistoryDBs": {
+    "types": [
+     "array"
+    ]
+   },
+   "ClearParcels": {
+    "types": [
+     "array"
+    ]
+   },
+   "EventContentBonusParcels": {
+    "types": [
+     "null"
+    ]
+   },
+   "MissionProgressDBs": {
+    "types": [
+     "array"
+    ]
+   },
+   "ParcelResult": {
+    "types": [
+     "object"
+    ]
+   },
+   "Protocol": {
+    "types": [
+     "int"
+    ]
+   },
+   "RequestId": {
+    "types": [
+     "str"
+    ]
+   },
+   "ServerNotification": {
+    "types": [
+     "int"
+    ]
+   },
+   "ServerTimeTicks": {
+    "types": [
+     "int"
+    ]
+   },
+   "SessionKey": {
+    "types": [
+     "object"
+    ]
+   }
+  },
+  "first_call_N_today": 101
+ },
+ "/api/contentsweep/request": {
+  "protocol": 27000,
+  "obf": "PP2KH57PYGW25AZW73372YR55E",
+  "samples": 13,
+  "cn": "扫荡·执行",
+  "request_fields": {
+   "Content": {
+    "types": [
+     "int"
+    ],
+    "example": "3"
+   },
+   "Count": {
+    "types": [
+     "int"
+    ],
+    "example": "6"
+   },
+   "EventContentId": {
+    "types": [
+     "int"
+    ],
+    "example": "0"
+   },
+   "StageId": {
+    "types": [
+     "int"
+    ],
+    "example": "30110"
+   },
+   "Type": {
+    "types": [
+     "null"
+    ],
+    "example": "null"
+   }
+  },
+  "response_packet_keys": {
+   "BattlePassMissionProgressDBDict": {
+    "types": [
+     "object"
+    ]
+   },
+   "BonusParcels": {
+    "types": [
+     "array"
+    ]
+   },
+   "CampaignStageHistoryDB": {
+    "types": [
+     "object"
+    ]
+   },
+   "ClearParcels": {
+    "types": [
+     "array"
+    ]
+   },
+   "EventContentBonusParcels": {
+    "types": [
+     "array"
+    ]
+   },
+   "MissionProgressDBs": {
+    "types": [
+     "array"
+    ]
+   },
+   "ParcelResult": {
+    "types": [
+     "object"
+    ]
+   },
+   "Protocol": {
+    "types": [
+     "int"
+    ]
+   },
+   "RequestId": {
+    "types": [
+     "str"
+    ]
+   },
+   "ServerNotification": {
+    "types": [
+     "int"
+    ]
+   },
+   "ServerTimeTicks": {
+    "types": [
+     "int"
+    ]
+   },
+   "SessionKey": {
+    "types": [
+     "object"
+    ]
+   }
+  },
+  "first_call_N_today": 116
+ },
+ "/api/contentsweep/setmultisweeppreset": {
+  "protocol": 27003,
+  "obf": "PJMQ5PDLP2C2V327SVLMVAZQCY",
+  "samples": 3,
+  "cn": "扫荡·保存扫荡预设",
+  "request_fields": {
+   "ParcelIds": {
+    "types": [
+     "array"
+    ],
+    "example": "[{\"Type\": 4, \"Id\": 10008}, {\"Type\": 4, \"Id\": 10014}, {\"Type\"…"
+   },
+   "PresetId": {
+    "types": [
+     "int"
+    ],
+    "example": "0"
+   },
+   "PresetName": {
+    "types": [
+     "str"
+    ],
+    "example": "\"hard\""
+   },
+   "StageIds": {
+    "types": [
+     "array"
+    ],
+    "example": "[1102103, 1152103, 1192103]"
+   }
+  },
+  "response_packet_keys": {
+   "MultiSweepPresetDBs": {
+    "types": [
+     "array"
+    ]
+   },
+   "Protocol": {
+    "types": [
+     "int"
+    ]
+   },
+   "RequestId": {
+    "types": [
+     "str"
+    ]
+   },
+   "ServerNotification": {
+    "types": [
+     "int"
+    ]
+   },
+   "ServerTimeTicks": {
+    "types": [
+     "int"
+    ]
+   },
+   "SessionKey": {
+    "types": [
+     "object"
+    ]
+   }
+  },
+  "first_call_N_today": 102
+ },
+ "/api/craft/beginprocess": {
+  "protocol": 21003,
+  "obf": "X7Y43CVXU2EUC44F3J4WUMZX2A",
+  "samples": 3,
+  "cn": "制造·开始制造",
+  "request_fields": {
+   "SlotId": {
+    "types": [
+     "int"
+    ],
+    "example": "0"
+   }
+  },
+  "response_packet_keys": {
+   "CraftInfoDB": {
+    "types": [
+     "object"
+    ]
+   },
+   "Protocol": {
+    "types": [
+     "int"
+    ]
+   },
+   "RequestId": {
+    "types": [
+     "str"
+    ]
+   },
+   "ServerNotification": {
+    "types": [
+     "int"
+    ]
+   },
+   "ServerTimeTicks": {
+    "types": [
+     "int"
+    ]
+   },
+   "SessionKey": {
+    "types": [
+     "object"
+    ]
+   }
+  },
+  "first_call_N_today": 65
+ },
+ "/api/craft/list": {
+  "protocol": 21000,
+  "obf": "LOV3E7JU62A2KCCYCL2AKHARW4",
+  "samples": 6,
+  "cn": "制造·节点列表",
+  "request_fields": {},
+  "response_packet_keys": {
+   "CraftInfos": {
+    "types": [
+     "array"
+    ]
+   },
+   "PresetSlotDBs": {
+    "types": [
+     "array"
+    ]
+   },
+   "Protocol": {
+    "types": [
+     "int"
+    ]
+   },
+   "RequestId": {
+    "types": [
+     "str"
+    ]
+   },
+   "ServerNotification": {
+    "types": [
+     "int"
+    ]
+   },
+   "ServerTimeTicks": {
+    "types": [
+     "int"
+    ]
+   },
+   "SessionKey": {
+    "types": [
+     "object"
+    ]
+   },
+   "ShiftingCraftInfos": {
+    "types": [
+     "array"
+    ]
+   }
+  },
+  "first_call_N_today": 56
+ },
+ "/api/craft/reward": {
+  "protocol": 21005,
+  "obf": "I2YDAXZGOZIYNB6HBCLBV7M3DY",
+  "samples": 3,
+  "cn": "制造·领取成品",
+  "request_fields": {
+   "SlotId": {
+    "types": [
+     "int"
+    ],
+    "example": "0"
+   }
+  },
+  "response_packet_keys": {
+   "BattlePassMissionProgressDBDict": {
+    "types": [
+     "object"
+    ]
+   },
+   "CraftInfos": {
+    "types": [
+     "array"
+    ]
+   },
+   "MissionProgressDBs": {
+    "types": [
+     "array"
+    ]
+   },
+   "ParcelResultDB": {
+    "types": [
+     "object"
+    ]
+   },
+   "Protocol": {
+    "types": [
+     "int"
+    ]
+   },
+   "RequestId": {
+    "types": [
+     "str"
+    ]
+   },
+   "ServerNotification": {
+    "types": [
+     "int"
+    ]
+   },
+   "ServerTimeTicks": {
+    "types": [
+     "int"
+    ]
+   },
+   "SessionKey": {
+    "types": [
+     "object"
+    ]
+   }
+  },
+  "first_call_N_today": 57
+ },
+ "/api/craft/selectnode": {
+  "protocol": 21001,
+  "obf": "2VNEHLRH6BRC3GWK4N4WQ5PMK4",
+  "samples": 9,
+  "cn": "制造·选择节点",
+  "request_fields": {
+   "LeafNodeIndex": {
+    "types": [
+     "int"
+    ],
+    "example": "3"
+   },
+   "SlotId": {
+    "types": [
+     "int"
+    ],
+    "example": "0"
+   }
+  },
+  "response_packet_keys": {
+   "Protocol": {
+    "types": [
+     "int"
+    ]
+   },
+   "RequestId": {
+    "types": [
+     "str"
+    ]
+   },
+   "SelectedNodeDB": {
+    "types": [
+     "object"
+    ]
+   },
+   "ServerNotification": {
+    "types": [
+     "int"
+    ]
+   },
+   "ServerTimeTicks": {
+    "types": [
+     "int"
+    ]
+   },
+   "SessionKey": {
+    "types": [
+     "object"
+    ]
+   }
+  },
+  "first_call_N_today": 60
+ },
+ "/api/craft/updatenodelevel": {
+  "protocol": 21002,
+  "obf": "THDJJQA6PN3YZKVSXI73VF2AA4",
+  "samples": 9,
+  "cn": "制造·节点升级",
+  "request_fields": {
+   "ConsumeGoldAmount": {
+    "types": [
+     "int"
+    ],
+    "example": "2000"
+   },
+   "ConsumeRequestDB": {
+    "types": [
+     "object"
+    ],
+    "example": "{\"ConsumeItemServerIdAndCounts\": {\"1180965\": 1}, \"ConsumeEqu…"
+   },
+   "CraftNodeType": {
+    "types": [
+     "int"
+    ],
+    "example": "0"
+   },
+   "SlotId": {
+    "types": [
+     "int"
+    ],
+    "example": "0"
+   }
+  },
+  "response_packet_keys": {
+   "AccountCurrencyDB": {
+    "types": [
+     "object"
+    ]
+   },
+   "ConsumeResultDB": {
+    "types": [
+     "object"
+    ]
+   },
+   "CraftInfoDB": {
+    "types": [
+     "object"
+    ]
+   },
+   "CraftNodeDB": {
+    "types": [
+     "object"
+    ]
+   },
+   "MissionProgressDBs": {
+    "types": [
+     "array"
+    ]
+   },
+   "Protocol": {
+    "types": [
+     "int"
+    ]
+   },
+   "RequestId": {
+    "types": [
+     "str"
+    ]
+   },
+   "ServerNotification": {
+    "types": [
+     "int"
+    ]
+   },
+   "ServerTimeTicks": {
+    "types": [
+     "int"
+    ]
+   },
+   "SessionKey": {
+    "types": [
+     "object"
+    ]
+   }
+  },
+  "first_call_N_today": 59
+ },
+ "/api/echelon/list": {
+  "protocol": 5000,
+  "obf": "ED653MDBZL75ADU4XKIFERNVVI",
+  "samples": 8,
+  "cn": "编队·列表",
+  "request_fields": {},
+  "response_packet_keys": {
+   "EchelonDBs": {
+    "types": [
+     "array"
+    ]
+   },
+   "Protocol": {
+    "types": [
+     "int"
+    ]
+   },
+   "RequestId": {
+    "types": [
+     "str"
+    ]
+   },
+   "ServerNotification": {
+    "types": [
+     "int"
+    ]
+   },
+   "ServerTimeTicks": {
+    "types": [
+     "int"
+    ]
+   },
+   "SessionKey": {
+    "types": [
+     "object"
+    ]
+   }
+  },
+  "first_call_N_today": null
+ },
+ "/api/echelon/save": {
+  "protocol": 5001,
+  "obf": "H3S5EPFZOXKUGXLXC2VFAVMQIU",
+  "samples": 4,
+  "cn": "编队·保存",
+  "request_fields": {
+   "AssistUseInfos": {
+    "types": [
+     "null"
+    ],
+    "example": "null"
+   },
+   "EchelonDB": {
+    "types": [
+     "object"
+    ],
+    "example": "{\"AccountServerId\": 10000000000, \"EchelonType\": 3, \"EchelonN…"
+   },
+   "IsPractice": {
+    "types": [
+     "bool"
+    ],
+    "example": "false"
+   }
+  },
+  "response_packet_keys": {
+   "EchelonDB": {
+    "types": [
+     "object"
+    ]
+   },
+   "Protocol": {
+    "types": [
+     "int"
+    ]
+   },
+   "RequestId": {
+    "types": [
+     "str"
+    ]
+   },
+   "ServerNotification": {
+    "types": [
+     "int"
+    ]
+   },
+   "ServerTimeTicks": {
+    "types": [
+     "int"
+    ]
+   },
+   "SessionKey": {
+    "types": [
+     "object"
+    ]
+   }
+  },
+  "first_call_N_today": null
+ },
+ "/api/event/rewardincrease": {
+  "protocol": 25003,
+  "obf": "ME6ZY2KZLN5UN4DF7BT3TKJKHI",
+  "samples": 142,
+  "cn": "账号加成信息（掉落/经验加成，刷界面时高频）",
+  "request_fields": {},
+  "response_packet_keys": {
+   "EventRewardIncreaseDBs": {
+    "types": [
+     "array"
+    ]
+   },
+   "Protocol": {
+    "types": [
+     "int"
+    ]
+   },
+   "RequestId": {
+    "types": [
+     "str"
+    ]
+   },
+   "ServerNotification": {
+    "types": [
+     "int"
+    ]
+   },
+   "ServerTimeTicks": {
+    "types": [
+     "int"
+    ]
+   },
+   "SessionKey": {
+    "types": [
+     "object"
+    ]
+   }
+  },
+  "first_call_N_today": 18
+ },
+ "/api/eventcontent/adventurelist": {
+  "protocol": 30000,
+  "obf": "WOHXJTASLD5AAJI3DIGMH7O24U",
+  "samples": 16,
+  "cn": "活动·关卡列表",
+  "request_fields": {
+   "EventContentId": {
+    "types": [
+     "int"
+    ],
+    "example": "10836"
+   }
+  },
+  "response_packet_keys": {
+   "AlreadyReceiveRewardId": {
+    "types": [
+     "array"
+    ]
+   },
+   "EventContentBonusRewardDBs": {
+    "types": [
+     "array"
+    ]
+   },
+   "Protocol": {
+    "types": [
+     "int"
+    ]
+   },
+   "RequestId": {
+    "types": [
+     "str"
+    ]
+   },
+   "ServerNotification": {
+    "types": [
+     "int"
+    ]
+   },
+   "ServerTimeTicks": {
+    "types": [
+     "int"
+    ]
+   },
+   "SessionKey": {
+    "types": [
+     "object"
+    ]
+   },
+   "StageHistoryDBs": {
+    "types": [
+     "array"
+    ]
+   },
+   "StagePoint": {
+    "types": [
+     "int"
+    ]
+   },
+   "StrategyObjecthistoryDBs": {
+    "types": [
+     "array"
+    ]
+   }
+  },
+  "first_call_N_today": 85
+ },
+ "/api/eventcontent/collectionlist": {
+  "protocol": 30025,
+  "obf": "HG4HUMWCUOMWCEHBRJTX2H7AUI",
+  "samples": 14,
+  "cn": "活动·收集进度",
+  "request_fields": {
+   "EventContentId": {
+    "types": [
+     "int"
+    ],
+    "example": "848"
+   },
+   "GroupId": {
+    "types": [
+     "null"
+    ],
+    "example": "null"
+   }
+  },
+  "response_packet_keys": {
+   "EventContentUnlockCGDBs": {
+    "types": [
+     "array"
+    ]
+   },
+   "Protocol": {
+    "types": [
+     "int"
+    ]
+   },
+   "RequestId": {
+    "types": [
+     "str"
+    ]
+   },
+   "ServerNotification": {
+    "types": [
+     "int"
+    ]
+   },
+   "ServerTimeTicks": {
+    "types": [
+     "int"
+    ]
+   },
+   "SessionKey": {
+    "types": [
+     "object"
+    ]
+   }
+  },
+  "first_call_N_today": 19
+ },
+ "/api/eventcontent/enterstorystage": {
+  "protocol": 30036,
+  "obf": "XUCQ3BUDYXA2J73LI6YUZ5CSCU",
+  "samples": 3,
+  "cn": "活动·进入剧情关",
+  "request_fields": {
+   "EventContentId": {
+    "types": [
+     "int"
+    ],
+    "example": "10836"
+   },
+   "StageUniqueId": {
+    "types": [
+     "int"
+    ],
+    "example": "108361301"
+   }
+  },
+  "response_packet_keys": {
+   "ParcelResultDB": {
+    "types": [
+     "object"
+    ]
+   },
+   "Protocol": {
+    "types": [
+     "int"
+    ]
+   },
+   "RandomSeed": {
+    "types": [
+     "int"
+    ]
+   },
+   "RequestId": {
+    "types": [
+     "str"
+    ]
+   },
+   "SaveDataDB": {
+    "types": [
+     "object"
+    ]
+   },
+   "ServerNotification": {
+    "types": [
+     "int"
+    ]
+   },
+   "ServerTimeTicks": {
+    "types": [
+     "int"
+    ]
+   },
+   "SessionKey": {
+    "types": [
+     "object"
+    ]
+   }
+  },
+  "first_call_N_today": null
+ },
+ "/api/eventcontent/scenariogrouphistoryupdate": {
+  "protocol": 30027,
+  "obf": "AFSSTHWPFDRFY5HB4UARYGHQFM",
+  "samples": 3,
+  "cn": "活动·剧情历史更新",
+  "request_fields": {
+   "EventContentId": {
+    "types": [
+     "int"
+    ],
+    "example": "10836"
+   },
+   "ScenarioGroupUniqueId": {
+    "types": [
+     "int"
+    ],
+    "example": "10034010"
+   },
+   "ScenarioType": {
+    "types": [
+     "int"
+    ],
+    "example": "6"
+   }
+  },
+  "response_packet_keys": {
+   "ParcelResultDB": {
+    "types": [
+     "object"
+    ]
+   },
+   "Protocol": {
+    "types": [
+     "int"
+    ]
+   },
+   "RequestId": {
+    "types": [
+     "str"
+    ]
+   },
+   "ScenarioGroupHistoryDBs": {
+    "types": [
+     "array"
+    ]
+   },
+   "ServerNotification": {
+    "types": [
+     "int"
+    ]
+   },
+   "ServerTimeTicks": {
+    "types": [
+     "int"
+    ]
+   },
+   "SessionKey": {
+    "types": [
+     "object"
+    ]
+   }
+  },
+  "first_call_N_today": null
+ },
+ "/api/eventcontent/shopbuymerchandise": {
+  "protocol": 30019,
+  "obf": "NTR7V3HURPQCNSI2UK3GYWN6NE",
+  "samples": 16,
+  "cn": "活动·商店购买",
+  "request_fields": {
+   "EventContentId": {
+    "types": [
+     "int"
+    ],
+    "example": "10836"
+   },
+   "GoodsUniqueId": {
+    "types": [
+     "int"
+    ],
+    "example": "62811"
+   },
+   "IsRefreshMerchandise": {
+    "types": [
+     "bool"
+    ],
+    "example": "false"
+   },
+   "PurchaseCount": {
+    "types": [
+     "int"
+    ],
+    "example": "6"
+   },
+   "ShopUniqueId": {
+    "types": [
+     "int"
+    ],
+    "example": "108360011"
+   }
+  },
+  "response_packet_keys": {
+   "AccountCurrencyDB": {
+    "types": [
+     "object"
+    ]
+   },
+   "ConsumeResultDB": {
+    "types": [
+     "object"
+    ]
+   },
+   "EventContentCollectionDBs": {
+    "types": [
+     "null"
+    ]
+   },
+   "MailDB": {
+    "types": [
+     "null"
+    ]
+   },
+   "ParcelResultDB": {
+    "types": [
+     "object"
+    ]
+   },
+   "Protocol": {
+    "types": [
+     "int"
+    ]
+   },
+   "RequestId": {
+    "types": [
+     "str"
+    ]
+   },
+   "ServerNotification": {
+    "types": [
+     "int"
+    ]
+   },
+   "ServerTimeTicks": {
+    "types": [
+     "int"
+    ]
+   },
+   "SessionKey": {
+    "types": [
+     "object"
+    ]
+   },
+   "ShopProductDB": {
+    "types": [
+     "object"
+    ]
+   }
+  },
+  "first_call_N_today": null
+ },
+ "/api/eventcontent/shoplist": {
+  "protocol": 30014,
+  "obf": "DMROW5QG2MTBCAS3PPKF4ZCHRU",
+  "samples": 1,
+  "cn": "活动·商店列表",
+  "request_fields": {
+   "CategoryList": {
+    "types": [
+     "array"
+    ],
+    "example": "[13, 14, 15]"
+   },
+   "EventContentId": {
+    "types": [
+     "int"
+    ],
+    "example": "10836"
+   }
+  },
+  "response_packet_keys": {
+   "Protocol": {
+    "types": [
+     "int"
+    ]
+   },
+   "RequestId": {
+    "types": [
+     "str"
+    ]
+   },
+   "ServerNotification": {
+    "types": [
+     "int"
+    ]
+   },
+   "ServerTimeTicks": {
+    "types": [
+     "int"
+    ]
+   },
+   "SessionKey": {
+    "types": [
+     "object"
+    ]
+   },
+   "ShopInfos": {
+    "types": [
+     "array"
+    ]
+   }
+  },
+  "first_call_N_today": null
+ },
+ "/api/eventcontent/storystageresult": {
+  "protocol": 30037,
+  "obf": "SYYBT5B4W6SS2Y6NLQ6SE62JZU",
+  "samples": 3,
+  "cn": "活动·剧情关结算",
+  "request_fields": {
+   "EventContentId": {
+    "types": [
+     "int"
+    ],
+    "example": "10836"
+   },
+   "StageUniqueId": {
+    "types": [
+     "int"
+    ],
+    "example": "108361301"
+   }
+  },
+  "response_packet_keys": {
+   "CampaignStageHistoryDB": {
+    "types": [
+     "object"
+    ]
+   },
+   "EventContentCollectionDBs": {
+    "types": [
+     "null"
+    ]
+   },
+   "EventMissionProgressDBDict": {
+    "types": [
+     "object"
+    ]
+   },
+   "FirstClearReward": {
+    "types": [
+     "array"
+    ]
+   },
+   "MissionProgressDBs": {
+    "types": [
+     "array"
+    ]
+   },
+   "ParcelResultDB": {
+    "types": [
+     "object"
+    ]
+   },
+   "Protocol": {
+    "types": [
+     "int"
+    ]
+   },
+   "RequestId": {
+    "types": [
+     "str"
+    ]
+   },
+   "ServerNotification": {
+    "types": [
+     "int"
+    ]
+   },
+   "ServerTimeTicks": {
+    "types": [
+     "int"
+    ]
+   },
+   "SessionKey": {
+    "types": [
+     "object"
+    ]
+   }
+  },
+  "first_call_N_today": null
+ },
+ "/api/friend/check": {
+  "protocol": 43010,
+  "obf": "TAGMSXJIONDD5CVTS52LJXSDNQ",
+  "samples": 43,
+  "cn": "好友·状态检查",
+  "request_fields": {},
+  "response_packet_keys": {
+   "Protocol": {
+    "types": [
+     "int"
+    ]
+   },
+   "RequestId": {
+    "types": [
+     "str"
+    ]
+   },
+   "ServerNotification": {
+    "types": [
+     "int"
+    ]
+   },
+   "ServerTimeTicks": {
+    "types": [
+     "int"
+    ]
+   },
+   "SessionKey": {
+    "types": [
+     "object"
+    ]
+   }
+  },
+  "first_call_N_today": 26
+ },
+ "/api/item/list": {
+  "protocol": 4000,
+  "obf": "DGOYM2RERJJ7JIGHWVF7UZ5XPA",
+  "samples": 5,
+  "cn": "道具·列表",
+  "request_fields": {},
+  "response_packet_keys": {
+   "ExpiryItemDBs": {
+    "types": [
+     "array"
+    ]
+   },
+   "ItemDBs": {
+    "types": [
+     "array"
+    ]
+   },
+   "Protocol": {
+    "types": [
+     "int"
+    ]
+   },
+   "RequestId": {
+    "types": [
+     "str"
+    ]
+   },
+   "ServerNotification": {
+    "types": [
+     "int"
+    ]
+   },
+   "ServerTimeTicks": {
+    "types": [
+     "int"
+    ]
+   },
+   "SessionKey": {
+    "types": [
+     "object"
+    ]
+   }
+  },
+  "first_call_N_today": 4
+ },
+ "/api/mail/check": {
+  "protocol": 7001,
+  "obf": "A6XU5ZVL4DWGSYCQFZKU5ILQVY",
+  "samples": 63,
+  "cn": "邮件·未读检查",
+  "request_fields": {},
+  "response_packet_keys": {
+   "Count": {
+    "types": [
+     "int"
+    ]
+   },
+   "Protocol": {
+    "types": [
+     "int"
+    ]
+   },
+   "RequestId": {
+    "types": [
+     "str"
+    ]
+   },
+   "ServerNotification": {
+    "types": [
+     "int"
+    ]
+   },
+   "ServerTimeTicks": {
+    "types": [
+     "int"
+    ]
+   },
+   "SessionKey": {
+    "types": [
+     "object"
+    ]
+   }
+  },
+  "first_call_N_today": 23
+ },
+ "/api/mail/list": {
+  "protocol": 7000,
+  "obf": "URZSRU73NZ7TFCFVHVORFXNFSE",
+  "samples": 6,
+  "cn": "邮件·列表",
+  "request_fields": {
+   "IsDescending": {
+    "types": [
+     "bool"
+    ],
+    "example": "true"
+   },
+   "IsReadMail": {
+    "types": [
+     "bool"
+    ],
+    "example": "false"
+   },
+   "PivotIndex": {
+    "types": [
+     "int"
+    ],
+    "example": "0"
+   },
+   "PivotTime": {
+    "types": [
+     "str"
+    ],
+    "example": "\"9999-12-31T23:59:59\""
+   },
+   "mailSortingRule": {
+    "types": [
+     "int"
+    ],
+    "example": "0"
+   }
+  },
+  "response_packet_keys": {
+   "Count": {
+    "types": [
+     "int"
+    ]
+   },
+   "MailDBs": {
+    "types": [
+     "array"
+    ]
+   },
+   "Protocol": {
+    "types": [
+     "int"
+    ]
+   },
+   "RequestId": {
+    "types": [
+     "str"
+    ]
+   },
+   "ServerNotification": {
+    "types": [
+     "int"
+    ]
+   },
+   "ServerTimeTicks": {
+    "types": [
+     "int"
+    ]
+   },
+   "SessionKey": {
+    "types": [
+     "object"
+    ]
+   }
+  },
+  "first_call_N_today": 31
+ },
+ "/api/mail/listsemipermanent": {
+  "protocol": 7003,
+  "obf": "6MI4R4QVPYBZU5UU3FHCSUQECY",
+  "samples": 3,
+  "cn": "邮件·永久邮箱列表",
+  "request_fields": {
+   "IsDescending": {
+    "types": [
+     "bool"
+    ],
+    "example": "true"
+   },
+   "IsReadMail": {
+    "types": [
+     "bool"
+    ],
+    "example": "false"
+   },
+   "PivotIndex": {
+    "types": [
+     "int"
+    ],
+    "example": "0"
+   },
+   "PivotTime": {
+    "types": [
+     "str"
+    ],
+    "example": "\"9999-12-31T23:59:59\""
+   },
+   "mailSortingRule": {
+    "types": [
+     "int"
+    ],
+    "example": "0"
+   }
+  },
+  "response_packet_keys": {
+   "Protocol": {
+    "types": [
+     "int"
+    ]
+   },
+   "RequestId": {
+    "types": [
+     "str"
+    ]
+   },
+   "ServerNotification": {
+    "types": [
+     "int"
+    ]
+   },
+   "ServerTimeTicks": {
+    "types": [
+     "int"
+    ]
+   },
+   "SessionKey": {
+    "types": [
+     "object"
+    ]
+   }
+  },
+  "first_call_N_today": 30
+ },
+ "/api/mail/receive": {
+  "protocol": 7002,
+  "obf": "X3CP3SJNLNSPJAUT24VJ6UZAJA",
+  "samples": 3,
+  "cn": "邮件·领取附件",
+  "request_fields": {
+   "MailServerIds": {
+    "types": [
+     "array"
+    ],
+    "example": "[20729178, 20729153]"
+   }
+  },
+  "response_packet_keys": {
+   "BattlePassInfoDBs": {
+    "types": [
+     "null"
+    ]
+   },
+   "MailServerIds": {
+    "types": [
+     "array"
+    ]
+   },
+   "MissionProgressDBs": {
+    "types": [
+     "array"
+    ]
+   },
+   "ParcelResultDB": {
+    "types": [
+     "object"
+    ]
+   },
+   "Protocol": {
+    "types": [
+     "int"
+    ]
+   },
+   "RequestId": {
+    "types": [
+     "str"
+    ]
+   },
+   "ServerNotification": {
+    "types": [
+     "int"
+    ]
+   },
+   "ServerTimeTicks": {
+    "types": [
+     "int"
+    ]
+   },
+   "SessionKey": {
+    "types": [
+     "object"
+    ]
+   }
+  },
+  "first_call_N_today": 32
+ },
+ "/api/management/data": {
+  "protocol": 90004,
+  "obf": "XJER6O4J52SF7TFS6WLCFJNDIM",
+  "samples": 55,
+  "cn": "主界面数据（管理局汇总）",
+  "request_fields": {},
+  "response_packet_keys": {
+   "Data": {
+    "types": [
+     "object"
+    ]
+   },
+   "ErrorCode": {
+    "types": [
+     "int"
+    ]
+   },
+   "Protocol": {
+    "types": [
+     "int"
+    ]
+   },
+   "Reason": {
+    "types": [
+     "str"
+    ]
+   },
+   "RequestId": {
+    "types": [
+     "str"
+    ]
+   },
+   "ServerNotification": {
+    "types": [
+     "int"
+    ]
+   },
+   "ServerTimeTicks": {
+    "types": [
+     "int"
+    ]
+   },
+   "SessionKey": {
+    "types": [
+     "object"
+    ]
+   }
+  },
+  "first_call_N_today": 8
+ },
+ "/api/minigame/missionlist": {
+  "protocol": 35003,
+  "obf": "ECS6DZHQ3DFT6SL2CNYHYECQ4A",
+  "samples": 5,
+  "cn": "小游戏·任务列表",
+  "request_fields": {
+   "EventContentId": {
+    "types": [
+     "int"
+    ],
+    "example": "10836"
+   }
+  },
+  "response_packet_keys": {
+   "ClearedOrignalMissionIds": {
+    "types": [
+     "null"
+    ]
+   },
+   "MissionHistoryUniqueIds": {
+    "types": [
+     "array"
+    ]
+   },
+   "ProgressDBs": {
+    "types": [
+     "array"
+    ]
+   },
+   "Protocol": {
+    "types": [
+     "int"
+    ]
+   },
+   "RequestId": {
+    "types": [
+     "str"
+    ]
+   },
+   "ServerNotification": {
+    "types": [
+     "int"
+    ]
+   },
+   "ServerTimeTicks": {
+    "types": [
+     "int"
+    ]
+   },
+   "SessionKey": {
+    "types": [
+     "object"
+    ]
+   }
+  },
+  "first_call_N_today": 14
+ },
+ "/api/mission/guidemissionseasonlist": {
+  "protocol": 8006,
+  "obf": "Y3UKGGQIBTTIJ6M374PM2EQRUQ",
+  "samples": 5,
+  "cn": "任务·引导任务赛季",
+  "request_fields": {},
+  "response_packet_keys": {
+   "GuideMissionSeasonDBs": {
+    "types": [
+     "array"
+    ]
+   },
+   "MissionProgressDBs": {
+    "types": [
+     "array"
+    ]
+   },
+   "Protocol": {
+    "types": [
+     "int"
+    ]
+   },
+   "RequestId": {
+    "types": [
+     "str"
+    ]
+   },
+   "ServerNotification": {
+    "types": [
+     "int"
+    ]
+   },
+   "ServerTimeTicks": {
+    "types": [
+     "int"
+    ]
+   },
+   "SessionKey": {
+    "types": [
+     "object"
+    ]
+   }
+  },
+  "first_call_N_today": 11
+ },
+ "/api/mission/list": {
+  "protocol": 8000,
+  "obf": "5S4LD3Y34GQ2GPKJ75FIIFQWCQ",
+  "samples": 23,
+  "cn": "任务·列表",
+  "request_fields": {
+   "EventContentId": {
+    "types": [
+     "int",
+     "null"
+    ],
+    "example": "null"
+   }
+  },
+  "response_packet_keys": {
+   "ClearedOriginalMissionIds": {
+    "types": [
+     "array"
+    ]
+   },
+   "DailySuddenMissionInfo": {
+    "types": [
+     "object"
+    ]
+   },
+   "HistoryDBs": {
+    "types": [
+     "null"
+    ]
+   },
+   "MissionHistoryUniqueIds": {
+    "types": [
+     "array"
+    ]
+   },
+   "ProgressDBs": {
+    "types": [
+     "array"
+    ]
+   },
+   "Protocol": {
+    "types": [
+     "int"
+    ]
+   },
+   "RequestId": {
+    "types": [
+     "str"
+    ]
+   },
+   "ServerNotification": {
+    "types": [
+     "int"
+    ]
+   },
+   "ServerTimeTicks": {
+    "types": [
+     "int"
+    ]
+   },
+   "SessionKey": {
+    "types": [
+     "object"
+    ]
+   }
+  },
+  "first_call_N_today": 10
+ },
+ "/api/mission/multiplereward": {
+  "protocol": 8002,
+  "obf": "FF3K76PH2LLL6OPCYVKKENNHGE",
+  "samples": 10,
+  "cn": "任务·批量领取奖励",
+  "request_fields": {
+   "EventContentId": {
+    "types": [
+     "null"
+    ],
+    "example": "null"
+   },
+   "GuideMissionSeasonId": {
+    "types": [
+     "null"
+    ],
+    "example": "null"
+   },
+   "MissionCategory": {
+    "types": [
+     "int"
+    ],
+    "example": "5"
+   }
+  },
+  "response_packet_keys": {
+   "AddedHistoryDBs": {
+    "types": [
+     "array"
+    ]
+   },
+   "MissionProgressDBs": {
+    "types": [
+     "array"
+    ]
+   },
+   "ParcelResultDB": {
+    "types": [
+     "object"
+    ]
+   },
+   "Protocol": {
+    "types": [
+     "int"
+    ]
+   },
+   "RequestId": {
+    "types": [
+     "str"
+    ]
+   },
+   "ServerNotification": {
+    "types": [
+     "int"
+    ]
+   },
+   "ServerTimeTicks": {
+    "types": [
+     "int"
+    ]
+   },
+   "SessionKey": {
+    "types": [
+     "object"
+    ]
+   }
+  },
+  "first_call_N_today": 75
+ },
+ "/api/mission/reward": {
+  "protocol": 8001,
+  "obf": "5GN7IJ36QXZ6ZZX3E5SCHLZEN4",
+  "samples": 1,
+  "cn": "任务·领取奖励（单个）",
+  "request_fields": {
+   "EventContentId": {
+    "types": [
+     "null"
+    ],
+    "example": "null"
+   },
+   "MissionUniqueId": {
+    "types": [
+     "int"
+    ],
+    "example": "1701"
+   },
+   "ProgressServerId": {
+    "types": [
+     "int"
+    ],
+    "example": "0"
+   }
+  },
+  "response_packet_keys": {
+   "AddedHistoryDB": {
+    "types": [
+     "object"
+    ]
+   },
+   "ParcelResultDB": {
+    "types": [
+     "object"
+    ]
+   },
+   "Protocol": {
+    "types": [
+     "int"
+    ]
+   },
+   "RequestId": {
+    "types": [
+     "str"
+    ]
+   },
+   "ServerNotification": {
+    "types": [
+     "int"
+    ]
+   },
+   "ServerTimeTicks": {
+    "types": [
+     "int"
+    ]
+   },
+   "SessionKey": {
+    "types": [
+     "object"
+    ]
+   }
+  },
+  "first_call_N_today": 127
+ },
+ "/api/networktime/sync": {
+  "protocol": 3,
+  "obf": "QIRA2IPFGIJ5T56RHONAUNGUJA",
+  "samples": 5,
+  "cn": "服务器时间同步",
+  "request_fields": {},
+  "response_packet_keys": {
+   "EchoSendTick": {
+    "types": [
+     "int"
+    ]
+   },
+   "Protocol": {
+    "types": [
+     "int"
+    ]
+   },
+   "ReceiveTick": {
+    "types": [
+     "int"
+    ]
+   },
+   "RequestId": {
+    "types": [
+     "str"
+    ]
+   },
+   "ServerNotification": {
+    "types": [
+     "int"
+    ]
+   },
+   "ServerTimeTicks": {
+    "types": [
+     "int"
+    ]
+   },
+   "SessionKey": {
+    "types": [
+     "object"
+    ]
+   }
+  },
+  "first_call_N_today": 5
+ },
+ "/api/notification/eventcontentreddotcheck": {
+  "protocol": 36001,
+  "obf": "RMS5YFA2GTTTWMYK2IHUP2QSYE",
+  "samples": 73,
+  "cn": "红点检查（活动未读）",
+  "request_fields": {},
+  "response_packet_keys": {
+   "EventContentUnlockCGDBs": {
+    "types": [
+     "object"
+    ]
+   },
+   "Protocol": {
+    "types": [
+     "int"
+    ]
+   },
+   "Reddots": {
+    "types": [
+     "object"
+    ]
+   },
+   "RequestId": {
+    "types": [
+     "str"
+    ]
+   },
+   "ServerNotification": {
+    "types": [
+     "int"
+    ]
+   },
+   "ServerTimeTicks": {
+    "types": [
+     "int"
+    ]
+   },
+   "SessionKey": {
+    "types": [
+     "object"
+    ]
+   }
+  },
+  "first_call_N_today": 22
+ },
+ "/api/opencondition/eventlist": {
+  "protocol": 15002,
+  "obf": "4QJN3NKE73EJOHZJLD3OLU2XNU",
+  "samples": 6,
+  "cn": "开放条件·活动列表",
+  "request_fields": {
+   "ConquestEventIds": {
+    "types": [
+     "array"
+    ],
+    "example": "[50822]"
+   },
+   "WorldRaidSeasonAndGroupIds": {
+    "types": [
+     "object"
+    ],
+    "example": "{\"821\": [821602], \"823\": [823100]}"
+   }
+  },
+  "response_packet_keys": {
+   "ConquestTiles": {
+    "types": [
+     "object"
+    ]
+   },
+   "Protocol": {
+    "types": [
+     "int"
+    ]
+   },
+   "RequestId": {
+    "types": [
+     "str"
+    ]
+   },
+   "ServerNotification": {
+    "types": [
+     "int"
+    ]
+   },
+   "ServerTimeTicks": {
+    "types": [
+     "int"
+    ]
+   },
+   "SessionKey": {
+    "types": [
+     "object"
+    ]
+   },
+   "WorldRaidLocalBossDBs": {
+    "types": [
+     "object"
+    ]
+   }
+  },
+  "first_call_N_today": 20
+ },
+ "/api/raid/createbattle": {
+  "protocol": 17004,
+  "obf": "XTPFNRK3YYSB3RREIKHQ6JQSWI",
+  "samples": 1,
+  "cn": "总力战·创建战斗",
+  "request_fields": {
+   "AssistUseInfo": {
+    "types": [
+     "null"
+    ],
+    "example": "null"
+   },
+   "Difficulty": {
+    "types": [
+     "int"
+    ],
+    "example": "5"
+   },
+   "EchelonNumber": {
+    "types": [
+     "int"
+    ],
+    "example": "2"
+   },
+   "IsPractice": {
+    "types": [
+     "bool"
+    ],
+    "example": "false"
+   },
+   "IsPublic": {
+    "types": [
+     "bool"
+    ],
+    "example": "false"
+   },
+   "RaidUniqueId": {
+    "types": [
+     "int"
+    ],
+    "example": "1111406"
+   },
+   "SkillCardMulliganCharacterIds": {
+    "types": [
+     "array"
+    ],
+    "example": "[10117, 10089, 10105]"
+   },
+   "Tags": {
+    "types": [
+     "null"
+    ],
+    "example": "null"
+   }
+  },
+  "response_packet_keys": {
+   "AccountCurrencyDB": {
+    "types": [
+     "object"
+    ]
+   },
+   "BattleSetting": {
+    "types": [
+     "object"
+    ]
+   },
+   "MissionProgressDBs": {
+    "types": [
+     "array"
+    ]
+   },
+   "Protocol": {
+    "types": [
+     "int"
+    ]
+   },
+   "RaidBattleDB": {
+    "types": [
+     "object"
+    ]
+   },
+   "RaidDB": {
+    "types": [
+     "object"
+    ]
+   },
+   "RandomSeed": {
+    "types": [
+     "int"
+    ]
+   },
+   "RequestId": {
+    "types": [
+     "str"
+    ]
+   },
+   "ServerNotification": {
+    "types": [
+     "int"
+    ]
+   },
+   "ServerTimeTicks": {
+    "types": [
+     "int"
+    ]
+   },
+   "SessionKey": {
+    "types": [
+     "object"
+    ]
+   }
+  },
+  "first_call_N_today": null
+ },
+ "/api/raid/endbattle": {
+  "protocol": 17007,
+  "obf": "RVEHU3PWIH3HXZ7BFL5E24HVQA",
+  "samples": 1,
+  "cn": "总力战·战斗结算",
+  "request_fields": {
+   "AssistUseInfo": {
+    "types": [
+     "null"
+    ],
+    "example": "null"
+   },
+   "ClientSetting": {
+    "types": [
+     "object"
+    ],
+    "example": "{\"IsAutoUseSkill\": false, \"PlayerActions\": {\"value1\": null, …"
+   },
+   "EchelonId": {
+    "types": [
+     "int"
+    ],
+    "example": "2"
+   },
+   "IsPractice": {
+    "types": [
+     "bool"
+    ],
+    "example": "false"
+   },
+   "RaidServerId": {
+    "types": [
+     "int"
+    ],
+    "example": "8"
+   },
+   "Summary": {
+    "types": [
+     "object"
+    ],
+    "example": "{\"IsAbort\": false, \"IsDefeatBattle\": false, \"HashKey\": 0, \"I…"
+   }
+  },
+  "response_packet_keys": {
+   "BestRankingPoint": {
+    "types": [
+     "int"
+    ]
+   },
+   "ClearTimePoint": {
+    "types": [
+     "int"
+    ]
+   },
+   "DefaultClearPoint": {
+    "types": [
+     "int"
+    ]
+   },
+   "HPPercentScorePoint": {
+    "types": [
+     "int"
+    ]
+   },
+   "ParcelResultDB": {
+    "types": [
+     "object"
+    ]
+   },
+   "Protocol": {
+    "types": [
+     "int"
+    ]
+   },
+   "RankingPoint": {
+    "types": [
+     "int"
+    ]
+   },
+   "RequestId": {
+    "types": [
+     "str"
+    ]
+   },
+   "ServerNotification": {
+    "types": [
+     "int"
+    ]
+   },
+   "ServerTimeTicks": {
+    "types": [
+     "int"
+    ]
+   },
+   "SessionKey": {
+    "types": [
+     "object"
+    ]
+   }
+  },
+  "first_call_N_today": null
+ },
+ "/api/raid/enterbattle": {
+  "protocol": 17005,
+  "obf": "G5KYZE3JTNA2CBHARKX3DOV2S4",
+  "samples": 2,
+  "cn": "总力战·进入战斗",
+  "request_fields": {
+   "AssistUseInfo": {
+    "types": [
+     "null"
+    ],
+    "example": "null"
+   },
+   "EchelonId": {
+    "types": [
+     "int"
+    ],
+    "example": "0"
+   },
+   "EchelonNumber": {
+    "types": [
+     "int"
+    ],
+    "example": "2"
+   },
+   "IsPractice": {
+    "types": [
+     "bool"
+    ],
+    "example": "false"
+   },
+   "RaidServerId": {
+    "types": [
+     "int"
+    ],
+    "example": "8"
+   },
+   "RaidUniqueId": {
+    "types": [
+     "int"
+    ],
+    "example": "1111406"
+   },
+   "SkillCardMulliganCharacterIds": {
+    "types": [
+     "array"
+    ],
+    "example": "[10117, 10089, 10105]"
+   }
+  },
+  "response_packet_keys": {
+   "BattleSetting": {
+    "types": [
+     "object"
+    ]
+   },
+   "Protocol": {
+    "types": [
+     "int"
+    ]
+   },
+   "RaidBattleDB": {
+    "types": [
+     "object"
+    ]
+   },
+   "RaidDB": {
+    "types": [
+     "object"
+    ]
+   },
+   "RandomSeed": {
+    "types": [
+     "int"
+    ]
+   },
+   "RequestId": {
+    "types": [
+     "str"
+    ]
+   },
+   "ServerNotification": {
+    "types": [
+     "int"
+    ]
+   },
+   "ServerTimeTicks": {
+    "types": [
+     "int"
+    ]
+   },
+   "SessionKey": {
+    "types": [
+     "object"
+    ]
+   }
+  },
+  "first_call_N_today": null
+ },
+ "/api/raid/lobby": {
+  "protocol": 17014,
+  "obf": "PAAKOO2FW7K7VQR2BINTKQ5ZBA",
+  "samples": 5,
+  "cn": "总力战·大厅",
+  "request_fields": {},
+  "response_packet_keys": {
+   "AccountCurrencyDB": {
+    "types": [
+     "null"
+    ]
+   },
+   "ParcelResultDB": {
+    "types": [
+     "null"
+    ]
+   },
+   "Protocol": {
+    "types": [
+     "int"
+    ]
+   },
+   "RaidLobbyInfoDB": {
+    "types": [
+     "object"
+    ]
+   },
+   "RequestId": {
+    "types": [
+     "str"
+    ]
+   },
+   "SeasonType": {
+    "types": [
+     "int"
+    ]
+   },
+   "ServerNotification": {
+    "types": [
+     "int"
+    ]
+   },
+   "ServerTimeTicks": {
+    "types": [
+     "int"
+    ]
+   },
+   "SessionKey": {
+    "types": [
+     "object"
+    ]
+   }
+  },
+  "first_call_N_today": null
+ },
+ "/api/raid/opponentlist": {
+  "protocol": 17016,
+  "obf": "V7THWTCAC6YBKJLSVZYJ5IIZ6M",
+  "samples": 4,
+  "cn": "总力战·排名列表 (？)",
+  "request_fields": {
+   "IsFirstRequest": {
+    "types": [
+     "bool"
+    ],
+    "example": "true"
+   },
+   "IsUpper": {
+    "types": [
+     "bool"
+    ],
+    "example": "false"
+   },
+   "Rank": {
+    "types": [
+     "int"
+    ],
+    "example": "129615"
+   },
+   "Score": {
+    "types": [
+     "null"
+    ],
+    "example": "null"
+   },
+   "SearchType": {
+    "types": [
+     "int"
+    ],
+    "example": "1"
+   }
+  },
+  "response_packet_keys": {
+   "OpponentUserDBs": {
+    "types": [
+     "array"
+    ]
+   },
+   "Protocol": {
+    "types": [
+     "int"
+    ]
+   },
+   "RequestId": {
+    "types": [
+     "str"
+    ]
+   },
+   "ServerNotification": {
+    "types": [
+     "int"
+    ]
+   },
+   "ServerTimeTicks": {
+    "types": [
+     "int"
+    ]
+   },
+   "SessionKey": {
+    "types": [
+     "object"
+    ]
+   }
+  },
+  "first_call_N_today": null
+ },
+ "/api/raid/rankingindex": {
+  "protocol": 17021,
+  "obf": "FK47MNDAPWYUP3RUY3YICLQEK4",
+  "samples": 2,
+  "cn": "总力战·排名索引",
+  "request_fields": {},
+  "response_packet_keys": {
+   "Protocol": {
+    "types": [
+     "int"
+    ]
+   },
+   "RankBrackets": {
+    "types": [
+     "array"
+    ]
+   },
+   "RequestId": {
+    "types": [
+     "str"
+    ]
+   },
+   "ServerNotification": {
+    "types": [
+     "int"
+    ]
+   },
+   "ServerTimeTicks": {
+    "types": [
+     "int"
+    ]
+   },
+   "SessionKey": {
+    "types": [
+     "object"
+    ]
+   }
+  },
+  "first_call_N_today": null
+ },
+ "/api/raid/seasonreward": {
+  "protocol": 17013,
+  "obf": "DUBME56UP27MNKKJLCS2HI6YBM",
+  "samples": 2,
+  "cn": "总力战·赛季奖励",
+  "request_fields": {},
+  "response_packet_keys": {
+   "MissionProgressDBs": {
+    "types": [
+     "array"
+    ]
+   },
+   "ParcelResultDB": {
+    "types": [
+     "object"
+    ]
+   },
+   "Protocol": {
+    "types": [
+     "int"
+    ]
+   },
+   "ReceiveRewardIds": {
+    "types": [
+     "array"
+    ]
+   },
+   "RequestId": {
+    "types": [
+     "str"
+    ]
+   },
+   "ServerNotification": {
+    "types": [
+     "int"
+    ]
+   },
+   "ServerTimeTicks": {
+    "types": [
+     "int"
+    ]
+   },
+   "SessionKey": {
+    "types": [
+     "object"
+    ]
+   }
+  },
+  "first_call_N_today": null
+ },
+ "/api/raid/sweep": {
+  "protocol": 17019,
+  "obf": "2LSIG4XDI5J2UQO567M4P7GSKM",
+  "samples": 1,
+  "cn": "总力战·扫荡",
+  "request_fields": {
+   "SweepCount": {
+    "types": [
+     "int"
+    ],
+    "example": "2"
+   },
+   "UniqueId": {
+    "types": [
+     "int"
+    ],
+    "example": "1111406"
+   }
+  },
+  "response_packet_keys": {
+   "MissionProgressDBs": {
+    "types": [
+     "array"
+    ]
+   },
+   "ParcelResultDB": {
+    "types": [
+     "object"
+    ]
+   },
+   "Protocol": {
+    "types": [
+     "int"
+    ]
+   },
+   "RequestId": {
+    "types": [
+     "str"
+    ]
+   },
+   "Rewards": {
+    "types": [
+     "array"
+    ]
+   },
+   "ServerNotification": {
+    "types": [
+     "int"
+    ]
+   },
+   "ServerTimeTicks": {
+    "types": [
+     "int"
+    ]
+   },
+   "SessionKey": {
+    "types": [
+     "object"
+    ]
+   },
+   "TotalSeasonPoint": {
+    "types": [
+     "int"
+    ]
+   }
+  },
+  "first_call_N_today": null
+ },
+ "/api/scenario/skip": {
+  "protocol": 19003,
+  "obf": "63AWLKA74BAHU6K3JNGSV7X65M",
+  "samples": 3,
+  "cn": "剧情·跳过",
+  "request_fields": {
+   "ScriptGroupId": {
+    "types": [
+     "int"
+    ],
+    "example": "10034010"
+   },
+   "SkipPointScriptCount": {
+    "types": [
+     "int"
+    ],
+    "example": "2"
+   }
+  },
+  "response_packet_keys": {
+   "Protocol": {
+    "types": [
+     "int"
+    ]
+   },
+   "RequestId": {
+    "types": [
+     "str"
+    ]
+   },
+   "ServerNotification": {
+    "types": [
+     "int"
+    ]
+   },
+   "ServerTimeTicks": {
+    "types": [
+     "int"
+    ]
+   },
+   "SessionKey": {
+    "types": [
+     "object"
+    ]
+   }
+  },
+  "first_call_N_today": null
+ },
+ "/api/schooldungeon/list": {
+  "protocol": 38000,
+  "obf": "CVOHU6FZQTL2DEZSQ3PCIVOBKM",
+  "samples": 3,
+  "cn": "学院副本·列表 (？)",
+  "request_fields": {},
+  "response_packet_keys": {
+   "Protocol": {
+    "types": [
+     "int"
+    ]
+   },
+   "RequestId": {
+    "types": [
+     "str"
+    ]
+   },
+   "SchoolDungeonStageHistoryDBList": {
+    "types": [
+     "array"
+    ]
+   },
+   "ServerNotification": {
+    "types": [
+     "int"
+    ]
+   },
+   "ServerTimeTicks": {
+    "types": [
+     "int"
+    ]
+   },
+   "SessionKey": {
+    "types": [
+     "object"
+    ]
+   }
+  },
+  "first_call_N_today": null
+ },
+ "/api/shop/buyrefreshmerchandise": {
+  "protocol": 10007,
+  "obf": "GCYR6KWHCQQ4D2R6HXJX6NHHBY",
+  "samples": 2,
+  "cn": "商店·手动刷新商品",
+  "request_fields": {
+   "ShopUniqueIds": {
+    "types": [
+     "array"
+    ],
+    "example": "[1036, 1037, 1038, 1039, 1000, 1001, 1002, 1032, 1040, 1041,…"
+   }
+  },
+  "response_packet_keys": {
+   "AccountCurrencyDB": {
+    "types": [
+     "object"
+    ]
+   },
+   "BattlePassMissionProgressDBDict": {
+    "types": [
+     "object"
+    ]
+   },
+   "ConsumeResultDB": {
+    "types": [
+     "object"
+    ]
+   },
+   "MailDB": {
+    "types": [
+     "null"
+    ]
+   },
+   "MissionProgressDBs": {
+    "types": [
+     "array"
+    ]
+   },
+   "ParcelResultDB": {
+    "types": [
+     "object"
+    ]
+   },
+   "Protocol": {
+    "types": [
+     "int"
+    ]
+   },
+   "RequestId": {
+    "types": [
+     "str"
+    ]
+   },
+   "ServerNotification": {
+    "types": [
+     "int"
+    ]
+   },
+   "ServerTimeTicks": {
+    "types": [
+     "int"
+    ]
+   },
+   "SessionKey": {
+    "types": [
+     "object"
+    ]
+   },
+   "ShopProductDB": {
+    "types": [
+     "array"
+    ]
+   }
+  },
+  "first_call_N_today": null
+ },
+ "/api/shop/list": {
+  "protocol": 10002,
+  "obf": "FBRX4DTR54E6Q2FDLMV6MEHDVQ",
+  "samples": 8,
+  "cn": "商店·列表（信用点/青辉石）",
+  "request_fields": {
+   "CategoryList": {
+    "types": [
+     "array"
+    ],
+    "example": "[38]"
+   }
+  },
+  "response_packet_keys": {
+   "Protocol": {
+    "types": [
+     "int"
+    ]
+   },
+   "RequestId": {
+    "types": [
+     "str"
+    ]
+   },
+   "ServerNotification": {
+    "types": [
+     "int"
+    ]
+   },
+   "ServerTimeTicks": {
+    "types": [
+     "int"
+    ]
+   },
+   "SessionKey": {
+    "types": [
+     "object"
+    ]
+   },
+   "ShopEligmaHistoryDBs": {
+    "types": [
+     "array"
+    ]
+   },
+   "ShopInfos": {
+    "types": [
+     "array"
+    ]
+   }
+  },
+  "first_call_N_today": 42
+ },
+ "/api/toast/list": {
+  "protocol": 16000,
+  "obf": "TNHDCYD5QKYJNL6NHXKI3QRKOY",
+  "samples": 5,
+  "cn": "弹窗通知列表",
+  "request_fields": {},
+  "response_packet_keys": {
+   "Protocol": {
+    "types": [
+     "int"
+    ]
+   },
+   "RequestId": {
+    "types": [
+     "str"
+    ]
+   },
+   "ServerNotification": {
+    "types": [
+     "int"
+    ]
+   },
+   "ServerTimeTicks": {
+    "types": [
+     "int"
+    ]
+   },
+   "SessionKey": {
+    "types": [
+     "object"
+    ]
+   },
+   "ToastDBs": {
+    "types": [
+     "null"
+    ]
+   }
+  },
+  "first_call_N_today": 16
+ },
+ "/api/weekdungeon/list": {
+  "protocol": 23000,
+  "obf": "P5OT7LMDAURZPQ5AFVSA2BDWHA",
+  "samples": 3,
+  "cn": "周常副本·列表（课程表）(？)",
+  "request_fields": {},
+  "response_packet_keys": {
+   "AdditionalStageIdList": {
+    "types": [
+     "array"
+    ]
+   },
+   "Protocol": {
+    "types": [
+     "int"
+    ]
+   },
+   "RequestId": {
+    "types": [
+     "str"
+    ]
+   },
+   "ServerNotification": {
+    "types": [
+     "int"
+    ]
+   },
+   "ServerTimeTicks": {
+    "types": [
+     "int"
+    ]
+   },
+   "SessionKey": {
+    "types": [
+     "object"
+    ]
+   },
+   "WeekDungeonStageHistoryDBList": {
+    "types": [
+     "array"
+    ]
+   }
+  },
+  "first_call_N_today": null
+ }
+}

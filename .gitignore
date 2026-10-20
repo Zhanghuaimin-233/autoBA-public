@@ -1,0 +1,13 @@
+__pycache__/
+*.pyc
+
+# 本机配置与凭据（不入库）
+env.local.bat
+yostar_credentials.json
+session_state.json
+*.log
+
+# 本地抓包与明文日志（使用者自备，不入库）
+capture/
+session_plain_all.jsonl
+resp_plain_all.jsonl

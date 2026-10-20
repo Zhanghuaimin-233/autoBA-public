@@ -1,0 +1,382 @@
+{
+ "/api/billing/purchaselistbyyostar": {
+  "protocol": 29002,
+  "obf": "UXIHQC2AXRZCEBTL2NPBMBBI6I",
+  "samples": 11
+ },
+ "/api/account/auth": {
+  "protocol": 1002,
+  "obf": "AHTQLQI65FWJGGGK4KL5AEF57A",
+  "samples": 5
+ },
+ "/api/academy/getinfo": {
+  "protocol": 24000,
+  "obf": "KKVAEXLS5QIIB36RQW27XRTJGI",
+  "samples": 8
+ },
+ "/api/account/loginsync": {
+  "protocol": 1017,
+  "obf": "P3OMQZD2FXV7XXEGA7ETCXIJ4Q",
+  "samples": 5
+ },
+ "/api/item/list": {
+  "protocol": 4000,
+  "obf": "DGOYM2RERJJ7JIGHWVF7UZ5XPA",
+  "samples": 5
+ },
+ "/api/networktime/sync": {
+  "protocol": 3,
+  "obf": "QIRA2IPFGIJ5T56RHONAUNGUJA",
+  "samples": 5
+ },
+ "/api/contentsave/get": {
+  "protocol": 26000,
+  "obf": "A5HZKUZQNB2GVPTZL5ATLZLLQ4",
+  "samples": 5
+ },
+ "/api/battlepass/getinfo": {
+  "protocol": 51000,
+  "obf": "IQLINGRIPTDDWVURJU6WQJY25E",
+  "samples": 9
+ },
+ "/api/management/data": {
+  "protocol": 90004,
+  "obf": "XJER6O4J52SF7TFS6WLCFJNDIM",
+  "samples": 55
+ },
+ "/api/account/gettutorial": {
+  "protocol": 1005,
+  "obf": "TE4UJH3A6CSOJSPVNXXIBGYIIA",
+  "samples": 5
+ },
+ "/api/mission/list": {
+  "protocol": 8000,
+  "obf": "5S4LD3Y34GQ2GPKJ75FIIFQWCQ",
+  "samples": 23
+ },
+ "/api/mission/guidemissionseasonlist": {
+  "protocol": 8006,
+  "obf": "Y3UKGGQIBTTIJ6M374PM2EQRUQ",
+  "samples": 5
+ },
+ "/api/minigame/missionlist": {
+  "protocol": 35003,
+  "obf": "ECS6DZHQ3DFT6SL2CNYHYECQ4A",
+  "samples": 5
+ },
+ "/api/battlepass/missionlist": {
+  "protocol": 51003,
+  "obf": "DM356GTN7BIX2KUOSIR6RHO2DQ",
+  "samples": 7
+ },
+ "/api/toast/list": {
+  "protocol": 16000,
+  "obf": "TNHDCYD5QKYJNL6NHXKI3QRKOY",
+  "samples": 5
+ },
+ "/api/battlepass/check": {
+  "protocol": 51006,
+  "obf": "JGJG65UANK2HFSVER3AX232FMM",
+  "samples": 58
+ },
+ "/api/eventcontent/collectionlist": {
+  "protocol": 30025,
+  "obf": "HG4HUMWCUOMWCEHBRJTX2H7AUI",
+  "samples": 14
+ },
+ "/api/event/rewardincrease": {
+  "protocol": 25003,
+  "obf": "ME6ZY2KZLN5UN4DF7BT3TKJKHI",
+  "samples": 142
+ },
+ "/api/opencondition/eventlist": {
+  "protocol": 15002,
+  "obf": "4QJN3NKE73EJOHZJLD3OLU2XNU",
+  "samples": 6
+ },
+ "/api/notification/eventcontentreddotcheck": {
+  "protocol": 36001,
+  "obf": "RMS5YFA2GTTTWMYK2IHUP2QSYE",
+  "samples": 73
+ },
+ "/api/mail/check": {
+  "protocol": 7001,
+  "obf": "A6XU5ZVL4DWGSYCQFZKU5ILQVY",
+  "samples": 63
+ },
+ "/api/clan/check": {
+  "protocol": 28019,
+  "obf": "QXX6AAJZW2CU4X57SL7FCM72XA",
+  "samples": 43
+ },
+ "/api/friend/check": {
+  "protocol": 43010,
+  "obf": "TAGMSXJIONDD5CVTS52LJXSDNQ",
+  "samples": 43
+ },
+ "/api/account/settutorial": {
+  "protocol": 1006,
+  "obf": "3KUKWHN3VDLAXVS4YDYBTTVZ2Y",
+  "samples": 1
+ },
+ "/api/attendance/reward": {
+  "protocol": 9002,
+  "obf": "AZELQARARQP5L57ZML5KM3BRJ4",
+  "samples": 2
+ },
+ "/api/weekdungeon/list": {
+  "protocol": 23000,
+  "obf": "P5OT7LMDAURZPQ5AFVSA2BDWHA",
+  "samples": 3
+ },
+ "/api/contentsweep/request": {
+  "protocol": 27000,
+  "obf": "PP2KH57PYGW25AZW73372YR55E",
+  "samples": 13
+ },
+ "/api/schooldungeon/list": {
+  "protocol": 38000,
+  "obf": "CVOHU6FZQTL2DEZSQ3PCIVOBKM",
+  "samples": 3
+ },
+ "/api/arena/enterlobby": {
+  "protocol": 22000,
+  "obf": "A2FUPZASWN3KLFFCK5RS2Z3UQI",
+  "samples": 5
+ },
+ "/api/arena/dailyreward": {
+  "protocol": 22009,
+  "obf": "UGNFRQJ3JRBLNH67INDEVWKU7Y",
+  "samples": 3
+ },
+ "/api/echelon/list": {
+  "protocol": 5000,
+  "obf": "ED653MDBZL75ADU4XKIFERNVVI",
+  "samples": 8
+ },
+ "/api/arena/syncechelonsettingtime": {
+  "protocol": 22016,
+  "obf": "EY7QMLA3SYLSYEV3NNLI2CY3ZQ",
+  "samples": 4
+ },
+ "/api/echelon/save": {
+  "protocol": 5001,
+  "obf": "H3S5EPFZOXKUGXLXC2VFAVMQIU",
+  "samples": 4
+ },
+ "/api/arena/enterbattle": {
+  "protocol": 22004,
+  "obf": "NWNNGWMRJC2VPSFJD5RJKSXOZA",
+  "samples": 4
+ },
+ "/api/arena/opponentlist": {
+  "protocol": 22003,
+  "obf": "PO5IN3RWHZDBLMRS4DLY4YK3ZY",
+  "samples": 5
+ },
+ "/api/raid/lobby": {
+  "protocol": 17014,
+  "obf": "PAAKOO2FW7K7VQR2BINTKQ5ZBA",
+  "samples": 5
+ },
+ "/api/arena/cumulativetimereward": {
+  "protocol": 22008,
+  "obf": "5N7BAP2FPLZHH7VN5BZYRBXPWQ",
+  "samples": 1
+ },
+ "/api/shop/list": {
+  "protocol": 10002,
+  "obf": "FBRX4DTR54E6Q2FDLMV6MEHDVQ",
+  "samples": 8
+ },
+ "/api/cafe/ack": {
+  "protocol": 20001,
+  "obf": "ZSN5XTRP4BTJ7F2HAHOTGZLHLU",
+  "samples": 6
+ },
+ "/api/cafe/receivecurrency": {
+  "protocol": 20013,
+  "obf": "MLB5WYXD67ETPMTGRWOTNKAWHM",
+  "samples": 2
+ },
+ "/api/cafe/interact": {
+  "protocol": 20006,
+  "obf": "MBDIB333KNPPUQNJEQNI3P6SIM",
+  "samples": 30
+ },
+ "/api/academy/attendschedule": {
+  "protocol": 24001,
+  "obf": "OUUT4DK7VK32GDTKX6IKZ5I4GQ",
+  "samples": 21
+ },
+ "/api/clan/lobby": {
+  "protocol": 28000,
+  "obf": "NAIKTHZMYTUJ7XJ2SOQQWSXWTQ",
+  "samples": 3
+ },
+ "/api/clan/chat/records": {
+  "protocol": 90009,
+  "obf": "2OX7WGNGTJCQGYBAT5VZY5VWIM",
+  "samples": 5
+ },
+ "/api/craft/list": {
+  "protocol": 21000,
+  "obf": "LOV3E7JU62A2KCCYCL2AKHARW4",
+  "samples": 6
+ },
+ "/api/craft/reward": {
+  "protocol": 21005,
+  "obf": "I2YDAXZGOZIYNB6HBCLBV7M3DY",
+  "samples": 3
+ },
+ "/api/craft/updatenodelevel": {
+  "protocol": 21002,
+  "obf": "THDJJQA6PN3YZKVSXI73VF2AA4",
+  "samples": 9
+ },
+ "/api/craft/selectnode": {
+  "protocol": 21001,
+  "obf": "2VNEHLRH6BRC3GWK4N4WQ5PMK4",
+  "samples": 9
+ },
+ "/api/craft/beginprocess": {
+  "protocol": 21003,
+  "obf": "X7Y43CVXU2EUC44F3J4WUMZX2A",
+  "samples": 3
+ },
+ "/api/eventcontent/adventurelist": {
+  "protocol": 30000,
+  "obf": "WOHXJTASLD5AAJI3DIGMH7O24U",
+  "samples": 16
+ },
+ "/api/billing/purchasefreeproduct": {
+  "protocol": 29003,
+  "obf": "EG2DYZYABN6E5CHUSZPXOI7BPQ",
+  "samples": 3
+ },
+ "/api/mission/multiplereward": {
+  "protocol": 8002,
+  "obf": "FF3K76PH2LLL6OPCYVKKENNHGE",
+  "samples": 10
+ },
+ "/api/campaign/list": {
+  "protocol": 6000,
+  "obf": "ZJSFR7GZ6IM2NYYNJKECP42SRI",
+  "samples": 3
+ },
+ "/api/contentsweep/multisweep": {
+  "protocol": 27001,
+  "obf": "WQDUVIBUUZOJDJ35372OWS2QHQ",
+  "samples": 3
+ },
+ "/api/contentsweep/setmultisweeppreset": {
+  "protocol": 27003,
+  "obf": "PJMQ5PDLP2C2V327SVLMVAZQCY",
+  "samples": 3
+ },
+ "/api/shop/buyrefreshmerchandise": {
+  "protocol": 10007,
+  "obf": "GCYR6KWHCQQ4D2R6HXJX6NHHBY",
+  "samples": 2
+ },
+ "/api/mail/listsemipermanent": {
+  "protocol": 7003,
+  "obf": "6MI4R4QVPYBZU5UU3FHCSUQECY",
+  "samples": 3
+ },
+ "/api/mail/list": {
+  "protocol": 7000,
+  "obf": "URZSRU73NZ7TFCFVHVORFXNFSE",
+  "samples": 6
+ },
+ "/api/mail/receive": {
+  "protocol": 7002,
+  "obf": "X3CP3SJNLNSPJAUT24VJ6UZAJA",
+  "samples": 3
+ },
+ "/api/battlepass/missionmultiplereward": {
+  "protocol": 51005,
+  "obf": "5LQOU6YFWHYRBRI2OHKI37DHRE",
+  "samples": 1
+ },
+ "/api/battlepass/receivereward": {
+  "protocol": 51002,
+  "obf": "QTVDCGVGII6VQBQQIAXJQD4M4Q",
+  "samples": 1
+ },
+ "/api/cafe/summoncharacter": {
+  "protocol": 20015,
+  "obf": "LL3NMLO43N76H3G47UKV3CNSRQ",
+  "samples": 4
+ },
+ "/api/eventcontent/shoplist": {
+  "protocol": 30014,
+  "obf": "DMROW5QG2MTBCAS3PPKF4ZCHRU",
+  "samples": 1
+ },
+ "/api/eventcontent/shopbuymerchandise": {
+  "protocol": 30019,
+  "obf": "NTR7V3HURPQCNSI2UK3GYWN6NE",
+  "samples": 16
+ },
+ "/api/raid/createbattle": {
+  "protocol": 17004,
+  "obf": "XTPFNRK3YYSB3RREIKHQ6JQSWI",
+  "samples": 1
+ },
+ "/api/raid/enterbattle": {
+  "protocol": 17005,
+  "obf": "G5KYZE3JTNA2CBHARKX3DOV2S4",
+  "samples": 2
+ },
+ "/api/raid/endbattle": {
+  "protocol": 17007,
+  "obf": "RVEHU3PWIH3HXZ7BFL5E24HVQA",
+  "samples": 1
+ },
+ "/api/raid/rankingindex": {
+  "protocol": 17021,
+  "obf": "FK47MNDAPWYUP3RUY3YICLQEK4",
+  "samples": 2
+ },
+ "/api/raid/opponentlist": {
+  "protocol": 17016,
+  "obf": "V7THWTCAC6YBKJLSVZYJ5IIZ6M",
+  "samples": 4
+ },
+ "/api/raid/seasonreward": {
+  "protocol": 17013,
+  "obf": "DUBME56UP27MNKKJLCS2HI6YBM",
+  "samples": 2
+ },
+ "/api/raid/sweep": {
+  "protocol": 17019,
+  "obf": "2LSIG4XDI5J2UQO567M4P7GSKM",
+  "samples": 1
+ },
+ "/api/eventcontent/enterstorystage": {
+  "protocol": 30036,
+  "obf": "XUCQ3BUDYXA2J73LI6YUZ5CSCU",
+  "samples": 3
+ },
+ "/api/scenario/skip": {
+  "protocol": 19003,
+  "obf": "63AWLKA74BAHU6K3JNGSV7X65M",
+  "samples": 3
+ },
+ "/api/eventcontent/scenariogrouphistoryupdate": {
+  "protocol": 30027,
+  "obf": "AFSSTHWPFDRFY5HB4UARYGHQFM",
+  "samples": 3
+ },
+ "/api/eventcontent/storystageresult": {
+  "protocol": 30037,
+  "obf": "SYYBT5B4W6SS2Y6NLQ6SE62JZU",
+  "samples": 3
+ },
+ "/api/mission/reward": {
+  "protocol": 8001,
+  "obf": "5GN7IJ36QXZ6ZZX3E5SCHLZEN4",
+  "samples": 1
+ }
+}
