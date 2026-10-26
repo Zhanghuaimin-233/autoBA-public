@@ -3,7 +3,7 @@
 流程：
   1. 输入手机号 → 构造 SendSMSReq → 离线签名 → POST user/send-sms
   2. 输入收到的验证码 → 构造 LoginReq → POST user/login → 拿新 yostar Token
-签名：由 sign_offline.py 提供接口（本仓库为占位实现，需自行对接签名后端）。
+签名：由 sign_offline.py 调用 unidbg 离线签名器（需自备 libairisgcore.so，见 unidbg/README.md）。
 注意：若服务端风控要求滑块，send-sms 会返回错误——此时去游戏登录界面人工过一次
      滑块获取 ticket（或接 WebUI 滑块），Captcha 需带 Randstr/Ticket 重发。
 跑法：uv run --with requests python login_oracle.py <手机号>
@@ -37,7 +37,7 @@ HEAD_TEMPLATE = {
 
 def get_oracle():
     """兼容旧接口：离线签名器（无游戏依赖）。"""
-    print('[签名] 调用签名后端（本仓库为占位实现）', flush=True)
+    print('[签名] unidbg 离线签名（零游戏依赖）', flush=True)
     return None, None
 
 

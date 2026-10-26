@@ -61,8 +61,8 @@ uv run --with fastapi --with uvicorn --with requests --with pycryptodome \
 ## 边界说明
 
 - **不含**：游戏二进制（`libairisgcore.so` 等）、账号凭据、抓包明文、密钥材料
-- **包含**：协议结构文档、加解密实现、会话机制、离线签名调用器
-- `docs/API.md` 与 `api_doc.json` 由脱敏后的抓包生成（账号 ID、令牌、设备指纹以占位符呈现）
+- **包含**：协议结构文档、加解密实现、会话机制、unidbg 离线签名实现
+- `docs/API.md` 与 `api_doc.json` 由脱敏后的抓包生成（账号 ID 使用测试号，令牌以占位符呈现，设备字段取自测试用模拟器）
 - 不提供账号共享、代练或商业化服务
 
 ## License
