@@ -378,5 +378,30 @@
   "protocol": 8001,
   "obf": "5GN7IJ36QXZ6ZZX3E5SCHLZEN4",
   "samples": 1
+ },
+ "/api/shop/buymerchandise": {
+  "protocol": 10000,
+  "obf": "A6DO2RLY7GVG7DDPZ4UHOH6FSA",
+  "samples": 5
+ },
+ "/api/shop/refresh": {
+  "protocol": 10003,
+  "obf": "2QYSTQH44UDEYSNMQ2XEYSV7TE",
+  "samples": 3
+ },
+ "/api/craft/shiftingbeginprocess": {
+  "protocol": 21007,
+  "obf": "FI4QTHDFKM7EUWJF6NQUFJERZE",
+  "samples": 1
+ },
+ "/api/resetablecontent/get": {
+  "protocol": 41000,
+  "obf": "JFFWQZULOYGDGMVJPIKIB5E5YU",
+  "samples": 1
+ },
+ "/api/eliminateraid/lobby": {
+  "protocol": 45001,
+  "obf": "PTLVLNEGY7WFZGPP2NEOUELMAE",
+  "samples": 1
  }
 }

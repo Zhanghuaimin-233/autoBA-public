@@ -1,6 +1,6 @@
 # autoBA
 
-碧蓝档案（国服）协议研究：接口结构、加解密、会话机制与离线签名实现。
+碧蓝档案（国服）协议研究：接口结构、加解密、会话机制、离线签名与日常模块 WebUI。
 
 > **本项目仅供学习与研究。**
 > 不提供游戏客户端文件、不包含账号凭据或抓包数据；不含任何商业化用途的授权，
@@ -14,13 +14,15 @@
 | 加解密 | packet 结构、AES-256-CBC、请求/响应 key 的明文携带方式（`ba_crypto.py`） |
 | 会话机制 | SessionKey、REQUEST-ID 链（响应颁发下一请求 rid）、Hash=(Protocol<<32)\|N（`ba_session.py`） |
 | 离线签名 | unidbg 模拟执行客户端 native 库，PC 上获得签名结果（`unidbg/` + `sign_offline.py`） |
-| 工程实现 | 会话客户端 + WebUI 展示（`webui/`） |
+| 日常模块 | WebUI 覆盖 10 个模块：日程清票、咖啡厅、悬赏通缉、学院交流会、社交小组签到、战术对抗赛、每日免费礼包、邮箱、任务奖励、商店（11 分类） |
 
 相关研究笔记见 `docs/`：
 
 - `自主登录研究.md` — 手机号+验证码登录链路（yostar sdk-api → account/auth）
-- `日程模块研究.md` / `咖啡厅模块研究.md` — 模块协议解剖
+- `日程模块研究.md` / `咖啡厅模块研究.md` / `竞技场模块研究.md` — 模块协议解剖
 - `悬赏通缉.md` / `学院交流会.md` / `社交小组签到.md` — 玩法模块接口
+- `商店_邮箱_任务.md` — 商店、邮箱、任务奖励接口与实现要点
+- `竞品功能对照.md` — 图像识别流派 BA 工具的功能与协议就绪度对照
 - `数据版本校验.md` — 资源版本探针与兼容处理
 
 ## 目录
@@ -31,25 +33,25 @@ ba_session.py       BA 会话客户端（rid 链 + N 计数 + 落盘）
 sign_offline.py     签名封装（调用 unidbg 执行器）
 unidbg/             unidbg 离线签名：AiriSignRunner.java + 依赖解析脚本
 login_oracle.py     自主登录流程（发码 / 验证码登录）
-webui/              FastAPI 后端 + 单页前端
-scripts/            数据表生成 / 接口文档生成工具
-tables/             游戏数据表映射（名称、角色、物品等）
+webui/              FastAPI 后端 + 单页前端（10 个日常模块）
+scripts/            数据表生成 / 接口文档生成 / 图标导出工具
+tables/             游戏数据表映射 + tables/full/ExcelDB 派生表
 docs/               协议研究笔记 + 接口文档
 ```
 
 ## 快速开始
 
-WebUI（协议调试与数据展示）：
+WebUI：
 
 ```bash
-# Windows
+# Windows：首次运行自动用 uv 创建 .venv 并安装依赖
 start_webui.bat
 # 或手动
 uv run --with fastapi --with uvicorn --with requests --with pycryptodome \
     python -m uvicorn webui.server:app --host 127.0.0.1 --port 8800
 ```
 
-访问 http://127.0.0.1:8800
+访问 http://127.0.0.1:8800。需要 Python 3.10+；`start_webui.bat` 通过 uv 引导，首次运行需联网安装依赖。
 
 离线签名需要自备两样环境（都不在仓库中）：
 
@@ -58,10 +60,17 @@ uv run --with fastapi --with uvicorn --with requests --with pycryptodome \
 
 详见 `unidbg/README.md`。`ba_session.py` 的 auth 模板还需本地抓包解密出的明文日志。
 
+## 数据表与图标
+
+- `tables/*.json`：角色、物品、名称映射等基础表
+- `tables/goods_info.json`：商店商品的 GoodsId → 名称/描述/稀有度/图标路径
+- `tables/full/ExcelDB/`：WebUI 用到的派生表（商店、日程、悬赏、交流会、好感等）
+- `webui/static/icons/`：游戏图标不入库，缺失时界面自动隐藏；可用 `scripts/extract_icons.py` 从自备客户端资源导出
+
 ## 边界说明
 
-- **不含**：游戏二进制（`libairisgcore.so` 等）、账号凭据、抓包明文、密钥材料
-- **包含**：协议结构文档、加解密实现、会话机制、unidbg 离线签名实现
+- **不含**：游戏二进制（`libairisgcore.so` 等）、账号凭据、抓包明文、密钥材料、游戏图标素材
+- **包含**：协议结构文档、加解密实现、会话机制、unidbg 离线签名实现、日常模块 WebUI
 - `docs/API.md` 与 `api_doc.json` 由脱敏后的抓包生成（账号 ID 使用测试号，令牌以占位符呈现，设备字段取自测试用模拟器）
 - 不提供账号共享、代练或商业化服务
 

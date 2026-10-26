@@ -171,6 +171,12 @@ class Session:
             raise RuntimeError(f'33004 rid 链断裂/N 不匹配（rid={self.rid[:13]} N={self.n}）'
                                '——会话状态过期，请重新 login()')
         if pkt.get('Protocol') == -1:
+            # 错误响应同样颁发下一个 rid，必须推进，否则后续请求会一直拿到同一个错误
+            # （实测：mission/multiplereward 报 8000 之后，整个会话的所有接口都卡死）
+            nxt = resp.get('requestid')
+            if nxt:
+                self.rid = nxt
+                self.n += 1
             raise RuntimeError(f"协议错误 {pkt.get('ErrorCode')}: {pkt.get('Reason')}")
         # rid 链推进：响应颁发下一个请求的 rid；N 推进
         self.rid = resp.get('requestid') or self.rid

@@ -10,7 +10,7 @@
   * { box-sizing:border-box; }
   body { margin:0; background:var(--bg); color:var(--txt);
          font:14px/1.6 "Segoe UI","Microsoft YaHei",sans-serif; }
-  .wrap { max-width:900px; margin:24px auto; padding:0 16px; }
+  .wrap { max-width:1280px; margin:24px auto; padding:0 16px; }
   h1 { font-size:20px; margin:8px 0 16px; }
   h2 { font-size:15px; margin:0 0 12px; color:var(--sub); }
   .card { background:var(--card); border:1px solid var(--line); border-radius:10px;
@@ -66,6 +66,8 @@
   button.mini { padding:0 5px; height:18px; line-height:16px; font-size:12px;
                 background:#fff; color:var(--acc); border:1px solid #c9d8ea; border-radius:5px; }
   button.mini:disabled { color:#c3cbd5; border-color:#e3e6ea; }
+  .shop-icon { width:26px; height:26px; object-fit:contain; vertical-align:middle; margin-right:6px; }
+  .shop-name { white-space:nowrap; }
   .cafe-head { display:flex; align-items:baseline; gap:10px; margin:14px 0 4px; }
   .cafe-head h3 { font-size:14px; margin:0; }
   .card-head { display:flex; align-items:center; gap:10px; flex-wrap:wrap; }
@@ -78,6 +80,7 @@
   .subsec > summary { cursor:pointer; font-size:13px; color:var(--sub); outline:none;
                       user-select:none; }
   .subsec[open] > summary { color:var(--txt); }
+  .subsec-body { overflow:hidden; }
   .zone-scroll { max-height:380px; overflow:auto; }
   .alert { display:flex; align-items:center; gap:10px; flex-wrap:wrap;
            background:#fbf1dc; border:1px solid #ecd9a8; border-radius:10px;
@@ -85,17 +88,52 @@
   .alert.hidden { display:none; }
   .alert .spacer { flex:1; }
   #oplog div { border-bottom:1px dashed #eef1f4; padding:2px 0; }
+
+  /* 两栏：左侧主区 + 右侧常驻日志 */
+  .layout { display:flex; align-items:flex-start; gap:16px; }
+  .main { flex:1; min-width:0; }
+  .side { width:340px; flex:none; position:sticky; top:16px; }
+  .logcard { display:flex; flex-direction:column; max-height:calc(100vh - 48px); }
+  .oplog-box { flex:1; overflow:auto; min-height:140px; }
+  .log-head { display:flex; align-items:center; gap:8px; margin-bottom:10px; }
+  .log-head h2 { margin:0; }
+  .log-head select { margin-left:auto; padding:3px 6px; border:1px solid var(--line);
+                     border-radius:6px; font-size:12px; background:#fff; color:var(--txt); }
+  @media (max-width: 1000px) {
+    .layout { display:block; }
+    .side { width:auto; position:static; margin-top:16px; }
+    .logcard { max-height:280px; }
+  }
+
+  /* 拖拽：用独立占位块指示落点，被拖元素留在原位，列表不会边拖边跳 */
+  .drag-handle { cursor:grab; user-select:none; color:var(--sub); font-size:15px;
+                 padding:0 3px; line-height:1; }
+  .drag-handle:active { cursor:grabbing; }
+  .card.dragging { opacity:.4; }
+  .drop-ph { border:2px dashed var(--acc); border-radius:10px; background:#eef4fb;
+             margin-bottom:16px; }
+  tr.dragging { opacity:.4; }
+  .drop-ph-row td { border:2px dashed var(--acc); border-radius:6px; background:#eef4fb;
+                    height:34px; padding:0; }
 </style>
 </head>
 <body>
 <div class="wrap">
-  <h1>autoBA 控制台</h1>
+  <h1>autoBA 控制台
+  <button id="btnRunAll" onclick="runAllDaily()"
+          style="margin-left:14px;vertical-align:middle;font-size:14px;padding:6px 14px">一键清日常</button>
+  <span class="sub" style="margin-left:10px;font-weight:normal">按模块拖拽顺序依次执行</span>
+</h1>
 
   <div id="resourceAlert" class="alert hidden">
     <span id="resourceAlertText"></span>
     <span class="spacer"></span>
     <button class="ghost sm" onclick="ackResource()">知道了</button>
   </div>
+
+  <div class="layout">
+  <div class="main" ondragover="dragOver(event, this, 'module')"
+       ondrop="dragDrop(event, this, 'module', saveModuleOrder)">
 
   <!-- 登录卡片 -->
   <div class="card" id="loginCard">
@@ -120,8 +158,11 @@
   </div>
 
   <!-- 一键清票 -->
-  <div class="card" id="planCard">
+  <div class="card" id="planCard" data-module="plan">
     <div class="card-head">
+      <span class="drag-handle" draggable="true" title="拖动排序（越靠上越先执行）"
+            ondragstart="dragStart(event, this.closest('.card'), 'module')"
+            ondragend="dragEnd()">⠿</span>
       <button class="fold" id="planFold" onclick="toggleFold('plan')" title="折叠">▾</button>
       <h2>学园日程 · 一键清票</h2>
       <span id="planSummary" class="sub">未生成方案</span>
@@ -153,18 +194,23 @@
   </div>
 
   <!-- 咖啡厅 -->
-  <div class="card" id="cafeCard">
+  <div class="card" id="cafeCard" data-module="cafe">
     <div class="card-head">
+      <span class="drag-handle" draggable="true" title="拖动排序（越靠上越先执行）"
+            ondragstart="dragStart(event, this.closest('.card'), 'module')"
+            ondragend="dragEnd()">⠿</span>
       <button class="fold" id="cafeFold" onclick="toggleFold('cafe')" title="折叠">▾</button>
       <h2>咖啡厅 · 摸头 + 邀请</h2>
       <span id="cafeSummary" class="sub">尚未加载</span>
       <span class="spacer"></span>
+      <button class="ghost sm" id="btnCafeAuto" onclick="toggleCafeAuto()">自动摸头：关</button>
       <button onclick="makeCafePlan()">生成邀请方案</button>
       <button class="danger" id="btnCafeRun" onclick="runCafe()">一键摸头 + 邀请</button>
     </div>
     <div id="cafeBody">
       <div class="row" style="margin-top:10px">
         <button class="ghost" onclick="loadCafe()">刷新咖啡厅</button>
+        <button class="ghost" onclick="claimCafe()">领取收益</button>
         <span id="cafeMsg" class="sub"></span>
       </div>
       <details class="subsec">
@@ -190,8 +236,11 @@
   </div>
 
   <!-- 悬赏通缉 -->
-  <div class="card" id="bountyCard">
+  <div class="card" id="bountyCard" data-module="bounty">
     <div class="card-head">
+      <span class="drag-handle" draggable="true" title="拖动排序（越靠上越先执行）"
+            ondragstart="dragStart(event, this.closest('.card'), 'module')"
+            ondragend="dragEnd()">⠿</span>
       <button class="fold" id="bountyFold" onclick="toggleFold('bounty')" title="折叠">▾</button>
       <h2>悬赏通缉</h2>
       <span id="bountySummary" class="sub">尚未加载</span>
@@ -219,8 +268,11 @@
   </div>
 
   <!-- 学院交流会 -->
-  <div class="card" id="scrimCard">
+  <div class="card" id="scrimCard" data-module="scrim">
     <div class="card-head">
+      <span class="drag-handle" draggable="true" title="拖动排序（越靠上越先执行）"
+            ondragstart="dragStart(event, this.closest('.card'), 'module')"
+            ondragend="dragEnd()">⠿</span>
       <button class="fold" id="scrimFold" onclick="toggleFold('scrim')" title="折叠">▾</button>
       <h2>学院交流会</h2>
       <span id="scrimSummary" class="sub">尚未加载</span>
@@ -248,8 +300,11 @@
   </div>
 
   <!-- 社交小组 -->
-  <div class="card" id="clanCard">
+  <div class="card" id="clanCard" data-module="clan">
     <div class="card-head">
+      <span class="drag-handle" draggable="true" title="拖动排序（越靠上越先执行）"
+            ondragstart="dragStart(event, this.closest('.card'), 'module')"
+            ondragend="dragEnd()">⠿</span>
       <button class="fold" id="clanFold" onclick="toggleFold('clan')" title="折叠">▾</button>
       <h2>社交小组 · 签到</h2>
       <span id="clanSummary" class="sub">尚未加载</span>
@@ -265,20 +320,223 @@
     </div>
   </div>
 
-  <div class="card">
-    <h2>操作日志</h2>
-    <div id="oplog" class="sub" style="max-height:240px;overflow:auto"></div>
+  <!-- 战术对抗赛 -->
+  <div class="card" id="arenaCard" data-module="arena">
+    <div class="card-head">
+      <span class="drag-handle" draggable="true" title="拖动排序（越靠上越先执行）"
+            ondragstart="dragStart(event, this.closest('.card'), 'module')"
+            ondragend="dragEnd()">⠿</span>
+      <button class="fold" id="arenaFold" onclick="toggleFold('arena')" title="折叠">▾</button>
+      <h2>战术对抗赛</h2>
+      <span id="arenaSummary" class="sub">尚未加载</span>
+      <span class="spacer"></span>
+      <button class="ghost sm" id="btnArenaClear" onclick="arenaClear()">一键清票</button>
+      <button class="danger" id="btnArenaReward" onclick="arenaClaim()">领取奖励</button>
+    </div>
+    <div id="arenaBody">
+      <div class="row" style="margin-top:10px">
+        <button class="ghost" onclick="loadArena(true)">刷新</button>
+        <span id="arenaMsg" class="sub"></span>
+      </div>
+      <div id="arenaView"><span class="sub">尚未加载</span></div>
+      <div class="sub" style="margin-top:8px" id="arenaNote">
+        清票走服务端演算，每场之后有 30 秒待机；等待期间其他模块照常执行。
+      </div>
+    </div>
   </div>
+
+  <!-- 每日免费礼包 -->
+  <div class="card" id="giftCard" data-module="gift">
+    <div class="card-head">
+      <span class="drag-handle" draggable="true" title="拖动排序（越靠上越先执行）"
+            ondragstart="dragStart(event, this.closest('.card'), 'module')"
+            ondragend="dragEnd()">⠿</span>
+      <button class="fold" id="giftFold" onclick="toggleFold('gift')" title="折叠">▾</button>
+      <h2>每日免费礼包</h2>
+      <span id="giftSummary" class="sub">尚未加载</span>
+      <span class="spacer"></span>
+      <button class="danger" id="btnGift" onclick="giftClaim()">领取</button>
+    </div>
+    <div id="giftBody">
+      <div class="row" style="margin-top:10px">
+        <button class="ghost" onclick="loadGift()">刷新</button>
+        <span id="giftMsg" class="sub"></span>
+      </div>
+      <div class="sub">10 行动点 + 10000 信用点，每日 4:00 重置。</div>
+    </div>
+  </div>
+
+  <!-- 邮箱 -->
+  <div class="card" id="mailCard" data-module="mail">
+    <div class="card-head">
+      <span class="drag-handle" draggable="true" title="拖动排序（越靠上越先执行）"
+            ondragstart="dragStart(event, this.closest('.card'), 'module')"
+            ondragend="dragEnd()">⠿</span>
+      <button class="fold" id="mailFold" onclick="toggleFold('mail')" title="折叠">▾</button>
+      <h2>邮箱</h2>
+      <span id="mailSummary" class="sub">尚未加载</span>
+      <span class="spacer"></span>
+      <button class="danger" id="btnMail" onclick="claimMail()">一键领取</button>
+    </div>
+    <div id="mailBody">
+      <div class="row" style="margin-top:10px">
+        <button class="ghost" onclick="loadMail()">刷新</button>
+        <span id="mailMsg" class="sub"></span>
+      </div>
+    </div>
+  </div>
+
+  <!-- 任务奖励 -->
+  <div class="card" id="missionCard" data-module="mission">
+    <div class="card-head">
+      <span class="drag-handle" draggable="true" title="拖动排序（越靠上越先执行）"
+            ondragstart="dragStart(event, this.closest('.card'), 'module')"
+            ondragend="dragEnd()">⠿</span>
+      <button class="fold" id="missionFold" onclick="toggleFold('mission')" title="折叠">▾</button>
+      <h2>任务奖励</h2>
+      <span id="missionSummary" class="sub">尚未加载</span>
+      <span class="spacer"></span>
+      <button class="danger" id="btnMission" onclick="claimMission()">领取奖励</button>
+    </div>
+    <div id="missionBody">
+      <div class="row" style="margin-top:10px">
+        <button class="ghost" onclick="loadMission()">刷新</button>
+        <span id="missionMsg" class="sub"></span>
+      </div>
+      <div class="sub">日常 / 周常 / 成就三类，按类别批量领取。</div>
+    </div>
+  </div>
+
+  <!-- 商店 -->
+  <div class="card" id="shopCard" data-module="shop">
+    <div class="card-head">
+      <span class="drag-handle" draggable="true" title="拖动排序（越靠上越先执行）"
+            ondragstart="dragStart(event, this.closest('.card'), 'module')"
+            ondragend="dragEnd()">⠿</span>
+      <button class="fold" id="shopFold" onclick="toggleFold('shop')" title="折叠">▾</button>
+      <h2>商店</h2>
+      <span id="shopSummary" class="sub">尚未加载</span>
+      <span class="spacer"></span>
+      <button class="ghost" onclick="loadShop(true)">刷新</button>
+    </div>
+    <div id="shopBody">
+      <div class="row" style="margin-top:10px">
+        <select id="shopCat" onchange="renderShop()"></select>
+        <span id="shopPeriod" class="sub"></span>
+        <span id="shopMsg" class="sub"></span>
+      </div>
+      <div id="shopView"><span class="sub">尚未加载</span></div>
+      <div class="row" style="margin-top:8px">
+        <label class="sub"><input type="checkbox" id="autobuyEnabled" onchange="saveAutobuy()"> 启用自动购买</label>
+        <button class="ghost" onclick="saveAutobuy()">保存勾选</button>
+        <button class="ghost" onclick="runAutobuy(true)">立即执行</button>
+        <span id="autobuyMsg" class="sub"></span>
+      </div>
+      <div class="sub" style="margin-top:6px">
+        勾选商品并填「每轮数量 / 轮数」。只有常规道具与战术对抗赛能手动刷新（上限 3 次 → 最多 4 轮）；
+        其余商店按各自周期自动刷新（总力战/大决战/熟练证书/综合战术测试/悬赏通缉为每月 1 日），只跑 1 轮。
+        神名精髓I·II 与青辉石商店受保护，不参与自动购买。
+      </div>
+    </div>
+  </div>
+
+  </div><!-- /main -->
+
+  <aside class="side">
+    <div class="card logcard">
+      <div class="log-head">
+        <h2>操作日志</h2>
+        <select id="logDate" onchange="onLogDateChange(this.value)">
+          <option value="live">实时（今天）</option>
+        </select>
+      </div>
+      <div id="oplog" class="sub oplog-box"></div>
+    </div>
+  </aside>
+  </div><!-- /layout -->
 </div>
 
 <script src="https://turing.captcha.qcloud.com/TCaptcha.js"></script>
 <script>
 const $ = id => document.getElementById(id);
-function log(s, cls) {
+// ---------- 日志：实时 + 按天回看 ----------
+let LOG_VIEW = 'live';          // 'live' 或 'YYYY-MM-DD'
+let _logQueue = [], _logTimer = null;
+
+function _dayStr(d) {
+  return d.getFullYear() + '-' +
+    String(d.getMonth() + 1).padStart(2, '0') + '-' +
+    String(d.getDate()).padStart(2, '0');
+}
+
+function mkLogEl(it) {
   const d = document.createElement('div');
-  if (cls) d.className = cls;
-  d.textContent = new Date().toTimeString().slice(0,8) + '  ' + s;
-  $('oplog').prepend(d);
+  if (it.cls) d.className = it.cls;
+  const t = new Date(it.ts);
+  const clock = isNaN(t.getTime()) ? '' : t.toTimeString().slice(0, 8);
+  d.textContent = clock + '  ' + it.text;
+  return d;
+}
+
+function log(s, cls) {
+  const now = new Date();
+  const item = { ts: now.toISOString(), day: _dayStr(now), text: s, cls: cls || '' };
+  if (LOG_VIEW === 'live') $('oplog').prepend(mkLogEl(item));
+  _logQueue.push(item);
+  clearTimeout(_logTimer);
+  _logTimer = setTimeout(flushLog, 600);
+}
+
+// 批量落盘，避免一键清几十条日志打成几十个请求
+async function flushLog() {
+  if (!_logQueue.length) return;
+  const entries = _logQueue;
+  _logQueue = [];
+  try {
+    await api('/api/log', {
+      method: 'POST', headers: {'Content-Type':'application/json'},
+      body: JSON.stringify({ entries }),
+    });
+  } catch (e) { /* 落盘失败不影响主流程 */ }
+}
+
+async function refreshLogDates() {
+  try {
+    const ds = await api('/api/log/dates');
+    const sel = $('logDate');
+    const keep = sel.value || LOG_VIEW;
+    sel.innerHTML = '<option value="live">实时（今天）</option>' +
+      (ds || []).map(d => `<option value="${d}">${d}</option>`).join('');
+    sel.value = keep;
+  } catch (e) { /* ignore */ }
+}
+
+async function showLogDate(day) {
+  LOG_VIEW = day || 'live';
+  const box = $('oplog');
+  box.innerHTML = '';
+  if (LOG_VIEW !== 'live') {
+    try {
+      const rows = await api('/api/log?date=' + LOG_VIEW);
+      (rows || []).slice().reverse().forEach(r => box.appendChild(mkLogEl(r)));
+    } catch (e) { box.textContent = '读取失败: ' + e.message; }
+    return;
+  }
+  // 实时：先渲染今天已落盘的部分，再叠加尚未落盘的内存队列
+  try {
+    const rows = await api('/api/log?date=' + _dayStr(new Date()));
+    (rows || []).slice().reverse().forEach(r => box.appendChild(mkLogEl(r)));
+  } catch (e) { /* ignore */ }
+  _logQueue.slice().reverse().forEach(r => box.appendChild(mkLogEl(r)));
+}
+
+function onLogDateChange(v) {
+  showLogDate(v);
+}
+
+async function initLog() {
+  await refreshLogDates();
+  await showLogDate('live');
 }
 async function api(path, opts) {
   const r = await fetch(path, opts);
@@ -287,24 +545,234 @@ async function api(path, opts) {
   return j;
 }
 
+// ---------- 拖拽排序（落点用独立占位块，被拖元素留在原位，列表不会边拖边跳） ----------
+let _dragEl = null, _dragKind = null, _phEl = null;
+
+function _mkPlaceholder(kind, height) {
+  const el = kind === 'module' ? document.createElement('div') : document.createElement('tr');
+  if (kind === 'module') {
+    el.className = 'drop-ph';
+  } else {
+    el.className = 'drop-ph-row';
+    el.innerHTML = '<td colspan="5"></td>';
+  }
+  if (height) el.style.height = height + 'px';
+  return el;
+}
+
+function dragStart(e, el, kind) {
+  _dragEl = el;
+  _dragKind = kind;
+  el.classList.add('dragging');
+  e.dataTransfer.effectAllowed = 'move';
+  try { e.dataTransfer.setData('text/plain', 'drag'); } catch (x) { /* Firefox 占位 */ }
+
+  const rect = el.getBoundingClientRect();
+  // 占位块先建好（先不插），等元素真正脱流那一刻再顶上它的位置
+  _phEl = _mkPlaceholder(kind, rect.height);
+
+  // 拖影：克隆一份略倾斜带阴影的，看起来是“抬起来”在动
+  try {
+    const ghost = el.cloneNode(true);
+    ghost.style.cssText = `position:fixed;left:-3000px;top:0;pointer-events:none;` +
+      `width:${rect.width}px;border-radius:10px;transform:rotate(1.2deg);` +
+      `box-shadow:0 16px 32px rgba(0,0,0,.18);opacity:.96;background:#fff;`;
+    document.body.appendChild(ghost);
+    e.dataTransfer.setDragImage(ghost, e.clientX - rect.left, e.clientY - rect.top);
+    setTimeout(() => ghost.remove(), 0);
+  } catch (x) { /* 不支持自定义拖影时用浏览器默认 */ }
+
+  // 原元素从列表里摘出去：必须等 dragstart 返回后再隐藏，否则浏览器会取消本次拖动
+  setTimeout(() => {
+    if (_dragEl !== el) return;
+    el.style.display = 'none';
+    if (_phEl && !_phEl.parentNode) el.parentNode.insertBefore(_phEl, el.nextSibling);
+  }, 0);
+}
+
+// 鼠标位置对应的“插入到谁之前”；返回 null 表示放到末尾
+function _insertTarget(container, y, selector) {
+  const items = [...container.querySelectorAll(selector)].filter(el =>
+    el !== _dragEl && !el.classList.contains('drop-ph') && !el.classList.contains('drop-ph-row'));
+  let best = null, bestOff = -Infinity;
+  for (const el of items) {
+    const box = el.getBoundingClientRect();
+    const off = y - box.top - box.height / 2;
+    if (off < 0 && off > bestOff) { bestOff = off; best = el; }
+  }
+  return best;
+}
+
+function dragOver(e, container, kind) {
+  if (!_dragEl || _dragKind !== kind || !_phEl) return;
+  e.preventDefault();
+  e.dataTransfer.dropEffect = 'move';
+  const selector = kind === 'module' ? '.card[data-module]' : 'tr[data-row]';
+  const before = _insertTarget(container, e.clientY, selector);
+  if (before) {
+    container.insertBefore(_phEl, before);
+  } else {
+    const items = [...container.querySelectorAll(selector)].filter(x => x !== _dragEl);
+    const last = items[items.length - 1];
+    if (last && last.nextSibling) container.insertBefore(_phEl, last.nextSibling);
+    else container.appendChild(_phEl);
+  }
+}
+
+function dragDrop(e, container, kind, onDone) {
+  if (!_dragEl || _dragKind !== kind) return;
+  e.preventDefault();
+  const el = _dragEl;
+  el.style.display = '';
+  el.classList.remove('dragging');
+  if (_phEl && _phEl.parentNode) _phEl.parentNode.insertBefore(el, _phEl);
+  dragEnd();
+  if (onDone) onDone();
+}
+
+function dragEnd() {
+  if (_dragEl) {
+    _dragEl.classList.remove('dragging');
+    _dragEl.style.display = '';
+  }
+  if (_phEl && _phEl.parentNode) _phEl.parentNode.removeChild(_phEl);
+  _dragEl = null; _dragKind = null; _phEl = null;
+}
+
+function saveModuleOrder() {
+  const order = [...document.querySelectorAll('.main .card[data-module]')]
+    .map(el => el.dataset.module);
+  savePrefs({ moduleOrder: order });
+}
+
+function applyModuleOrder() {
+  const order = loadPrefs().moduleOrder;
+  if (!order || !order.length) return;
+  const box = document.querySelector('.main');
+  if (!box) return;
+  const idx = new Map(order.map((k, i) => [k, i]));
+  const cards = [...box.querySelectorAll('.card[data-module]')];
+  cards.sort((a, b) => {
+    const ia = idx.has(a.dataset.module) ? idx.get(a.dataset.module) : 999;
+    const ib = idx.has(b.dataset.module) ? idx.get(b.dataset.module) : 999;
+    return ia - ib;
+  });
+  cards.forEach(el => box.appendChild(el));
+}
+
 // ---------- 折叠 ----------
-function applyFold(key, collapsed) {
+function applyFold(key, collapsed, animate) {
   const body = $(key + 'Body'), btn = $(key + 'Fold');
   if (!body || !btn) return;
-  body.classList.toggle('hidden', collapsed);
   btn.textContent = collapsed ? '▸' : '▾';
   btn.title = collapsed ? '展开' : '折叠';
   localStorage.setItem('autoba.fold.' + key, collapsed ? '1' : '0');
+
+  const isHidden = body.classList.contains('hidden');
+  if (!animate || collapsed === isHidden) {
+    body.classList.toggle('hidden', collapsed);
+    body.style.height = '';
+    body.style.overflow = '';
+    return;
+  }
+
+  if (collapsed) {
+    const h = body.scrollHeight;
+    body.style.height = h + 'px';
+    body.style.overflow = 'hidden';
+    const anim = body.animate(
+      [{ height: h + 'px', opacity: 1 }, { height: '0px', opacity: 0 }],
+      { duration: 240, easing: 'cubic-bezier(.4,0,.2,1)', fill: 'forwards' });
+    anim.onfinish = () => {
+      body.classList.add('hidden');
+      body.style.height = '';
+      body.style.overflow = '';
+      anim.cancel();
+    };
+  } else {
+    body.classList.remove('hidden');
+    const h = body.scrollHeight;
+    void body.offsetHeight;           // 强制回流，拿到真实高度
+    body.style.height = '0px';
+    body.style.overflow = 'hidden';
+    const anim = body.animate(
+      [{ height: '0px', opacity: 0 }, { height: h + 'px', opacity: 1 }],
+      { duration: 280, easing: 'cubic-bezier(.4,0,.2,1)', fill: 'forwards' });
+    anim.onfinish = () => {
+      body.style.height = '';
+      body.style.overflow = '';
+      anim.cancel();
+    };
+  }
 }
 function toggleFold(key) {
-  applyFold(key, !$(key + 'Body').classList.contains('hidden'));
+  applyFold(key, !$(key + 'Body').classList.contains('hidden'), true);
 }
+// ---------- 子区块展开/收起动画 ----------
+// details 默认高度瞬变，这里把内容包一层、接管高度动画，summary 始终留在原位
+function setupDetails() {
+  document.querySelectorAll('details.subsec').forEach(d => {
+    if (d.dataset.animReady === '1') return;
+    const summary = d.querySelector('summary');
+    if (!summary) return;
+    const body = document.createElement('div');
+    body.className = 'subsec-body';
+    let n = summary.nextSibling;
+    while (n) {
+      const next = n.nextSibling;
+      body.appendChild(n);
+      n = next;
+    }
+    d.appendChild(body);
+    summary.addEventListener('click', e => {
+      e.preventDefault();
+      toggleDetails(d, body);
+    });
+    d.dataset.animReady = '1';
+  });
+}
+
+function toggleDetails(d, body) {
+  if (d.dataset.anim === '1') return;
+  d.dataset.anim = '1';
+  body.style.overflow = 'hidden';
+  if (d.open) {
+    const h = body.scrollHeight;
+    body.style.height = h + 'px';
+    void body.offsetHeight;
+    const a = body.animate(
+      [{ height: h + 'px', opacity: 1 }, { height: '0px', opacity: 0 }],
+      { duration: 240, easing: 'cubic-bezier(.4,0,.2,1)', fill: 'forwards' });
+    a.onfinish = () => {
+      d.open = false;
+      body.style.height = '';
+      body.style.overflow = '';
+      a.cancel();
+      d.dataset.anim = '0';
+    };
+  } else {
+    d.open = true;
+    const h = body.scrollHeight;
+    body.style.height = '0px';
+    void body.offsetHeight;
+    const a = body.animate(
+      [{ height: '0px', opacity: 0 }, { height: h + 'px', opacity: 1 }],
+      { duration: 300, easing: 'cubic-bezier(.4,0,.2,1)', fill: 'forwards' });
+    a.onfinish = () => {
+      body.style.height = '';
+      body.style.overflow = '';
+      a.cancel();
+      d.dataset.anim = '0';
+    };
+  }
+}
+
 function ensureExpanded(key) {
   const body = $(key + 'Body');
   if (body && body.classList.contains('hidden')) applyFold(key, false);
 }
 function restoreFolds() {
-  ['plan', 'cafe', 'bounty', 'scrim', 'clan'].forEach(k => {
+  ['plan', 'cafe', 'bounty', 'scrim', 'clan', 'arena', 'gift', 'mail', 'mission', 'shop'].forEach(k => {
     if (localStorage.getItem('autoba.fold.' + k) === '1') applyFold(k, true);
   });
 }
@@ -380,8 +848,46 @@ async function refreshSession() {
     $('sessMsg').textContent = j.ok
       ? `有效 ✓ uid=${j.uid} rid=${j.rid} N=${j.n} zones=${j.zones}`
       : '无效: ' + j.error;
-    if (j.ok) { loadRoster(); loadCafe(); loadBounty(); loadScrim(); loadClan(); checkResource(); }
+    if (j.ok) { loadRoster(); loadCafe(); loadBounty(); loadScrim(); loadClan(); loadMail(); loadMission(); loadAutobuy(); loadShop(true); checkResource(); }
   } catch (e) { $('sessMsg').textContent = '探测失败: ' + e.message; }
+}
+
+// ---------- 界面设置持久化 ----------
+// 只存“用户编辑出来的东西”（票数分配/勾选项），跟着浏览器走。
+// 学生选择由 StudentPicker 自己维护（autoba.selected / autoba.cafeSelected）。
+const PREF_KEY = 'autoba.prefs';
+
+function loadPrefs() {
+  try { return JSON.parse(localStorage.getItem(PREF_KEY) || '{}') || {}; } catch (e) { return {}; }
+}
+
+let _prefTimer = null;
+
+function savePrefs(patch) {
+  const p = Object.assign(loadPrefs(), patch);
+  p.ts = Date.now() / 1000;
+  try { localStorage.setItem(PREF_KEY, JSON.stringify(p)); } catch (e) {}
+  // 后端落盘（防抖 800ms）：localStorage 是即时缓存，跨设备/清缓存靠这个文件
+  clearTimeout(_prefTimer);
+  _prefTimer = setTimeout(() => {
+    api('/api/ui-state', {
+      method: 'PUT', headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify(p),
+    }).catch(() => {});
+  }, 800);
+}
+
+// 启动时从后端拉一次；只有后端更新才覆盖本地，避免冲掉刚改的配置
+async function syncPrefs() {
+  try {
+    const j = await api('/api/ui-state');
+    if (!j || !j.ts) return;
+    if ((j.ts || 0) <= (loadPrefs().ts || 0)) return;
+    try { localStorage.setItem(PREF_KEY, JSON.stringify(j)); } catch (e) { return; }
+    applyModuleOrder();
+    if (BOUNTY) renderBounty(BOUNTY);
+    if (SCRIM) renderScrim(SCRIM);
+  } catch (e) { /* 后端不可用时纯本地 */ }
 }
 
 // ---------- 学生名册 / 选择器 ----------
@@ -436,7 +942,7 @@ class StudentPicker {
 
   save() { localStorage.setItem(this.key, JSON.stringify(this.sel)); }
   has(uid) { return this.sel.includes(String(uid)); }
-  fire() { if (this.onChange) this.onChange(); }
+  fire() { if (this.onChange) this.onChange(this); }
   get ids() { return this.sel.map(Number); }
 
   visible() {
@@ -545,7 +1051,7 @@ class StudentPicker {
 const schPicker = new StudentPicker('schPicker', 'autoba.selected',
   { onChange: () => invalidatePlan() });
 const cafePicker = new StudentPicker('cafePicker', 'autoba.cafeSelected',
-  { ordered: true, onChange: () => invalidateCafePlan() });
+  { ordered: true, onChange: (p) => { invalidateCafePlan(); savePrefs({ cafeStudents: p.ids }); } });
 
 async function loadRoster(force) {
   $('rosterMsg').textContent = '加载中…';
@@ -635,12 +1141,13 @@ async function clearTickets() {
 }
 
 async function doClear() {
-  if (CLEARING) return;
+  if (CLEARING) return { ok: false, error: '正在执行中' };
   hideConfirm();
   CLEARING = true;
   $('btnClear').disabled = true;
   $('planMsg').textContent = '执行中…';
   log('开始执行清票方案…');
+  let res = { ok: true };
   try {
     const j = await api('/api/schedule/clear', {
       method: 'POST', headers: {'Content-Type':'application/json'},
@@ -656,6 +1163,7 @@ async function doClear() {
   } catch (e) {
     $('planMsg').textContent = '执行失败: ' + e.message;
     log('清票失败: ' + e.message, 'err');
+    res = { ok: false, error: e.message };
   }
   CLEARING = false;
   $('btnClear').disabled = false;
@@ -664,6 +1172,7 @@ async function doClear() {
   ZONES_LOADED = false;
   if ($('zoneSec') && $('zoneSec').open) loadZones(true);
   await loadRoster(true);
+  return res;
 }
 
 // ---------- Zone 列表 ----------
@@ -702,6 +1211,55 @@ function renderZones(j) {
 
 // ---------- 咖啡厅 ----------
 let CAFE_STATE = null, CAFE_PLAN = null, CAFE_RUNNING = false;
+let CAFE_AUTO = null, CAFE_AUTO_TIMER = null;
+
+async function loadCafeAuto() {
+  try {
+    const j = await api('/api/cafe/auto');
+    CAFE_AUTO = j;
+    renderCafeAuto();
+  } catch (e) { /* 后端未重启时静默 */ }
+}
+
+function renderCafeAuto() {
+  const btn = $('btnCafeAuto');
+  if (!btn) return;
+  const on = !!(CAFE_AUTO && CAFE_AUTO.enabled);
+  let txt = on ? '自动摸头：开' : '自动摸头：关';
+  if (on && CAFE_AUTO && CAFE_AUTO.nextTick) {
+    const left = Math.max(0, Math.round(CAFE_AUTO.nextTick - Date.now() / 1000));
+    txt += ` · ${Math.floor(left / 60)}:${String(left % 60).padStart(2, '0')}`;
+  }
+  btn.textContent = txt;
+  btn.classList.toggle('active', on);
+}
+
+async function toggleCafeAuto() {
+  if (!CAFE_AUTO) await loadCafeAuto();
+  const next = !(CAFE_AUTO && CAFE_AUTO.enabled);
+  try {
+    const j = await api('/api/cafe/auto', {
+      method: 'POST', headers: {'Content-Type':'application/json'},
+      body: JSON.stringify({ enabled: next }),
+    });
+    CAFE_AUTO = Object.assign(CAFE_AUTO || {}, { enabled: j.enabled });
+    renderCafeAuto();
+    log(`[咖啡厅] 自动摸头已${j.enabled ? '开启' : '关闭'}`, 'ok');
+    await loadCafeAuto();
+    if (j.enabled) startCafeAutoPoll(); else stopCafeAutoPoll();
+  } catch (e) {
+    log('[咖啡厅] 自动摸头切换失败: ' + e.message, 'err');
+  }
+}
+
+function startCafeAutoPoll() {
+  stopCafeAutoPoll();
+  CAFE_AUTO_TIMER = setInterval(loadCafeAuto, 30000);
+}
+
+function stopCafeAutoPoll() {
+  if (CAFE_AUTO_TIMER) { clearInterval(CAFE_AUTO_TIMER); CAFE_AUTO_TIMER = null; }
+}
 
 function fmtCd(sec) {
   if (!sec) return '';
@@ -725,6 +1283,23 @@ async function loadCafe() {
   }
 }
 
+async function claimCafe() {
+  try {
+    const j = await api('/api/cafe/claim', { method: 'POST' });
+    if (j.ok) {
+      log(`[领取] 咖啡厅产出：${j.text}`, 'ok');
+      $('cafeMsg').textContent = `已领取 ${j.text}`;
+    } else {
+      log(`[领取] 跳过：${j.skipped}`, 'err');
+      $('cafeMsg').textContent = j.skipped;
+    }
+    await loadCafe();
+  } catch (e) {
+    log('[领取] 失败: ' + e.message, 'err');
+    $('cafeMsg').textContent = '领取失败: ' + e.message;
+  }
+}
+
 function renderCafe() {
   if (!CAFE_STATE) return;
   CAFE_STATE.cafes.forEach(c => {
@@ -736,8 +1311,9 @@ function renderCafe() {
       ` · Rank ${c.rank ?? '?'} · 邀请券 ${c.summonReady ? '就绪' : fmtCd(c.summonCooldown) + ' 后'}`;
     const rows = c.visitors.map(v => {
       const status = !v.owned ? '<span class="pill no">未拥有</span>'
+        : v.petReady ? (v.capped ? '<span class="pill ok">可摸 · 好感满</span>'
+                                 : '<span class="pill ok">可摸</span>')
         : v.capped ? '<span class="pill no">好感满</span>'
-        : v.petReady ? '<span class="pill ok">可摸</span>'
         : `<span class="pill">${fmtCd(v.petCooldown)}</span>`;
       const favor = v.owned ? `R${v.rank}/${v.cap}` : '—';
       return `<tr>
@@ -830,17 +1406,24 @@ async function runCafe() {
 }
 
 async function doCafeRun() {
-  if (CAFE_RUNNING) return;
+  if (CAFE_RUNNING) return { ok: false, error: '正在执行中' };
   hideCafeConfirm();
   CAFE_RUNNING = true;
   $('btnCafeRun').disabled = true;
   $('cafePlanMsg').textContent = '执行中…';
   log('开始咖啡厅摸头 + 邀请…');
+  let res = { ok: true };
   try {
     const j = await api('/api/cafe/run', {
       method: 'POST', headers: {'Content-Type':'application/json'},
       body: JSON.stringify({ students: cafePicker.ids }) });
     for (const s of j.steps) {
+      if (s.type === 'claim') {
+        if (s.ok) log(`[领取] 咖啡厅产出：${s.text}`, 'ok');
+        else if (s.skipped) log(`[领取] 跳过：${s.skipped}`, 'err');
+        else log(`[领取] 失败：${s.error}`, 'err');
+        continue;
+      }
       const tag = s.type === 'pet' ? '摸头' : (s.type === 'invite' ? '邀请' : '挪厅');
       if (s.ok) {
         const tail = s.type === 'pet' ? ` → R${s.rank} Exp${s.exp}` : ` → ${s.cafeId} 号厅`;
@@ -855,6 +1438,7 @@ async function doCafeRun() {
   } catch (e) {
     $('cafePlanMsg').textContent = '执行失败: ' + e.message;
     log('咖啡厅执行失败: ' + e.message, 'err');
+    res = { ok: false, error: e.message };
   }
   CAFE_RUNNING = false;
   $('btnCafeRun').disabled = false;
@@ -862,10 +1446,11 @@ async function doCafeRun() {
   $('cafePlanView').innerHTML = '';
   await loadCafe();
   await loadRoster(true);
+  return res;
 }
 
 // ---------- 悬赏通缉 ----------
-let BOUNTY = null, BOUNTY_RUNNING = false;
+let BOUNTY = null, BOUNTY_RUNNING = false, BOUNTY_PLAN = null;
 
 async function loadBounty() {
   $('bountyMsg').textContent = '读取中…';
@@ -883,16 +1468,25 @@ async function loadBounty() {
 }
 
 function renderBounty(j) {
-  const rows = j.maps.map(m => {
+  const prefs = loadPrefs();
+  const countsPref = prefs.bountyCounts || {};
+  const ordered = orderMaps(j.maps, prefs.bountyOrder);
+  BOUNTY.ordered = ordered;
+  const rows = ordered.map((m, i) => {
     const badge = m.noSweepable ? '<span class="pill no">无可扫</span>'
       : m.newNotCleared ? `<span class="pill no">新关 ${m.released} 未三星</span>`
       : '<span class="pill ok">就绪</span>';
-    return `<tr>
+    const n = Math.max(0, parseInt(countsPref[m.key], 10) || 0);
+    return `<tr data-row="${m.key}">
+      <td><span class="sub ord">${i + 1}</span>
+        <span class="drag-handle" draggable="true" title="拖动排序"
+              ondragstart="dragStart(event, this.closest('tr'), 'row')"
+              ondragend="dragEnd()">⠿</span></td>
       <td>${m.name}</td>
       <td>${m.sweepable ? `<code>${m.sweepable}</code>（${m.sweepableLabel ?? '?'}）` : '—'}${m.released && m.released !== m.sweepable
         ? `<br><span class="sub">已开放 ${m.released}（${m.releasedLabel ?? '?'}）</span>` : ''}</td>
       <td>${badge}</td>
-      <td><input class="bounty-n" data-key="${m.key}" type="number" min="0" max="6" value="0"
+      <td><input class="bounty-n" data-key="${m.key}" type="number" min="0" max="6" value="${n}"
                  style="width:70px" oninput="updateBountyTotal()"></td>
     </tr>`;
   }).join('');
@@ -904,10 +1498,57 @@ function renderBounty(j) {
     extra += `<div class="sub" style="color:var(--err)">通关历史出现表外关卡：${j.unknownStages.join('、')}</div>`;
   }
   $('bountyView').innerHTML =
-    `<table style="margin-top:6px"><tr><th>地图</th><th>可扫关</th><th>状态</th><th>票数</th></tr>${rows}</table>` + extra;
+    `<table style="margin-top:6px"><thead><tr><th>顺序</th><th>地图</th><th>可扫关</th><th>状态</th><th>票数</th></tr></thead>` +
+    `<tbody ondragover="dragOver(event, this, 'row')" ondrop="dragDrop(event, this, 'row', saveBountyOrder)">${rows}</tbody></table>` + extra;
   const needForce = j.resource.outdated || j.maps.some(m => m.newNotCleared) || (j.unknownStages || []).length;
   $('bountyForceWrap').classList.toggle('hidden', !needForce);
+  $('bountyForce').checked = !!needForce && !!loadPrefs().bountyForce;
   updateBountyTotal();
+}
+
+// 拖拽完成后：读新顺序 → 持久化 → 更新序号和截断结果（不重建表格，避免闪一下）
+function saveBountyOrder() {
+  const trs = [...document.querySelectorAll('#bountyView tbody tr[data-row]')];
+  const order = trs.map(tr => tr.dataset.row);
+  savePrefs({ bountyOrder: order });
+  trs.forEach((tr, i) => {
+    const o = tr.querySelector('.ord');
+    if (o) o.textContent = i + 1;
+  });
+  if (BOUNTY) {
+    BOUNTY.ordered = orderMaps(BOUNTY.maps, order);
+    updateBountyTotal();
+  }
+}
+
+// 用户自定义的执行顺序（优先级）：顺序越靠前，缺票时越晚被裁
+function orderMaps(maps, order) {
+  if (!order || !order.length) return maps.slice();
+  const idx = new Map(order.map((k, i) => [k, i]));
+  return maps.slice().sort((a, b) => {
+    const ia = idx.has(a.key) ? idx.get(a.key) : 999;
+    const ib = idx.has(b.key) ? idx.get(b.key) : 999;
+    return ia - ib;
+  });
+}
+
+// 配置是“策略”，余额是“今天实际有多少”。超配时按当前优先级顺序裁到最后一张，
+// 但**不回写配置**——明天补票后仍然是存下来的那套分配（比如 222）。
+function fitCounts(counts, balance, maps) {
+  if (balance == null) return Object.assign({}, counts);
+  let left = Math.max(0, balance);
+  const out = {};
+  (maps || []).forEach(m => {
+    const want = Math.max(0, parseInt(counts[m.key] || 0, 10) || 0);
+    const give = Math.min(want, left);
+    out[m.key] = give;
+    left -= give;
+  });
+  return out;
+}
+
+function sumValues(o) {
+  return Object.values(o).reduce((a, b) => a + b, 0);
 }
 
 function bountyCounts() {
@@ -919,16 +1560,30 @@ function bountyCounts() {
 }
 
 function updateBountyTotal() {
-  const total = Object.values(bountyCounts()).reduce((a, b) => a + b, 0);
-  const daily = BOUNTY ? BOUNTY.dailyTickets : 6;
+  const counts = bountyCounts();
+  if (Object.keys(counts).length) {
+    savePrefs({ bountyCounts: counts, bountyForce: $('bountyForce').checked });
+  }
+  const total = sumValues(counts);
+  const balance = BOUNTY ? BOUNTY.tickets : null;
+  const src = BOUNTY ? BOUNTY.ticketsSrc : null;
+  const fit = fitCounts(counts, balance, BOUNTY ? (BOUNTY.ordered || BOUNTY.maps) : []);
+  const over = balance != null && total > balance;
   const el = $('bountyTotal');
-  el.textContent = `已分配 ${total} / ${daily} 张` +
-    (total > 0 && total < daily ? '（未满，仍可执行）' : '');
-  el.className = total > daily ? 'sub err' : 'sub';
-  $('btnBounty').disabled = total === 0 || total > daily;
+  el.textContent = balance == null
+    ? `已分配 ${total} 张（当前余额未知，按实际执行）`
+    : `已分配 ${total} / 当前 ${balance} 张` +
+      (src === 'estimated' ? '（按每日补票推算）' : '') +
+      (over ? ` · 超出 ${total - balance} 张，将按 ${sumValues(fit)} 张执行` : '') +
+      (!over && total > 0 && total < balance ? '（未满，仍可执行）' : '') +
+      (balance === 0 ? ' · 今日票已用完' : '');
+  el.className = over ? 'sub err' : 'sub';
+  // 超配不再禁用按钮：按余额裁完照样能执行
+  $('btnBounty').disabled = total === 0 || balance === 0;
 }
 
 function hideBountyConfirm() {
+  BOUNTY_PLAN = null;
   $('bountyConfirm').classList.add('hidden');
   updateBountyTotal();
 }
@@ -938,20 +1593,26 @@ async function bountySweep() {
   if (BOUNTY_RUNNING) return;
   if (!BOUNTY) await loadBounty();
   if (!BOUNTY) return;
-  const c = bountyCounts();
-  const total = Object.values(c).reduce((a, b) => a + b, 0);
-  const daily = BOUNTY.dailyTickets;
-  if (total <= 0 || total > daily) return;
-  const parts = BOUNTY.maps.filter(m => c[m.key] > 0)
+  const want = bountyCounts();
+  const wantTotal = sumValues(want);
+  const balance = BOUNTY.tickets;
+  const c = fitCounts(want, balance, BOUNTY.ordered || BOUNTY.maps);
+  const total = sumValues(c);
+  if (total <= 0) return;
+  const parts = (BOUNTY.ordered || BOUNTY.maps).filter(m => c[m.key] > 0)
     .map(m => `${m.name} ×${c[m.key]}（${m.sweepable ?? '无可扫'}${m.sweepableLabel ? ` ${m.sweepableLabel}` : ''}）`);
-  const left = daily - total;
+  const trimmed = total < wantTotal ? `。配置 ${wantTotal} 张，余额不足已裁到 ${total} 张` : '';
+  BOUNTY_PLAN = c;      // 锁定确认条里的分配，执行时不再读输入框
   $('bountyConfirmText').textContent =
-    `将扫荡：${parts.join('，')}。合计 ${total} 张${left ? `，还剩 ${left} 张未分配` : ''}。`;
+    `将扫荡：${parts.join('，')}。合计 ${total} 张` +
+    (balance == null ? '（当前余额未知）' : `（当前余额 ${balance}，执行后剩 ${balance - total}）`) +
+    trimmed + '。';
   $('bountyConfirm').classList.remove('hidden');
   $('btnBounty').disabled = true;
 }
 
 async function doBountySweep() {
+  const counts = BOUNTY_PLAN || bountyCounts();
   hideBountyConfirm();
   BOUNTY_RUNNING = true;
   $('btnBounty').disabled = true;
@@ -961,7 +1622,7 @@ async function doBountySweep() {
   try {
     const j = await api('/api/bounty/sweep', {
       method: 'POST', headers: {'Content-Type':'application/json'},
-      body: JSON.stringify({ counts: bountyCounts(), force }) });
+      body: JSON.stringify({ counts, force }) });
     for (const s of j.steps) {
       if (s.ok) {
         const rw = (s.rewards || []).slice(0, 6).map(r => `${r.name}×${r.amount}`).join('、');
@@ -982,7 +1643,7 @@ async function doBountySweep() {
 }
 
 // ---------- 学院交流会 ----------
-let SCRIM = null, SCRIM_RUNNING = false;
+let SCRIM = null, SCRIM_RUNNING = false, SCRIM_PLAN = null;
 
 async function loadScrim() {
   $('scrimMsg').textContent = '读取中…';
@@ -1000,16 +1661,25 @@ async function loadScrim() {
 }
 
 function renderScrim(j) {
-  const rows = j.maps.map(m => {
+  const prefs = loadPrefs();
+  const countsPref = prefs.scrimCounts || {};
+  const ordered = orderMaps(j.maps, prefs.scrimOrder);
+  SCRIM.ordered = ordered;
+  const rows = ordered.map((m, i) => {
     const badge = m.noSweepable ? '<span class="pill no">无可扫</span>'
       : m.newNotCleared ? `<span class="pill no">新关 ${m.released} 未三星</span>`
       : '<span class="pill ok">就绪</span>';
-    return `<tr>
+    const n = Math.max(0, parseInt(countsPref[m.key], 10) || 0);
+    return `<tr data-row="${m.key}">
+      <td><span class="sub ord">${i + 1}</span>
+        <span class="drag-handle" draggable="true" title="拖动排序"
+              ondragstart="dragStart(event, this.closest('tr'), 'row')"
+              ondragend="dragEnd()">⠿</span></td>
       <td>${m.name}</td>
       <td>${m.sweepable ? `<code>${m.sweepable}</code>（${m.sweepableLabel ?? '?'}）` : '—'}${m.ap != null ? ` <span class="tag">体力 ${m.ap}</span>` : ''}${m.released && m.released !== m.sweepable
         ? `<br><span class="sub">已开放 ${m.released}（${m.releasedLabel ?? '?'}）</span>` : ''}</td>
       <td>${badge}</td>
-      <td><input class="scrim-n" data-key="${m.key}" type="number" min="0" max="6" value="0"
+      <td><input class="scrim-n" data-key="${m.key}" type="number" min="0" max="6" value="${n}"
                  style="width:70px" oninput="updateScrimTotal()"></td>
     </tr>`;
   }).join('');
@@ -1021,10 +1691,26 @@ function renderScrim(j) {
     extra += `<div class="sub" style="color:var(--err)">通关历史出现表外关卡：${j.unknownStages.join('、')}</div>`;
   }
   $('scrimView').innerHTML =
-    `<table style="margin-top:6px"><tr><th>地图</th><th>可扫关</th><th>状态</th><th>票数</th></tr>${rows}</table>` + extra;
+    `<table style="margin-top:6px"><thead><tr><th>顺序</th><th>地图</th><th>可扫关</th><th>状态</th><th>票数</th></tr></thead>` +
+    `<tbody ondragover="dragOver(event, this, 'row')" ondrop="dragDrop(event, this, 'row', saveScrimOrder)">${rows}</tbody></table>` + extra;
   const needForce = j.resource.outdated || j.maps.some(m => m.newNotCleared) || (j.unknownStages || []).length;
   $('scrimForceWrap').classList.toggle('hidden', !needForce);
+  $('scrimForce').checked = !!needForce && !!loadPrefs().scrimForce;
   updateScrimTotal();
+}
+
+function saveScrimOrder() {
+  const trs = [...document.querySelectorAll('#scrimView tbody tr[data-row]')];
+  const order = trs.map(tr => tr.dataset.row);
+  savePrefs({ scrimOrder: order });
+  trs.forEach((tr, i) => {
+    const o = tr.querySelector('.ord');
+    if (o) o.textContent = i + 1;
+  });
+  if (SCRIM) {
+    SCRIM.ordered = orderMaps(SCRIM.maps, order);
+    updateScrimTotal();
+  }
 }
 
 function scrimCounts() {
@@ -1036,15 +1722,30 @@ function scrimCounts() {
 }
 
 function updateScrimTotal() {
-  const total = Object.values(scrimCounts()).reduce((a, b) => a + b, 0);
-  const daily = SCRIM ? SCRIM.dailyTickets : 6;
+  const counts = scrimCounts();
+  if (Object.keys(counts).length) {
+    savePrefs({ scrimCounts: counts, scrimForce: $('scrimForce').checked });
+  }
+  const total = sumValues(counts);
+  const balance = SCRIM ? SCRIM.tickets : null;
+  const src = SCRIM ? SCRIM.ticketsSrc : null;
+  const fit = fitCounts(counts, balance, SCRIM ? (SCRIM.ordered || SCRIM.maps) : []);
+  const over = balance != null && total > balance;
   const el = $('scrimTotal');
-  el.textContent = `已分配 ${total} / ${daily} 张` + (total > 0 && total < daily ? '（未满，仍可执行）' : '');
-  el.className = total > daily ? 'sub err' : 'sub';
-  $('btnScrim').disabled = total === 0 || total > daily;
+  el.textContent = balance == null
+    ? `已分配 ${total} 张（当前余额未知，按实际执行）`
+    : `已分配 ${total} / 当前 ${balance} 张` +
+      (src === 'estimated' ? '（按每日补票推算）' : '') +
+      (over ? ` · 超出 ${total - balance} 张，将按 ${sumValues(fit)} 张执行` : '') +
+      (!over && total > 0 && total < balance ? '（未满，仍可执行）' : '') +
+      (balance === 0 ? ' · 今日票已用完' : '');
+  el.className = over ? 'sub err' : 'sub';
+  // 超配不再禁用：按余额裁完照样能执行
+  $('btnScrim').disabled = total === 0 || balance === 0;
 }
 
 function hideScrimConfirm() {
+  SCRIM_PLAN = null;
   $('scrimConfirm').classList.add('hidden');
   updateScrimTotal();
 }
@@ -1054,21 +1755,27 @@ async function scrimmageSweep() {
   if (SCRIM_RUNNING) return;
   if (!SCRIM) await loadScrim();
   if (!SCRIM) return;
-  const c = scrimCounts();
-  const total = Object.values(c).reduce((a, b) => a + b, 0);
-  const daily = SCRIM.dailyTickets;
-  if (total <= 0 || total > daily) return;
-  const parts = SCRIM.maps.filter(m => c[m.key] > 0)
+  const want = scrimCounts();
+  const wantTotal = sumValues(want);
+  const balance = SCRIM.tickets;
+  const c = fitCounts(want, balance, SCRIM.ordered || SCRIM.maps);
+  const total = sumValues(c);
+  if (total <= 0) return;
+  const parts = (SCRIM.ordered || SCRIM.maps).filter(m => c[m.key] > 0)
     .map(m => `${m.name} ×${c[m.key]}（${m.sweepable ?? '无可扫'}${m.sweepableLabel ? ` ${m.sweepableLabel}` : ''}）`);
-  const left = daily - total;
   const ap = SCRIM.maps.reduce((n, m) => n + (c[m.key] || 0) * (m.ap || 0), 0);
+  const trimmed = total < wantTotal ? `，配置 ${wantTotal} 张，余额不足已裁到 ${total} 张` : '';
+  SCRIM_PLAN = c;
   $('scrimConfirmText').textContent =
-    `将扫荡：${parts.join('，')}。合计 ${total} 张${left ? `，还剩 ${left} 张未分配` : ''}，预计消耗体力 ${ap}。`;
+    `将扫荡：${parts.join('，')}。合计 ${total} 张` +
+    (balance == null ? '（当前余额未知）' : `（当前余额 ${balance}，执行后剩 ${balance - total}）`) +
+    `，预计消耗体力 ${ap}${trimmed}。`;
   $('scrimConfirm').classList.remove('hidden');
   $('btnScrim').disabled = true;
 }
 
 async function doScrimSweep() {
+  const counts = SCRIM_PLAN || scrimCounts();
   hideScrimConfirm();
   SCRIM_RUNNING = true;
   $('btnScrim').disabled = true;
@@ -1078,7 +1785,7 @@ async function doScrimSweep() {
   try {
     const j = await api('/api/scrimmage/sweep', {
       method: 'POST', headers: {'Content-Type':'application/json'},
-      body: JSON.stringify({ counts: scrimCounts(), force }) });
+      body: JSON.stringify({ counts, force }) });
     for (const s of j.steps) {
       if (s.ok) {
         const rw = (s.rewards || []).slice(0, 6).map(r => `${r.name}×${r.amount}`).join('、');
@@ -1143,6 +1850,7 @@ async function clanCheckin() {
   const btn = $('btnClan');
   btn.disabled = true;
   $('clanMsg').textContent = '签到中…';
+  let res = { ok: true };
   try {
     const j = await api('/api/clan/checkin', { method: 'POST' });
     applyClan(j);
@@ -1152,8 +1860,550 @@ async function clanCheckin() {
   } catch (e) {
     $('clanMsg').textContent = '签到失败: ' + e.message;
     log('[签到] 失败: ' + e.message, 'err');
+    res = { ok: false, error: e.message };
   }
   btn.disabled = false;
+  return res;
+}
+
+// ---------- 战术对抗赛 ----------
+let ARENA = null, ARENA_RUNNING = false;
+let ARENA_CLEARING = false, ARENA_POLL = null, ARENA_LOG_IDX = 0;
+
+async function loadArena(force) {
+  $('arenaMsg').textContent = '读取中…';
+  try {
+    const j = await api('/api/arena/state' + (force ? '?force=1' : ''));
+    ARENA = j;
+    renderArena(j);
+    $('arenaMsg').textContent = j.dailyReady ? '每日奖励可领取' : '每日奖励已领过，明日再来';
+  } catch (e) {
+    $('arenaMsg').textContent = '读取失败: ' + e.message;
+    log('战术对抗赛读取失败: ' + e.message, 'err');
+  }
+}
+
+function renderArena(j) {
+  const rows = (j.opponents || []).map(o => `<tr>
+    <td>${o.index}</td>
+    <td>${o.leader}</td>
+    <td>R${o.rank ?? '?'}</td>
+    <td>Lv.${o.level ?? '?'}</td>
+    <td>${o.teamSize ?? '?'} 人</td>
+  </tr>`).join('');
+  $('arenaView').innerHTML =
+    `<table style="margin-top:6px"><thead><tr><th>#</th><th>代表</th><th>排名</th><th>等级</th><th>队伍</th></tr></thead>` +
+    `<tbody>${rows}</tbody></table>` +
+    `<div class="sub" style="margin-top:6px">赛季 ${j.season ?? '?'} · 分组 ${j.group ?? '?'} · 累计对战 ${j.allTimeRecord ?? '?'} 场</div>`;
+  $('arenaSummary').textContent =
+    `当前 R${j.rank ?? '?'} · 券 ${j.tickets ?? '?'} · 赛季 ${j.seasonRecord ?? '?'} 场` +
+    (j.dailyReady ? ' · 奖励待领' : '');
+}
+
+async function arenaClaim() {
+  if (ARENA_RUNNING) return { ok: false, error: '正在领取中' };
+  ARENA_RUNNING = true;
+  $('btnArenaReward').disabled = true;
+  $('arenaMsg').textContent = '领取中…';
+  const res = { ok: true };
+  try {
+    const j = await api('/api/arena/rewards', {
+      method: 'POST', headers: {'Content-Type':'application/json'},
+      body: JSON.stringify({ daily: true, cumulative: true }),
+    });
+    for (const [key, label] of [['daily', '每日排名奖励'], ['cumulative', '累计时数奖励']]) {
+      const r = j[key];
+      if (!r) continue;
+      if (!r.ok) {
+        log(`[竞技场] ${label}领取失败：${r.error}`, 'err');
+        res.ok = false;
+        res.error = res.error || r.error;
+        continue;
+      }
+      const rw = (r.rewards || []).map(x => `${x.name}×${x.amount}`).join('、');
+      const extra = key === 'cumulative' && r.amount != null ? `（${r.amount} 点）` : '';
+      log(`[竞技场] ${label}${extra}：${rw || '无奖励'}`, 'ok');
+    }
+    await loadArena(true);
+  } catch (e) {
+    $('arenaMsg').textContent = '领取失败: ' + e.message;
+    log('[竞技场] 领取失败: ' + e.message, 'err');
+    res.ok = false;
+    res.error = e.message;
+  }
+  ARENA_RUNNING = false;
+  $('btnArenaReward').disabled = false;
+  return res;
+}
+
+async function arenaClear(maxBattles) {
+  if (ARENA_CLEARING) return { ok: false, error: '正在清票中' };
+  try {
+    const j = await api('/api/arena/clear', {
+      method: 'POST', headers: {'Content-Type':'application/json'},
+      body: JSON.stringify({ maxBattles: maxBattles || 5, stopAtRank1: true, claimRewards: true }),
+    });
+    if (!j.ok) { log('[竞技场] ' + (j.error || '启动失败'), 'err'); return { ok: false, error: j.error }; }
+    ARENA_CLEARING = true;
+    $('btnArenaClear').disabled = true;
+    $('arenaMsg').textContent = `清票中…券 ${j.tickets}`;
+    startArenaPoll();
+    return { ok: true, tickets: j.tickets };
+  } catch (e) {
+    log('[竞技场] 清票启动失败: ' + e.message, 'err');
+    return { ok: false, error: e.message };
+  }
+}
+
+function startArenaPoll() {
+  stopArenaPoll();
+  ARENA_POLL = setInterval(pollArenaClear, 3000);
+  pollArenaClear();
+}
+
+function stopArenaPoll() {
+  if (ARENA_POLL) { clearInterval(ARENA_POLL); ARENA_POLL = null; }
+}
+
+async function pollArenaClear() {
+  try {
+    const j = await api('/api/arena/clear/status');
+    if (j.running) {
+      $('arenaMsg').textContent = `清票中…已完成 ${j.battles.length} 场（券 ${j.tickets}）`;
+      $('arenaSummary').textContent = `清票中 · 已完成 ${j.battles.length} 场`;
+      return;
+    }
+    stopArenaPoll();
+    ARENA_CLEARING = false;
+    $('btnArenaClear').disabled = false;
+    if (j.error) log('[竞技场] 清票失败：' + j.error, 'err');
+    const rw = [];
+    for (const k of ['daily', 'cumulative']) {
+      const r = (j.claimed || {})[k];
+      if (r && r.ok) rw.push(...(r.rewards || []).map(x => `${x.name}×${x.amount}`));
+    }
+    log(`[竞技场] 清票结束：${j.battles.length} 场（${j.stopReason || '达到上限'}）` +
+        (rw.length ? `；奖励 ${rw.join('、')}` : ''), j.error ? 'err' : 'ok');
+    await loadArena(true);
+  } catch (e) { /* 后端未重启时静默 */ }
+}
+
+async function runDailyArena() {
+  const r = await arenaClear(5);
+  if (!r.ok) throw new Error(r.error || '清票启动失败');
+  log(`[竞技场] 后台清票已启动（券 ${r.tickets}），等待期间继续执行后续模块`, 'sub');
+}
+
+// ---------- 每日免费礼包 ----------
+let GIFT = null, GIFT_RUNNING = false;
+
+async function loadGift() {
+  $('giftMsg').textContent = '读取中…';
+  try {
+    const j = await api('/api/gift/state');
+    GIFT = j;
+    if (!j.available) {
+      $('giftSummary').textContent = '商品未找到';
+      $('giftMsg').textContent = '商店里没有找到免费礼包商品';
+      $('btnGift').disabled = true;
+    } else if (j.purchased) {
+      $('giftSummary').textContent = '今日已领取';
+      $('giftMsg').textContent = `下次重置：${j.resetDate || '—'}`;
+      $('btnGift').disabled = true;
+    } else {
+      $('giftSummary').textContent = '今日可领取';
+      $('giftMsg').textContent = '10 行动点 + 10000 信用点';
+      $('btnGift').disabled = false;
+    }
+  } catch (e) {
+    $('giftMsg').textContent = '读取失败: ' + e.message;
+    log('免费礼包读取失败: ' + e.message, 'err');
+  }
+}
+
+async function giftClaim() {
+  if (GIFT_RUNNING) return { ok: false, error: '正在领取中' };
+  GIFT_RUNNING = true;
+  $('btnGift').disabled = true;
+  $('giftMsg').textContent = '领取中…';
+  const res = { ok: true };
+  try {
+    const j = await api('/api/gift/claim', { method: 'POST' });
+    const rw = (j.rewards || []).map(x => `${x.name}×${x.amount}`).join('、');
+    log(`[礼包] 领取成功：${rw || '无奖励'}`, 'ok');
+    $('giftMsg').textContent = `已领取：${rw || '无奖励'}`;
+    await loadGift();
+  } catch (e) {
+    $('giftMsg').textContent = '领取失败: ' + e.message;
+    log('[礼包] 领取失败: ' + e.message, 'err');
+    res.ok = false;
+    res.error = e.message;
+  }
+  GIFT_RUNNING = false;
+  return res;
+}
+
+// ---------- 邮箱 ----------
+let MAIL = null, MAIL_RUNNING = false;
+
+async function loadMail() {
+  $('mailMsg').textContent = '读取中…';
+  try {
+    const j = await api('/api/mail/state');
+    MAIL = j;
+    $('mailSummary').textContent = j.unread ? `未读 ${j.unread} 封` : '没有未读邮件';
+    $('mailMsg').textContent = j.unread ? `${j.unread} 封待领取` : '已清空';
+  } catch (e) {
+    $('mailMsg').textContent = '读取失败: ' + e.message;
+    log('[邮箱] 读取失败: ' + e.message, 'err');
+  }
+}
+
+async function claimMail() {
+  if (MAIL_RUNNING) return { ok: false, error: '正在领取中' };
+  MAIL_RUNNING = true;
+  $('btnMail').disabled = true;
+  try {
+    const j = await api('/api/mail/claim', { method: 'POST' });
+    if (!j.count) log('[邮箱] 没有可领取的邮件', 'sub');
+    else {
+      const rw = (j.rewards || []).map(r => `${r.name}×${r.amount}`).join('、');
+      log(`[邮箱] 领取 ${j.count} 封：${rw || '已领取'}`, 'ok');
+    }
+    await loadMail();
+    return { ok: true };
+  } catch (e) {
+    log('[邮箱] 领取失败: ' + e.message, 'err');
+    $('mailMsg').textContent = '领取失败: ' + e.message;
+    return { ok: false, error: e.message };
+  } finally {
+    MAIL_RUNNING = false;
+    $('btnMail').disabled = false;
+  }
+}
+
+async function runDailyMail() {
+  if (!MAIL) await loadMail();
+  const r = await claimMail();
+  if (r && r.ok === false) throw new Error(r.error || '领取失败');
+}
+
+// ---------- 任务奖励 ----------
+let MISSION = null, MISSION_RUNNING = false;
+const MISSION_CAT_NAMES = { 1: '日常', 2: '周常', 3: '成就' };
+
+async function loadMission() {
+  $('missionMsg').textContent = '读取中…';
+  try {
+    const j = await api('/api/mission/state');
+    MISSION = j;
+    const parts = Object.entries(j.claimable || {})
+      .map(([c, n]) => `${MISSION_CAT_NAMES[c] || ('类别' + c)} ${n}`);
+    // 服务端才是权威（已完成≠可领），这里只做提示
+    $('missionSummary').textContent = j.total ? `疑似 ${j.total} 项` : '没有待领';
+    $('missionMsg').textContent = parts.length ? '点「领取奖励」按类别扫一遍' : '已领完';
+  } catch (e) {
+    $('missionMsg').textContent = '读取失败: ' + e.message;
+    log('[任务] 读取失败: ' + e.message, 'err');
+  }
+}
+
+async function claimMission() {
+  if (MISSION_RUNNING) return { ok: false, error: '正在领取中' };
+  MISSION_RUNNING = true;
+  $('btnMission').disabled = true;
+  try {
+    if (!MISSION) await loadMission();
+    const cats = [1, 2, 3];      // 服务端决定，没得领会回 8000 → 按 skipped 处理
+    const j = await api('/api/mission/claim', {
+      method: 'POST', headers: {'Content-Type':'application/json'},
+      body: JSON.stringify({ categories: cats }),
+    });
+    for (const st of j.steps || []) {
+      const label = MISSION_CAT_NAMES[st.category] || ('类别' + st.category);
+      if (!st.ok) { log(`[任务] ${label}领取失败：${st.error}`, 'err'); continue; }
+      if (st.skipped) { log(`[任务] ${label}：${st.skipped}`, 'sub'); continue; }
+      const rw = (st.rewards || []).map(r => `${r.name}×${r.amount}`).join('、');
+      log(`[任务] ${label}：${rw || '已领取'}`, 'ok');
+    }
+    await loadMission();
+    return { ok: true };
+  } catch (e) {
+    log('[任务] 领取失败: ' + e.message, 'err');
+    $('missionMsg').textContent = '领取失败: ' + e.message;
+    return { ok: false, error: e.message };
+  } finally {
+    MISSION_RUNNING = false;
+    $('btnMission').disabled = false;
+  }
+}
+
+async function runDailyMission() {
+  if (!MISSION) await loadMission();
+  const r = await claimMission();
+  if (r && r.ok === false) throw new Error(r.error || '领取失败');
+}
+
+// ---------- 商店 ----------
+let SHOP = null;
+
+async function loadShop(force) {
+  $('shopMsg').textContent = '读取中…';
+  try {
+    const j = await api('/api/shop/state');
+    SHOP = j;
+    const sel = $('shopCat');
+    const keep = sel.value;
+    sel.innerHTML = (j.shops || []).map(s =>
+      `<option value="${s.category}">${s.name}（${s.products.length}）</option>`).join('');
+    if (keep && [...sel.options].some(o => o.value === keep)) sel.value = keep;
+    $('shopSummary').textContent = `${(j.shops || []).length} 个商店`;
+    $('shopMsg').textContent = '';
+    renderShop();
+  } catch (e) {
+    $('shopMsg').textContent = '读取失败: ' + e.message;
+    log('[商店] 读取失败: ' + e.message, 'err');
+  }
+}
+
+async function renderShop() {
+  if (!SHOP) return;
+  const cat = Number($('shopCat').value || 0);
+  const s = (SHOP.shops || []).find(x => x.category === cat);
+  if (!s) { $('shopView').innerHTML = '<span class="sub">该分类无商品</span>'; return; }
+  if (cat === 1) { await renderEligma(); return; }
+  $('shopPeriod').textContent = s.period ? `${s.period}刷新` +
+    (s.nextRefresh ? '（下次 ' + s.nextRefresh.slice(0, 10) + '）' : '') : '';
+  const protect = (AUTOBUY && AUTOBUY.protected || []).includes(cat);
+  const rows = (s.products || []).slice(0, 300).map(p => {
+    const cfg = (AUTOBUY && (AUTOBUY.items || []).find(x => x.shopExcelId === p.shopExcelId)) || null;
+    const canRefresh = !!(AUTOBUY && (AUTOBUY.manualRefresh || []).includes(cat));
+    const autoCells = protect ? '' : `<td><input type="checkbox" class="ab-on" data-id="${p.shopExcelId}" ${cfg ? 'checked' : ''}></td>
+      <td><input type="number" class="ab-num" data-id="${p.shopExcelId}" min="1" value="${cfg ? cfg.perRound : 1}" style="width:56px"></td>
+      <td><input type="number" class="ab-rounds" data-id="${p.shopExcelId}" min="1" max="${canRefresh ? 4 : 1}" value="${canRefresh ? (cfg ? cfg.rounds : 1) : 1}" ${canRefresh ? '' : 'disabled title="该商店不支持手动刷新"'} style="width:56px"></td>`;
+    return `<tr>
+    <td class="shop-name">${p.iconUrl ? `<img class="shop-icon" src="${p.iconUrl}" alt="" loading="lazy" onerror="this.remove()">` : ''}<span title="${(p.desc || '').replace(/"/g, '&quot;')}">${p.name}</span></td>
+    <td>${p.bought ?? 0}/${p.limit ?? '?'}</td>
+    <td>${p.soldOut ? '<span class="pill no">售罄</span>' : '<span class="pill ok">可买</span>'}</td>
+    <td>${p.soldOut || !p.goodsId ? '' : `<button class="ghost sm" onclick="buyShop(${p.shopExcelId},${p.goodsId},${!!p.isRefresh},this)">买 1</button>`}</td>
+    ${autoCells}
+  </tr>`;
+  }).join('');
+  const autoHead = protect ? '' : '<th>自动</th><th>数量/轮</th><th>轮数</th>';
+  $('shopView').innerHTML = (protect ? '<div class="sub" style="margin-bottom:6px">该商店受保护，不参与自动购买</div>' : '') +
+    `<div class="zone-scroll"><table>
+    <thead><tr><th>商品</th><th>已买/限购</th><th>状态</th><th></th>${autoHead}</tr></thead>
+    <tbody>${rows}</tbody></table></div>`;
+}
+
+async function renderEligma() {
+  $('shopView').innerHTML = '<span class="sub">读取精髓商店…</span>';
+  try {
+    const j = await api('/api/shop/eligma');
+    const rows = (j.rows || []).slice(0, 300).map(r => `<tr>
+      <td class="shop-name">${r.iconUrl ? `<img class="shop-icon" src="${r.iconUrl}" alt="" loading="lazy" onerror="this.remove()">` : ''}${r.name}</td>
+      <td>${'★'.repeat(r.star || 0)}</td>
+      <td>${r.bought}</td>
+      <td>${r.price} 精髓</td>
+      <td>${r.capped ? '已封顶' : '再买 ' + r.toNext + ' 片涨价'}</td>
+    </tr>`).join('');
+    $('shopView').innerHTML =
+      `<div class="sub" style="margin-bottom:6px">${j.note}（已拥有 ${(j.rows || []).length} 名）</div>` +
+      `<div class="zone-scroll"><table><thead><tr>
+         <th>学生</th><th>星级</th><th>已购碎片</th><th>当前单价</th><th>下次涨价</th>
+       </tr></thead><tbody>${rows}</tbody></table></div>`;
+  } catch (e) {
+    $('shopView').innerHTML = `<span class="sub">读取精髓商店失败：${e.message}</span>`;
+  }
+}
+
+async function buyShop(shopExcelId, goodsId, isRefresh, btn) {
+  btn.disabled = true;
+  try {
+    const j = await api('/api/shop/buy', {
+      method: 'POST', headers: {'Content-Type':'application/json'},
+      body: JSON.stringify({ shopExcelId, goodsId, count: 1, isRefresh: !!isRefresh }),
+    });
+    const rw = (j.rewards || []).map(r => `${r.name}×${r.amount}`).join('、');
+    log(`[商店] 购买成功：${rw || '已购买'}`, 'ok');
+    await loadShop(true);
+  } catch (e) {
+    log('[商店] 购买失败: ' + e.message, 'err');
+  } finally { btn.disabled = false; }
+}
+
+let AUTOBUY = null;
+
+async function loadAutobuy() {
+  try {
+    AUTOBUY = await api('/api/shop/autobuy');
+    $('autobuyEnabled').checked = !!AUTOBUY.enabled;
+    const n = (AUTOBUY.items || []).length;
+    $('autobuyMsg').textContent = n ? `已配置 ${n} 项` + (AUTOBUY.lastRun ? ` · 上次 ${AUTOBUY.lastRun}` : '')
+                                    : '未配置商品';
+  } catch (e) { /* 忽略 */ }
+}
+
+async function saveAutobuy() {
+  if (!SHOP) return;
+  const cat = Number($('shopCat').value || 0);
+  const items = ((AUTOBUY && AUTOBUY.items) || []).filter(x => x.category !== cat);
+  document.querySelectorAll('.ab-on').forEach(cb => {
+    if (!cb.checked) return;
+    const sid = Number(cb.dataset.id);
+    const num = document.querySelector(`.ab-num[data-id="${sid}"]`);
+    const rnd = document.querySelector(`.ab-rounds[data-id="${sid}"]`);
+    items.push({
+      shopExcelId: sid, category: cat,
+      perRound: Math.max(1, Number(num && num.value) || 1),
+      rounds: Math.max(1, Number(rnd && rnd.value) || 1),
+    });
+  });
+  try {
+    const j = await api('/api/shop/autobuy', {
+      method: 'POST', headers: {'Content-Type':'application/json'},
+      body: JSON.stringify({ enabled: $('autobuyEnabled').checked, items }),
+    });
+    await loadAutobuy();
+    renderShop();
+    log(`[商店] 自动购买配置已保存：${j.count} 项`, 'ok');
+  } catch (e) {
+    log('[商店] 保存自动购买失败: ' + e.message, 'err');
+  }
+}
+
+async function runAutobuy(force) {
+  $('autobuyMsg').textContent = '执行中…';
+  try {
+    const j = await api('/api/shop/autobuy/run', {
+      method: 'POST', headers: {'Content-Type':'application/json'},
+      body: JSON.stringify({ force: !!force }),
+    });
+    if (j.skipped) { $('autobuyMsg').textContent = j.skipped; log('[商店] ' + j.skipped, 'sub'); return { ok: true }; }
+    if (!j.ok) { log('[商店] ' + (j.error || '自动购买失败'), 'err'); return { ok: false, error: j.error }; }
+    for (const st of j.steps || []) {
+      if (st.ok) {
+        const rw = (st.rewards || []).map(r => `${r.name}×${r.amount}`).join('、');
+        log(`[商店] ${st.name} ×${st.count}${rw ? ' → ' + rw : ''}`, 'ok');
+      } else if (st.skipped) {
+        log(`[商店] 跳过 ${st.name || ('#' + st.shopExcelId)}：${st.skipped}`, 'sub');
+      } else {
+        log(`[商店] ${st.name || ('#' + st.shopExcelId)} 失败：${st.error}`, 'err');
+      }
+    }
+    await loadAutobuy();
+    renderShop();
+    return { ok: true };
+  } catch (e) {
+    log('[商店] 自动购买失败: ' + e.message, 'err');
+    $('autobuyMsg').textContent = '失败: ' + e.message;
+    return { ok: false, error: e.message };
+  }
+}
+
+async function runDailyShop() {
+  const r = await runAutobuy(false);
+  if (r && r.ok === false) throw new Error(r.error || '自动购买失败');
+}
+
+async function runDailyGift() {
+  if (!GIFT) await loadGift();
+  if (!GIFT || !GIFT.available) { log('免费礼包：商店无此商品，跳过', 'sub'); return; }
+  if (GIFT.purchased) { log('免费礼包：今日已领，跳过', 'sub'); return; }
+  const r = await giftClaim();
+  if (r && r.ok === false) throw new Error(r.error || '领取失败');
+}
+
+// ---------- 一键清日常（按模块拖拽顺序） ----------
+let ALL_RUNNING = false;
+const MODULE_LABELS = {
+  plan: '学园日程', cafe: '咖啡厅', bounty: '悬赏通缉',
+  scrim: '学院交流会', clan: '社交小组', arena: '战术对抗赛', gift: '免费礼包',
+  mail: '邮箱', mission: '任务奖励', shop: '商店',
+};
+
+function currentModuleOrder() {
+  return [...document.querySelectorAll('.main .card[data-module]')].map(el => el.dataset.module);
+}
+
+async function runDailyBounty() {
+  if (!BOUNTY) await loadBounty();
+  if (!BOUNTY) throw new Error('悬赏状态读取失败');
+  const plan = fitCounts(bountyCounts(), BOUNTY.tickets, BOUNTY.ordered || BOUNTY.maps);
+  if (sumValues(plan) <= 0) { log('悬赏：配置为 0，跳过', 'sub'); return; }
+  log(`悬赏：执行 ${sumValues(plan)} 张`, 'sub');
+  const j = await api('/api/bounty/sweep', {
+    method: 'POST', headers: {'Content-Type':'application/json'},
+    body: JSON.stringify({ counts: plan, force: $('bountyForce').checked }) });
+  for (const s of j.steps) {
+    if (s.ok) {
+      const rw = (s.rewards || []).slice(0, 6).map(r => `${r.name}×${r.amount}`).join('、');
+      log(`[悬赏] ${s.map} ${s.stage}${s.stageLabel ? `（${s.stageLabel}）` : ''} ×${s.count} → 券余 ${s.tickets}；${rw}`, 'ok');
+    } else {
+      log(`[悬赏] ${s.map} 失败：${s.error}`, 'err');
+    }
+  }
+  if (j.stopped) log('[悬赏] 停止：' + j.stopped, 'err');
+  BOUNTY = null;
+}
+
+async function runDailyScrim() {
+  if (!SCRIM) await loadScrim();
+  if (!SCRIM) throw new Error('交流会状态读取失败');
+  const plan = fitCounts(scrimCounts(), SCRIM.tickets, SCRIM.ordered || SCRIM.maps);
+  if (sumValues(plan) <= 0) { log('交流会：配置为 0，跳过', 'sub'); return; }
+  log(`交流会：执行 ${sumValues(plan)} 张`, 'sub');
+  const j = await api('/api/scrimmage/sweep', {
+    method: 'POST', headers: {'Content-Type':'application/json'},
+    body: JSON.stringify({ counts: plan, force: $('scrimForce').checked }) });
+  for (const s of j.steps) {
+    if (s.ok) {
+      const rw = (s.rewards || []).slice(0, 6).map(r => `${r.name}×${r.amount}`).join('、');
+      log(`[交流会] ${s.map} ${s.stage}${s.stageLabel ? `（${s.stageLabel}）` : ''} ×${s.count} → 券余 ${s.tickets}；${rw}`, 'ok');
+    } else {
+      log(`[交流会] ${s.map} 失败：${s.error}`, 'err');
+    }
+  }
+  if (j.stopped) log('[交流会] 停止：' + j.stopped, 'err');
+  SCRIM = null;
+}
+
+async function runAllDaily() {
+  if (ALL_RUNNING) return;
+  const order = currentModuleOrder();
+  const summary = order.map(k => MODULE_LABELS[k] || k).join(' → ');
+  if (!confirm(`按当前顺序执行一键清？\n\n${summary}\n\n日程/咖啡厅/签到会立刻发请求；悬赏与交流会按当前配置和余额执行；竞技场在后台清票（30s/场）。`)) return;
+  ALL_RUNNING = true;
+  $('btnRunAll').disabled = true;
+  log(`[一键清] 开始：${summary}`);
+  const failed = [];
+  for (const mod of order) {
+    const label = MODULE_LABELS[mod] || mod;
+    log(`[一键清] ▶ ${label}`);
+    try {
+      let res = { ok: true };
+      if (mod === 'plan') res = (await doClear()) || { ok: true };
+      else if (mod === 'cafe') res = (await doCafeRun()) || { ok: true };
+      else if (mod === 'bounty') await runDailyBounty();
+      else if (mod === 'scrim') await runDailyScrim();
+      else if (mod === 'clan') res = (await clanCheckin()) || { ok: true };
+      else if (mod === 'arena') { await runDailyArena(); }
+      else if (mod === 'gift') { await runDailyGift(); }
+      else if (mod === 'mail') await runDailyMail();
+      else if (mod === 'mission') await runDailyMission();
+      else if (mod === 'shop') await runDailyShop();
+      if (res && res.ok === false) throw new Error(res.error || '未知错误');
+      log(`[一键清] ✓ ${label}`, 'ok');
+    } catch (e) {
+      failed.push(label);
+      log(`[一键清] ✗ ${label}：${e.message}`, 'err');
+    }
+  }
+  log(failed.length ? `[一键清] 结束，失败：${failed.join('、')}` : '[一键清] 全部完成',
+      failed.length ? 'err' : 'ok');
+  if (ARENA_CLEARING) log('[一键清] 竞技场仍在后台清票（30s/场），可在卡片里看进度', 'sub');
+  ALL_RUNNING = false;
+  $('btnRunAll').disabled = false;
 }
 
 // ---------- 数据版本预警 ----------
@@ -1186,8 +2436,13 @@ async function ackResource() {
 }
 
 // 首屏
+setupDetails();
 restoreFolds();
+applyModuleOrder();
 refreshSession();
+syncPrefs();
+initLog();
+loadCafeAuto().then(() => { if (CAFE_AUTO && CAFE_AUTO.enabled) startCafeAutoPoll(); });
 </script>
 </body>
 </html>

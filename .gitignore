@@ -1,6 +1,9 @@
 __pycache__/
 *.pyc
 
+# 虚拟环境
+.venv/
+
 # 本机配置与凭据（不入库）
 env.local.bat
 yostar_credentials.json
@@ -11,3 +14,11 @@ session_state.json
 capture/
 session_plain_all.jsonl
 resp_plain_all.jsonl
+
+# 运行时状态与产物（不入库）
+clan_state.json
+resource_state.json
+ticket_state.json
+webui/ui_state.json
+webui/logs/
+webui/static/icons/

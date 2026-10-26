@@ -3,9 +3,10 @@
 功能：
   - 登录流：手机号 → 天御滑块（TCaptcha，AppID 从服务端配置拉）→ 验证码 → yostar Token
   - 会话：ba_session（rid 链 + N 计数），全局单例 + 锁串行化
-  - 业务：学园日程（getinfo / attendschedule）
+  - 业务：日程 / 咖啡厅 / 悬赏 / 交流会 / 小组 / 竞技场 / 礼包 / 邮箱 / 任务 / 商店
 
-启动：uv run --with fastapi --with uvicorn --with requests --with pycryptodome python -m uvicorn webui.server:app --port 8800
+启动：start_webui.bat（直接用项目 .venv 里的解释器，不走 uv run 的临时 overlay 环境）
+手动：.venv/Scripts/python.exe -m uvicorn webui.server:app --port 8800
 访问：http://127.0.0.1:8800
 """
 import json
@@ -13,9 +14,11 @@ import threading
 import time
 import datetime
 import itertools
+import asyncio
 
-from fastapi import FastAPI, HTTPException
+from fastapi import FastAPI, HTTPException, Request
 from fastapi.responses import FileResponse
+from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel
 import os
 import sys
@@ -50,6 +53,9 @@ PEOPLE_FILE = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__fil
 API_MAP = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), 'api_map_v2.json')
 
 app = FastAPI(title='autoBA WebUI')
+STATIC_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'static')
+os.makedirs(os.path.join(STATIC_DIR, 'icons'), exist_ok=True)
+app.mount('/static', StaticFiles(directory=STATIC_DIR), name='static')
 _lock = threading.Lock()          # sdk 签名调用串行化
 _sess_lock = threading.Lock()     # ba_session rid 链串行化
 _session = None                   # 懒加载的 ba_session
@@ -62,6 +68,30 @@ currency_names = _nm.get('currency', {})
 api_map = json.load(open(API_MAP, encoding='utf-8'))
 fes_ids = set(json.load(open(FES_FILE, encoding='utf-8'))['students'])
 people = json.load(open(PEOPLE_FILE, encoding='utf-8'))   # uid → {family, personal}（同位体分组）
+GOODS_INFO = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))),
+                          'tables', 'goods_info.json')
+try:
+    goods_info = json.load(open(GOODS_INFO, encoding='utf-8'))   # goodsId → {icon,name,desc,rarity}
+except Exception:
+    goods_info = {}
+# 学生名 → 碎片图标（item_names 里「XX的神名文字」的 icon 字段就是它）
+_SHARD_SUFFIX = '的神名文字'
+try:
+    _item_meta = json.load(open(os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))),
+                                             'tables', 'item_names.json'), encoding='utf-8'))
+    shard_icons = {v['name_cn'][:-len(_SHARD_SUFFIX)]: v['icon']
+                   for v in _item_meta.values()
+                   if (v.get('name_cn') or '').endswith(_SHARD_SUFFIX) and v.get('icon')}
+except Exception:
+    shard_icons = {}
+# 商店表每行的 LocalizeEtcId → 中文名/描述（比 goods_info 更权威，覆盖全部商品）
+try:
+    _loc_etc = json.load(open(os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))),
+                                           'tables', 'full', 'ExcelDB', 'LocalizeEtcExcel.json'),
+                              encoding='utf-8'))
+    localize_etc = {r['Key']: r for r in _loc_etc}
+except Exception:
+    localize_etc = {}
 
 
 def _sdk_post(path: str, body_obj: dict) -> dict:
@@ -232,8 +262,12 @@ def login_sync(force: bool = False) -> dict:
     """loginsync(1017) 原始响应（名册 + 双厅状态都在里面）。"""
     if not force and _sync['pkt'] and time.time() - _sync['ts'] < SYNC_TTL:
         return _sync['pkt']
+    # 照抄客户端的 SyncProtocols：少请求段会拿到空数据（货币/咖啡厅都踩过）
     _, pkt = call_session('/api/account/loginsync', 1017,
-                          business={'SyncProtocols': [20000, 1003, 2000], 'SkillCutInOption': 'Never'})
+                          business={'SyncProtocols': [20000, 1003, 2000, 3000, 5000, 12000, 6000, 22001, 17018,
+                                                      21000, 28001, 33000, 19000, 10006, 39006, 44000, 29002,
+                                                      30041, 45000, 46000, 46001, 47000, 49000, 27002, 49004],
+                                    'SkillCutInOption': 'Never'})
     _sync.update(ts=time.time(), pkt=pkt)
     return pkt
 
@@ -457,6 +491,7 @@ def academy_attend(req: AttendReq):
 
 CAFE_INVITE_CD = 20 * 3600      # 每厅独立 20h
 PET_CD = 3 * 3600               # 摸头 3h（按厅 × 访客实例）
+_ap_cap_cache = None
 
 
 def _dt(s):
@@ -511,7 +546,8 @@ def build_cafe_state():
                 'favorite': bool((r or {}).get('favorite')),
                 'fes': bool((r or {}).get('fes')),
                 'lastInteract': v.get('LastInteractTime'),
-                'petReady': owned and not (r or {}).get('capped') and ready,
+                # 好感满也摸：+0 好感，但算每日/周常「咖啡厅互动」任务计数（10-20 抓包实证）
+                'petReady': owned and ready,
                 'petCooldown': 0 if ready else left,
             })
         ready, left = _cooldown(db.get('LastSummonDate'), CAFE_INVITE_CD)
@@ -553,7 +589,7 @@ def build_cafe_plan(ordered):
         if not r:
             notes.append({'uid': uid, 'reason': '未拥有'})
         elif r['capped']:
-            notes.append({'uid': uid, 'reason': '好感已满'})
+            notes.append({'uid': uid, 'reason': '好感已满，不占邀请券'})
         else:
             sel.append(uid)
     sel_set = set(sel)
@@ -633,6 +669,83 @@ def _invite(cid: int, server_id: int):
                         business={'CafeDBId': _dbid(cid), 'CharacterServerId': server_id})
 
 
+def _ap_cap() -> int:
+    """行动点上限：CurrencyExcel(5).OverChargeLimit。"""
+    global _ap_cap_cache
+    if _ap_cap_cache is None:
+        rows = json.load(open(os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))),
+                                           'tables', 'full', 'ExcelDB', 'CurrencyExcel.json'),
+                              encoding='utf-8'))
+        _ap_cap_cache = next((int(r.get('OverChargeLimit') or 0) for r in rows if r.get('ID') == 5), 999)
+    return _ap_cap_cache
+
+
+def _currency(cid: int) -> int:
+    cur = ((login_sync().get('AccountCurrencySyncResponse') or {})
+           .get('AccountCurrencyDB') or {}).get('CurrencyDict') or {}
+    return int(cur.get(str(cid)) or 0)
+
+
+def _income_gains(pkt: dict) -> list:
+    """领取入账明细取自 ParcelResultDB.DisplaySequence，两厅各一条同类货币要合并。"""
+    sums = {}
+    for d in ((pkt.get('ParcelResultDB') or {}).get('DisplaySequence') or []):
+        amt = int(d.get('Amount') or 0)
+        pid = (d.get('Key') or {}).get('Id')
+        if amt > 0:
+            sums[pid] = sums.get(pid, 0) + amt
+    return [{'id': pid, 'amount': amt,
+             'name': currency_names.get(str(pid), f'货币{pid}')} for pid, amt in sums.items()]
+
+
+def _receive_income(force: bool = False) -> dict:
+    """领取两厅累积产出（信用点 + 行动点）：CafeDBId=0 一次领完。
+
+    行动点已到上限时默认不领——产出留在厅里不会浪费，硬领只会把 AP 溢出掉；
+    等 AP 消耗后下一轮巡检自然会领。
+    """
+    ap, cap = _currency(5), _ap_cap()
+    if not force and ap >= cap:
+        return {'ok': False, 'skipped': f'行动点 {ap}/{cap} 已满，先消耗再领', 'gains': []}
+    _, pkt = call_session('/api/cafe/receivecurrency', 20013,
+                          business={'AccountServerId': get_session().srv, 'CafeDBId': 0})
+    gains = _income_gains(pkt)
+    return {'ok': True, 'gains': gains,
+            'text': '、'.join(f"{g['name']} ×{g['amount']}" for g in gains) or '暂无可领取产出'}
+
+
+@app.get('/api/debug/currency')
+def debug_currency():
+    cur = ((login_sync().get('AccountCurrencySyncResponse') or {})
+           .get('AccountCurrencyDB') or {}).get('CurrencyDict') or {}
+    pkt = login_sync()
+    top = [k for k in pkt if isinstance(pkt[k], dict)]
+    sec = {}
+    for k in top:
+        if 'urrenc' in k or 'ccount' in k:
+            v = pkt[k]
+            sec[k] = list(v.keys())[:12]
+    return {'count': len(cur),
+            'items': {k: v for k, v in sorted(cur.items(), key=lambda x: int(x[0])) if int(k) in (1, 5, 6, 22, 23)},
+            'top_sections': top,
+            'currency_sections': sec}
+
+
+@app.get('/api/debug/cafe')
+def debug_cafe():
+    """咖啡厅产出原始状态（累积金额/舒适度/应用时间），排查领取用。"""
+    cgi = login_sync().get('CafeGetInfoResponse') or {}
+    out = []
+    for c in (cgi.get('CafeDBs') or []):
+        p = c.get('ProductionDB') or {}
+        out.append({'cafeId': c.get('CafeId'), 'rank': c.get('CafeRank'),
+                    'lastUpdate': c.get('LastUpdate'),
+                    'applied': c.get('ProductionAppliedTime'),
+                    'comfort': p.get('ComfortValue'), 'appliedDate': p.get('AppliedDate'),
+                    'infos': p.get('ProductionParcelInfos')})
+    return {'ap': _currency(5), 'apCap': _ap_cap(), 'credit': _currency(1), 'cafes': out}
+
+
 @app.get('/api/cafe/state')
 def cafe_state():
     st = build_cafe_state()
@@ -667,11 +780,31 @@ def cafe_pet(req: CafePetReq):
             'exp': ch.get('FavorExp'), 'star': ch.get('StarGrade')}
 
 
+@app.post('/api/cafe/claim')
+def cafe_claim(force: bool = False):
+    """手动领取咖啡厅产出；force=True 时行动点满了也硬领。"""
+    try:
+        j = _receive_income(force=force)
+    except Exception as e:
+        raise HTTPException(502, f'领取失败：{str(e)[:120]}')
+    _sync['ts'] = 0.0
+    return j
+
+
 @app.post('/api/cafe/run')
-def cafe_run(req: CafePlanReq):
-    """先摸遍所有可摸访客，再按方案邀请/挪厅并各摸一次。"""
-    st = build_cafe_state()
+def cafe_run(req: CafePlanReq, invite: bool = True, max_invites: int = 99):
+    """先领产出，再摸遍所有可摸访客，最后按方案邀请/挪厅并各摸一次。
+
+    invite=False      只领+只摸不邀请（定时巡检的“只摸”轮次）
+    max_invites=N     单次最多消耗 N 张邀请券（定时任务每窗口只用 1 张）
+    """
     steps = []
+    try:
+        steps.append({'type': 'claim', **_receive_income()})
+    except Exception as e:
+        steps.append({'type': 'claim', 'ok': False, 'error': str(e)[:120]})
+
+    st = build_cafe_state()
     for c in st['cafes']:
         for v in c['visitors']:
             if not v['petReady']:
@@ -685,10 +818,15 @@ def cafe_run(req: CafePlanReq):
                 steps.append({'type': 'pet', 'cafeId': c['cafeId'], 'uid': v['uid'],
                               'name': v['name'], 'ok': False, 'error': str(e)[:120]})
 
+    if not invite:
+        _roster['ts'] = 0.0
+        _sync['ts'] = 0.0
+        return {'steps': steps, 'stopped': None, 'planned': 0}
+
     built = build_cafe_plan(req.students)
     roster = built['state']['roster']
     stopped = None
-    for p in built['plan']:
+    for p in built['plan'][:max(0, max_invites)]:
         server_id = (roster.get(str(p['uid'])) or {}).get('serverId')
         if not server_id:
             stopped = f"邀请 {p['name']} 失败：名册缺少 ServerId"
@@ -715,6 +853,137 @@ def cafe_run(req: CafePlanReq):
     _roster['ts'] = 0.0
     _sync['ts'] = 0.0
     return {'steps': steps, 'stopped': stopped, 'planned': len(built['plan'])}
+
+
+# ---------- 咖啡厅自动摸头 ----------
+# 机制：摸头 3h CD（按「厅 × 访客实例」）；访客 4:00 / 16:00 两批刷新。
+# 两厅邀请券独立、各 20h CD，所以能错开：4:00 用 1 号厅券摸 4 次 → 16:00 刷新走 →
+# 16:00 用 2 号厅券再拉回来摸 4 次 = 一天 8 次。
+# 巡检只是"摸到可摸的 + 券好了就按名单邀请"，不预设时段，靠 CD 自然逼近上限。
+CAFE_AUTO_INTERVAL = 600
+_cafe_auto = {'enabled': False, 'task': None, 'lastTick': 0, 'nextTick': 0,
+              'lastResult': None, 'lastError': None, 'lastClaimError': None}
+
+
+def _load_ui_state() -> dict:
+    try:
+        with open(UI_STATE, encoding='utf-8') as f:
+            return json.load(f)
+    except Exception:
+        return {}
+
+
+def _write_ui_state(data: dict):
+    tmp = UI_STATE + '.tmp'
+    with open(tmp, 'w', encoding='utf-8') as f:
+        json.dump(data, f, ensure_ascii=False, indent=1)
+    os.replace(tmp, UI_STATE)
+
+
+def _log_line(text: str, cls: str = ''):
+    """后端直接写操作日志（定时任务没有前端可调）。"""
+    now = datetime.datetime.now()
+    os.makedirs(LOG_DIR, exist_ok=True)
+    entry = {'ts': now.isoformat(), 'text': text, 'cls': cls}
+    with open(os.path.join(LOG_DIR, f"{now.strftime('%Y-%m-%d')}.jsonl"), 'a',
+              encoding='utf-8') as f:
+        f.write(json.dumps(entry, ensure_ascii=False) + '\n')
+
+
+def _cafe_window_key(now=None) -> str:
+    """当前刷新窗口：4:00-16:00 记作当天 T04，16:00-次日 4:00 记作 T16。"""
+    d = now or datetime.datetime.now()
+    if d.hour < 4:
+        return f"{(d - datetime.timedelta(days=1)).strftime('%Y-%m-%d')}T16"
+    if d.hour < 16:
+        return f"{d.strftime('%Y-%m-%d')}T04"
+    return f"{d.strftime('%Y-%m-%d')}T16"
+
+
+def _cafe_auto_once():
+    """一次巡检：摸遍可摸的；每个刷新窗口只用一张券做邀请/挪厅。
+
+    窗口内首轮：学生在某厅 → 先白摸一次，再用对面厅的券挪过去重置 CD（档位二）
+                不在厅   → 直接用券邀请（档位一）
+    窗口内后续轮次：invite=False，只摸不动券，把另一张券留给下个窗口
+    """
+    state = _load_ui_state()
+    students = state.get('cafeStudents') or []
+    window = _cafe_window_key()
+    do_invite = state.get('cafeInviteWindow') != window
+    res = cafe_run(CafePlanReq(students=students), invite=do_invite, max_invites=1)
+    if do_invite and not res.get('stopped'):
+        state['cafeInviteWindow'] = window
+        _write_ui_state(state)
+    return res
+
+
+async def _cafe_auto_loop():
+    while True:
+        try:
+            if _cafe_auto['enabled']:
+                res = await asyncio.to_thread(_cafe_auto_once)
+                steps = res.get('steps') or []
+                pets = sum(1 for s in steps if s.get('type') == 'pet' and s.get('ok'))
+                inv = sum(1 for s in steps if s.get('type') in ('invite', 'move') and s.get('ok'))
+                claim = next((s for s in steps if s.get('type') == 'claim'), {})
+                claimed = claim.get('text') if claim.get('ok') and claim.get('gains') else ''
+                _cafe_auto['lastResult'] = {
+                    'ts': datetime.datetime.now().isoformat(),
+                    'pets': pets,
+                    'invites': inv,
+                    'claimed': claimed or claim.get('skipped') or '',
+                    'stopped': res.get('stopped'),
+                }
+                _cafe_auto['lastError'] = None
+                claim_err = '' if (claim.get('ok') or claim.get('skipped')) else (claim.get('error') or '')
+                if claim_err and claim_err != _cafe_auto['lastClaimError']:
+                    _log_line(f'[自动摸头] 领取收益失败：{claim_err}', 'err')
+                _cafe_auto['lastClaimError'] = claim_err
+                if pets or inv:
+                    _log_line(f'[自动摸头] 摸头 {pets} 次，邀请/挪厅 {inv} 次'
+                              + (f'，领取 {claimed}' if claimed else ''), 'ok')
+                    _roster['ts'] = 0.0
+        except Exception as e:
+            _cafe_auto['lastError'] = str(e)[:200]
+            _log_line(f'[自动摸头] 失败：{str(e)[:150]}', 'err')
+        _cafe_auto['lastTick'] = time.time()
+        _cafe_auto['nextTick'] = time.time() + CAFE_AUTO_INTERVAL
+        await asyncio.sleep(CAFE_AUTO_INTERVAL)
+
+
+@app.on_event('startup')
+async def _start_cafe_auto():
+    st = _load_ui_state()
+    _cafe_auto['enabled'] = bool(st.get('cafeAuto'))
+    _cafe_auto['task'] = asyncio.create_task(_cafe_auto_loop())
+
+
+class CafeAutoReq(BaseModel):
+    enabled: bool
+
+
+@app.get('/api/cafe/auto')
+def cafe_auto_state():
+    return {
+        'enabled': _cafe_auto['enabled'],
+        'interval': CAFE_AUTO_INTERVAL,
+        'lastTick': _cafe_auto['lastTick'],
+        'nextTick': _cafe_auto['nextTick'],
+        'lastResult': _cafe_auto['lastResult'],
+        'lastError': _cafe_auto['lastError'],
+    }
+
+
+@app.post('/api/cafe/auto')
+def cafe_auto_toggle(req: CafeAutoReq):
+    _cafe_auto['enabled'] = bool(req.enabled)
+    if not req.enabled:
+        _cafe_auto['nextTick'] = 0
+    st = _load_ui_state()
+    st['cafeAuto'] = bool(req.enabled)
+    _write_ui_state(st)
+    return {'ok': True, 'enabled': _cafe_auto['enabled']}
 
 
 # ---------- 社交小组（社团）签到 ----------
@@ -849,6 +1118,97 @@ def resource_ack(req: ResourceAckReq):
     return {'ok': True, 'ack': state['ack']}
 
 
+# ---------- 界面设置持久化 ----------
+# 对齐 autopcr 的做法（配置存后端文件，前端只做即时缓存），我们是单用户，
+# 一个文件足够，不像 autopcr 那样按 qid 分目录。
+UI_STATE = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'ui_state.json')
+
+
+@app.get('/api/ui-state')
+def get_ui_state():
+    try:
+        with open(UI_STATE, encoding='utf-8') as f:
+            return json.load(f)
+    except Exception:
+        return {}
+
+
+@app.put('/api/ui-state')
+async def put_ui_state(request: Request):
+    try:
+        data = await request.json()
+    except Exception:
+        raise HTTPException(400, '请求体不是合法 JSON')
+    if not isinstance(data, dict):
+        raise HTTPException(400, '请求体必须是对象')
+    data['ts'] = time.time()
+    tmp = UI_STATE + '.tmp'
+    with open(tmp, 'w', encoding='utf-8') as f:
+        json.dump(data, f, ensure_ascii=False, indent=1)
+    os.replace(tmp, UI_STATE)      # 原子替换，避免写一半断电留下坏文件
+    return {'ok': True, 'ts': data['ts']}
+
+
+# ---------- 操作日志（按天落盘，前端可回看） ----------
+LOG_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'logs')
+
+
+@app.post('/api/log')
+async def post_log(request: Request):
+    try:
+        data = await request.json()
+    except Exception:
+        raise HTTPException(400, '请求体不是合法 JSON')
+    entries = data.get('entries') if isinstance(data, dict) else None
+    if not isinstance(entries, list):
+        raise HTTPException(400, 'entries 必须是数组')
+    os.makedirs(LOG_DIR, exist_ok=True)
+    buckets = {}
+    for e in entries[:200]:          # 单次上限，防误传大包
+        if not isinstance(e, dict):
+            continue
+        day = str(e.get('day') or '')
+        text = str(e.get('text') or '')[:1000]
+        if len(day) != 10 or not text:
+            continue
+        buckets.setdefault(day, []).append(
+            {'ts': str(e.get('ts') or ''), 'text': text, 'cls': str(e.get('cls') or '')})
+    for day, rows in buckets.items():
+        with open(os.path.join(LOG_DIR, f'{day}.jsonl'), 'a', encoding='utf-8') as f:
+            for r in rows:
+                f.write(json.dumps(r, ensure_ascii=False) + '\n')
+    return {'ok': True, 'written': sum(len(v) for v in buckets.values())}
+
+
+@app.get('/api/log/dates')
+def log_dates():
+    try:
+        names = [n[:-6] for n in os.listdir(LOG_DIR) if n.endswith('.jsonl')]
+    except Exception:
+        return []
+    return sorted(names, reverse=True)
+
+
+@app.get('/api/log')
+def get_log(date: str = '', limit: int = 800):
+    if len(date) != 10 or not date.replace('-', '').isdigit():
+        raise HTTPException(400, 'date 需为 YYYY-MM-DD')
+    path = os.path.join(LOG_DIR, f'{date}.jsonl')
+    if not os.path.exists(path):
+        return []
+    rows = []
+    with open(path, encoding='utf-8') as f:
+        for line in f:
+            line = line.strip()
+            if not line:
+                continue
+            try:
+                rows.append(json.loads(line))
+            except Exception:
+                continue
+    return rows[-limit:]
+
+
 # ---------- 悬赏通缉 ----------
 BOUNTY_MAPS = [
     {'key': 'ChaserA', 'name': '悬赏通缉：高架公路', 'short': '高架公路'},
@@ -862,6 +1222,133 @@ def _stage_label(n: int) -> str:
     return chr(ord('A') + n - 1) if 1 <= n <= 26 else str(n)
 BOUNTY_DAILY = 6
 _wd_table = None
+
+
+TICKET_STATE = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))),
+                            'ticket_state.json')
+
+
+# 票类每日补充规则：源自 tables/full/ExcelDB/CurrencyExcel.json
+#   DailyRefillAmount / DailyRefillTime=[400]（凌晨 4:00）/ ChargeLimit / OverChargeLimit
+# 服务端 CurrencyDict 只保留“最后一次变更后的值”，跨天补票不落库——实测 2026-10-20
+# 服务端日程券给 0（UpdateTime 停在昨夜），客户端界面却显示 7。客户端按下面这套规则
+# 本地推算，这里照抄同一套逻辑，否则会把 0 当成“没票”。
+TICKET_RULES = {
+    6:  {'refill': 10, 'cap': None},   # 日程券：上限随学园地点等级总和变化
+    22: {'refill': 6,  'cap': 30},     # 悬赏通缉整合票
+    23: {'refill': 6,  'cap': 30},     # 学院交流会整合票
+    24: {'refill': 1,  'cap': 7},      # 大决战 A
+    25: {'refill': 1,  'cap': 7},      # 大决战 B
+    26: {'refill': 1,  'cap': 7},      # 大决战 C
+    27: {'refill': 1,  'cap': 7},      # 大决战 D
+}
+# AcademyTicketExcel.json：LocationRankSum → ScheduleTicktetMax
+_ACADEMY_TICKET_CAP = ((80, 7), (50, 6), (25, 5), (10, 4), (1, 3))
+_rank = {'ts': 0.0, 'sum': None}
+RANK_TTL = 600
+
+
+def _iso_ts(s):
+    """ISO 时间串 → 时间戳；空值/占位值返回 None。"""
+    if not s or str(s).startswith('0001'):
+        return None
+    try:
+        return datetime.datetime.fromisoformat(str(s)).timestamp()
+    except ValueError:
+        return None
+
+
+def _academy_rank_sum() -> int:
+    """学园各地点 Rank 之和（日程券上限依据），10 分钟缓存。"""
+    if _rank['sum'] is not None and time.time() - _rank['ts'] < RANK_TTL:
+        return _rank['sum']
+    try:
+        _, pkt = call_session('/api/academy/getinfo', 24000)
+        s = sum(int(l.get('Rank') or 0) for l in (pkt.get('AcademyLocationDBs') or [])) or 1
+    except Exception:
+        s = _rank['sum'] or 1
+    _rank.update(ts=time.time(), sum=s)
+    return s
+
+
+def _academy_ticket_cap(rank_sum: int) -> int:
+    for need, cap in _ACADEMY_TICKET_CAP:
+        if rank_sum >= need:
+            return cap
+    return 3
+
+
+def _reset_ts() -> float:
+    """最近一次 4:00 补票时刻的本地时间戳。"""
+    now = datetime.datetime.now()
+    t = now.replace(hour=4, minute=0, second=0, microsecond=0)
+    if now < t:
+        t -= datetime.timedelta(days=1)
+    return t.timestamp()
+
+
+def _ticket_cache(cid: int):
+    """本地记录的操作后余额 → (值, 时间戳)。跨天不再直接作废，而是当推算基数。"""
+    try:
+        with open(TICKET_STATE, encoding='utf-8') as f:
+            d = json.load(f)
+    except Exception:
+        return None, None
+    v = d.get(str(cid))
+    if v is None:
+        return None, None
+    return int(v), _iso_ts(d.get(f'{cid}_ts'))
+
+
+def _ticket_cache_set(cid: int, value: int):
+    """操作响应带回的余额最权威，直接落盘并记时间。"""
+    d = {}
+    try:
+        with open(TICKET_STATE, encoding='utf-8') as f:
+            d = json.load(f)
+    except Exception:
+        pass
+    d[str(cid)] = int(value)
+    d[f'{cid}_ts'] = datetime.datetime.now().isoformat()
+    d['day'] = _game_day()
+    with open(TICKET_STATE, 'w', encoding='utf-8') as f:
+        json.dump(d, f, ensure_ascii=False)
+
+
+def _ticket_balance(cid: int):
+    """返回 (余额, 来源)。来源 measured=实测；estimated=按补票规则推算；unknown=未知。
+
+    取“操作响应本地记录”与“loginsync 货币快照”中时间较新者作基准：
+    今天变更过 → 服务端值就是当前余额；跨天没动 → 上次值 + 每日补充 × 天数（截上限）。
+    """
+    rule = TICKET_RULES.get(cid)
+    if not rule:
+        return None, 'unknown'
+    cap = rule['cap']
+    if cap is None:
+        cap = _academy_ticket_cap(_academy_rank_sum())
+
+    best_v, best_t = _ticket_cache(cid)
+    try:
+        db = ((login_sync().get('AccountCurrencySyncResponse') or {})
+              .get('AccountCurrencyDB') or {})
+        cur = db.get('CurrencyDict') or {}
+        if str(cid) in cur:
+            t = _iso_ts((db.get('UpdateTimeDict') or {}).get(str(cid)))
+            if best_t is None or (t is not None and t > best_t):
+                best_t, best_v = t, int(cur.get(str(cid)) or 0)
+    except Exception:
+        pass
+
+    if best_v is None:
+        return None, 'unknown'
+    reset = _reset_ts()
+    if best_t is not None and best_t >= reset:
+        return best_v, 'measured'
+    days = 1
+    if best_t is not None:
+        days = max(1, int((reset - best_t) // 86400) + 1)
+    return min(best_v + rule['refill'] * days, cap), 'estimated'
 _bounty = {'ts': 0.0, 'data': None}
 BOUNTY_TTL = 30
 
@@ -910,10 +1397,13 @@ def build_bounty_state(force=False):
 
     unknown = sorted(sid for sid in hist if sid not in known)
     res = build_resource_status()
+    _tk, _src = _ticket_balance(22)
     data = {
         'maps': maps,
         'dailyTickets': BOUNTY_DAILY,
-        'unknownStages': unknown,
+        'tickets': _tk,
+        'ticketsSrc': _src,
+        'unknownStages': sorted(sid for sid in hist if sid not in known),
         'resource': {'outdated': res.get('outdated'), 'local': res.get('local'),
                      'server': res.get('server')},
     }
@@ -957,10 +1447,10 @@ def bounty_sweep(req: BountySweepReq):
     total = sum(counts.values())
     if total <= 0:
         raise HTTPException(400, '票数合计为 0')
-    if total > BOUNTY_DAILY:
-        raise HTTPException(400, f'票数合计 {total} 超过每日 {BOUNTY_DAILY} 张')
-
     st = build_bounty_state(force=True)
+    balance, _ = _ticket_balance(22)
+    if balance is not None and total > balance:
+        raise HTTPException(409, f'本地记录的悬赏挑战券为 {balance} 张，不足以扫荡 {total} 张')
     if st['resource']['outdated'] and not req.force:
         raise HTTPException(409, '游戏数据已更新，可能新增关卡；请先更新 tables，或勾选强制执')
     if st['unknownStages'] and not req.force:
@@ -991,6 +1481,8 @@ def bounty_sweep(req: BountySweepReq):
         pr = pkt.get('ParcelResult') or {}
         cur = ((pr.get('AccountCurrencyDB') or {}).get('CurrencyDict') or {})
         tickets = cur.get('22')
+        if tickets is not None:
+            _ticket_cache_set(22, int(tickets))
         steps.append({'map': m['name'], 'ok': True, 'count': n, 'stage': m['sweepable'],
                       'stageLabel': m.get('sweepableLabel'),
                       'tickets': tickets, 'rewards': _sum_parcels(pkt.get('ClearParcels'))})
@@ -1078,9 +1570,12 @@ def build_scrim_state(force=False):
         })
 
     res = build_resource_status()
+    _tk, _src = _ticket_balance(23)
     data = {
         'maps': maps,
         'dailyTickets': SCRIM_DAILY,
+        'tickets': _tk,
+        'ticketsSrc': _src,
         'unknownStages': sorted(sid for sid in hist if sid not in known),
         'resource': {'outdated': res.get('outdated'), 'local': res.get('local'),
                      'server': res.get('server')},
@@ -1101,10 +1596,10 @@ def scrimmage_sweep(req: BountySweepReq):
     total = sum(counts.values())
     if total <= 0:
         raise HTTPException(400, '票数合计为 0')
-    if total > SCRIM_DAILY:
-        raise HTTPException(400, f'票数合计 {total} 超过每日 {SCRIM_DAILY} 张')
-
     st = build_scrim_state(force=True)
+    balance, _ = _ticket_balance(23)
+    if balance is not None and total > balance:
+        raise HTTPException(409, f'本地记录的学院交流会券为 {balance} 张，不足以扫荡 {total} 张')
     if st['resource']['outdated'] and not req.force:
         raise HTTPException(409, '游戏数据已更新，可能新增关卡；请先更新 tables，或勾选强制执')
     if st['unknownStages'] and not req.force:
@@ -1135,6 +1630,8 @@ def scrimmage_sweep(req: BountySweepReq):
         pr = pkt.get('ParcelResult') or {}
         cur = ((pr.get('AccountCurrencyDB') or {}).get('CurrencyDict') or {})
         tickets = cur.get('23')
+        if tickets is not None:
+            _ticket_cache_set(23, int(tickets))
         steps.append({'map': m['name'], 'ok': True, 'count': n, 'stage': m['sweepable'],
                       'stageLabel': m.get('sweepableLabel'), 'ap': m.get('ap'),
                       'tickets': tickets, 'rewards': _sum_parcels(pkt.get('ClearParcels'))})
@@ -1145,3 +1642,683 @@ def scrimmage_sweep(req: BountySweepReq):
     _scrim['ts'] = 0.0
     _sync['ts'] = 0.0
     return {'steps': steps, 'tickets': tickets, 'stopped': stopped}
+
+
+# ---------- 战术对抗赛 ----------
+# 机制（2026-10-21 实测）：服务端演算整场（IsServerRunBattle），战果随 enterbattle(22004) 响应返回，
+# 没有独立结算请求；每场之后 30s 待机，时间戳在 ArenaPlayerInfoDB.BattleEnterActiveTime。
+_arena = {'ts': 0.0, 'data': None}
+ARENA_TTL = 30
+
+
+def _arena_tickets() -> int:
+    """战术对抗赛挑战券（Currency 7）。"""
+    return _currency(7)
+
+
+def build_arena_state(force=False):
+    if not force and _arena['data'] and time.time() - _arena['ts'] < ARENA_TTL:
+        return _arena['data']
+    _, pkt = call_session('/api/arena/enterlobby', 22000)
+    info = pkt.get('ArenaPlayerInfoDB') or {}
+    opps = []
+    for i, o in enumerate(pkt.get('OpponentUserDBs') or [], 1):
+        ts_db = o.get('TeamSettingDB') or {}
+        main_ids = [c.get('UniqueId') for c in (ts_db.get('MainCharacters') or []) if c.get('UniqueId')]
+        sup_ids = [c.get('UniqueId') for c in (ts_db.get('SupportCharacters') or []) if c.get('UniqueId')]
+        leader = ts_db.get('LeaderCharacterId') or (main_ids[0] if main_ids else None)
+        opps.append({
+            'index': i,
+            'accountId': o.get('AccountServerId'),
+            'rank': o.get('Rank'),
+            'level': o.get('Level'),
+            'nick': o.get('NickName'),
+            'leader': char_names.get(str(leader)) or (f'#{leader}' if leader else '—'),
+            'team': [char_names.get(str(x)) or f'#{x}' for x in (main_ids + sup_ids)[:6]],
+            'teamSize': len(main_ids) + len(sup_ids),
+        })
+    now = time.time()
+    daily_next = _iso_ts(info.get('DailyRewardActiveTime'))
+    data = {
+        'season': info.get('CurrentSeasonId'),
+        'group': info.get('PlayerGroupId'),
+        'rank': info.get('CurrentRank'),
+        'seasonRecord': info.get('SeasonRecord'),
+        'allTimeRecord': info.get('AllTimeRecord'),
+        'cumulativeReward': info.get('CumulativeTimeReward'),
+        'tickets': _arena_tickets(),
+        'opponents': opps,
+        'serverRunBattle': bool(pkt.get('IsServerRunBattle')),
+        'dailyReady': daily_next is None or daily_next <= now,
+        'dailyNext': info.get('DailyRewardActiveTime'),
+        'timeNext': info.get('TimeRewardLastUpdateTime'),
+        'battleNext': info.get('BattleEnterActiveTime'),
+        'battleSupported': True,
+    }
+    _arena.update(ts=time.time(), data=data)
+    return data
+
+
+@app.get('/api/arena/state')
+def arena_state(force: int = 0):
+    try:
+        return build_arena_state(bool(force))
+    except Exception as e:
+        raise HTTPException(500, f'读取战术对抗赛失败：{e}')
+
+
+def _claim_arena_rewards(daily=True, cumulative=True) -> dict:
+    """领取每日排名奖励与累计时数奖励；两者互相独立，一个失败不影响另一个。"""
+    out = {'daily': None, 'cumulative': None}
+    if daily:
+        try:
+            _, pkt = call_session('/api/arena/dailyreward', 22009)
+            pr = pkt.get('ParcelResult') or {}
+            out['daily'] = {
+                'ok': True,
+                'nextTime': pkt.get('DailyRewardActiveTime'),
+                'rewards': _sum_parcels([pr.get('DisplaySequence')]),
+            }
+        except Exception as e:
+            out['daily'] = {'ok': False, 'error': str(e)[:150]}
+    if cumulative:
+        try:
+            _, pkt = call_session('/api/arena/cumulativetimereward', 22008)
+            pr = pkt.get('ParcelResult') or {}
+            out['cumulative'] = {
+                'ok': True,
+                'amount': pkt.get('TimeRewardAmount'),
+                'nextTime': pkt.get('TimeRewardLastUpdateTime'),
+                'rewards': _sum_parcels([pr.get('DisplaySequence')]),
+            }
+        except Exception as e:
+            out['cumulative'] = {'ok': False, 'error': str(e)[:150]}
+    _arena['ts'] = 0.0
+    _sync['ts'] = 0.0          # 领奖动了货币，让下次 loginsync 重新拉
+    return out
+
+
+class ArenaRewardReq(BaseModel):
+    daily: bool = True
+    cumulative: bool = True
+
+
+@app.post('/api/arena/rewards')
+def arena_rewards(req: ArenaRewardReq):
+    return _claim_arena_rewards(req.daily, req.cumulative)
+
+
+# ---------- 战术对抗赛自动清票（后台线程，30s 待机期间可跑别的模块） ----------
+_arena_clear = {'running': False, 'battles': [], 'startedAt': None, 'finishedAt': None,
+                'error': None, 'stopReason': None, 'claimed': None}
+
+
+def _arena_wait_cd(next_time) -> int:
+    """等到 BattleEnterActiveTime 之后（服务端给的 30s 待机），返回等待秒数。"""
+    t = _iso_ts(next_time)
+    if t is None:
+        return 0
+    left = t - time.time()
+    if left <= 0:
+        return 0
+    left = min(left, 90)       # 防守上限，避免脏数据把线程挂死
+    time.sleep(left)
+    return int(left)
+
+
+def _arena_pick(st: dict):
+    """BAAS 思路：等级低优先（满级服恒同），再打名次最高的那个。"""
+    opps = [o for o in (st.get('opponents') or []) if o.get('rank') and o.get('accountId')]
+    if not opps:
+        return None
+    opps.sort(key=lambda o: ((o.get('level') or 0), (o.get('rank') or 10 ** 9)))
+    return opps[0]
+
+
+def _arena_battle(opp: dict) -> dict:
+    """打一场：服务端演算，战果直接来自响应。
+
+    客户端进竞技场的动作序列是 enterlobby → syncechelonsettingtime → enterbattle，
+    少了中间那步服务端会回 21017（实测）。
+    """
+    call_session('/api/arena/syncechelonsettingtime', 22016)
+    _, pkt = call_session('/api/arena/enterbattle', 22004, business={
+        'OpponentAccountServerId': opp['accountId'],
+        'OpponentIndex': opp['index'] - 1,      # 请求里是 0 基下标
+        'OpponentRank': opp['rank'],
+    })
+    sm = ((pkt.get('ArenaBattleDB') or {}).get('BattleSummary') or {})
+    info = pkt.get('ArenaPlayerInfoDB') or {}
+    cur = ((pkt.get('AccountCurrencyDB') or {}).get('CurrencyDict') or {})
+    tickets = cur.get('7')
+    return {
+        'win': sm.get('Winner') == 'Group01',     # Group01 = 攻方（实测对齐过）
+        'winner': sm.get('Winner'),
+        'endFrame': sm.get('EndFrame'),
+        'rank': info.get('CurrentRank'),
+        'nextBattle': info.get('BattleEnterActiveTime'),
+        'tickets': int(tickets) if tickets is not None else None,
+    }
+
+
+def _arena_clear_worker(max_battles: int, stop_rank1: bool, claim_rewards: bool):
+    try:
+        while len(_arena_clear['battles']) < max_battles:
+            st = build_arena_state(force=True)
+            if _arena_tickets() <= 0:
+                _arena_clear['stopReason'] = '挑战券已用尽'
+                break
+            if stop_rank1 and (st.get('rank') or 0) == 1:
+                _arena_clear['stopReason'] = '已到第 1 名'
+                break
+            _arena_wait_cd(st.get('battleNext'))
+            st = build_arena_state(force=True)      # 等完 CD 重新拿对手（列表会自动刷新）
+            opp = _arena_pick(st)
+            if not opp:
+                _arena_clear['stopReason'] = '没有可攻击的对手'
+                break
+            r = _arena_battle(opp)
+            _sync['ts'] = 0.0                        # 券数变了，下次 loginsync 重新拉
+            _arena_clear['battles'].append({
+                'targetRank': opp['rank'], 'targetLevel': opp.get('level'),
+                'win': r['win'], 'rank': r['rank'], 'endFrame': r['endFrame'],
+            })
+            _log_line(f"[竞技场] 打 R{opp['rank']}（Lv{opp.get('level')}）"
+                      f"{'胜' if r['win'] else '负'} → 现 R{r['rank']}", 'ok' if r['win'] else 'sub')
+            time.sleep(1)                            # 两场之间留一点余量
+    except Exception as e:
+        _arena_clear['error'] = str(e)[:200]
+        _log_line(f'[竞技场] 清票中断：{_arena_clear["error"]}', 'err')
+    finally:
+        if claim_rewards:
+            try:
+                _arena_clear['claimed'] = _claim_arena_rewards(True, True)
+            except Exception as e:
+                _arena_clear['claimed'] = {'error': str(e)[:150]}
+        _arena_clear['running'] = False
+        _arena_clear['finishedAt'] = datetime.datetime.now().isoformat(timespec='seconds')
+        why = _arena_clear.get('stopReason') or ('中断' if _arena_clear.get('error') else '达到上限')
+        _log_line(f"[竞技场] 清票结束：{len(_arena_clear['battles'])} 场（{why}）", 'sub')
+
+
+class ArenaClearReq(BaseModel):
+    maxBattles: int = 5
+    stopAtRank1: bool = True
+    claimRewards: bool = True
+
+
+@app.post('/api/arena/clear')
+def arena_clear(req: ArenaClearReq):
+    """启动后台清票：每场之间只等 30s CD，等待期间其他模块可以照常发请求。"""
+    if _arena_clear['running']:
+        return {'ok': False, 'error': '清票已在执行中', 'running': True}
+    tickets = _arena_tickets()
+    _arena_clear.update(running=True, battles=[], error=None, stopReason=None,
+                        startedAt=datetime.datetime.now().isoformat(timespec='seconds'),
+                        finishedAt=None, claimed=None)
+    threading.Thread(target=_arena_clear_worker,
+                     args=(max(1, req.maxBattles), req.stopAtRank1, req.claimRewards),
+                     daemon=True).start()
+    return {'ok': True, 'started': True, 'tickets': tickets}
+
+
+@app.get('/api/arena/clear/status')
+def arena_clear_status():
+    return dict(_arena_clear, tickets=_arena_tickets())
+
+
+# ---------- 邮箱 ----------
+@app.get('/api/mail/state')
+def mail_state():
+    _, chk = call_session('/api/mail/check', 7001)
+    n = int(chk.get('Count') or 0)
+    if n <= 0:
+        return {'unread': 0, 'mails': []}
+    _, pkt = call_session('/api/mail/list', 7000, business={
+        'IsDescending': True, 'IsReadMail': False, 'PivotIndex': 0,
+        'PivotTime': '9999-12-31T23:59:59', 'mailSortingRule': 0})
+    mails = []
+    for m in (pkt.get('MailDBs') or []):
+        mails.append({
+            'id': m.get('ServerId') or m.get('MailServerId'),
+            'title': m.get('Title') or m.get('LocalizedTitle') or '',
+            'expire': m.get('ExpireDate') or m.get('ExpireTime'),
+        })
+    return {'unread': len(mails), 'mails': mails}
+
+
+@app.post('/api/mail/claim')
+def mail_claim():
+    st = mail_state()
+    ids = [m['id'] for m in st['mails'] if m.get('id')]
+    if not ids:
+        return {'ok': True, 'count': 0, 'rewards': []}
+    _, pkt = call_session('/api/mail/receive', 7002, business={'MailServerIds': ids})
+    pr = pkt.get('ParcelResultDB') or {}
+    _sync['ts'] = 0.0
+    return {'ok': True, 'count': len(ids), 'rewards': _sum_parcels([pr.get('DisplaySequence')])}
+
+
+# ---------- 任务奖励 ----------
+@app.get('/api/mission/state')
+def mission_state():
+    _, pkt = call_session('/api/mission/list', 8000, business={'EventContentId': None})
+    prog = pkt.get('ProgressDBs') or []
+    claimed = set(pkt.get('MissionHistoryUniqueIds') or [])
+    cats = {}
+    for p in prog:
+        if p.get('Complete') and p.get('MissionUniqueId') not in claimed:
+            c = p.get('Category')
+            cats[c] = cats.get(c, 0) + 1
+    return {'claimable': cats, 'total': sum(cats.values())}
+
+
+class MissionClaimReq(BaseModel):
+    categories: list[int] = [1, 2, 3]
+
+
+@app.post('/api/mission/claim')
+def mission_claim(req: MissionClaimReq):
+    st = mission_state()
+    steps = []
+    for c in req.categories:
+        if not st['claimable'].get(c):
+            continue
+        try:
+            _, pkt = call_session('/api/mission/multiplereward', 8002, business={
+                'MissionCategory': c, 'EventContentId': None, 'GuideMissionSeasonId': None})
+            pr = pkt.get('ParcelResultDB') or {}
+            steps.append({'category': c, 'ok': True,
+                          'rewards': _sum_parcels([pr.get('DisplaySequence')])})
+        except Exception as e:
+            msg = str(e)
+            # 8000 = 该类别没有已完成任务（不是错误，只是没得领）
+            if '8000' in msg or 'no completed' in msg:
+                steps.append({'category': c, 'ok': True, 'skipped': '无可领取'})
+            else:
+                steps.append({'category': c, 'ok': False, 'error': msg[:120]})
+    _sync['ts'] = 0.0
+    return {'steps': steps, 'claimable': st['claimable']}
+
+
+# ---------- 商店（多分类） ----------
+# 客户端一次拉全部商店：CategoryList 固定这 11 个分类（抓包实证）
+SHOP_CATEGORIES = [0, 36, 37, 1, 21, 2, 33, 10, 25, 26, 20]
+# 名称按 ShopExcel.CategoryType 反查（2026-10-21 核对）；活动商店不在此接口，
+# 走 eventcontent/shoplist(30014)，所以这里没有「活动」这一类
+SHOP_CAT_NAMES = {
+    0: '常规道具', 1: '神名精髓I', 2: '总力战',
+    10: '战术对抗赛', 20: '熟练证书', 21: '神名精髓II',
+    25: '综合战术测试', 26: '悬赏通缉', 33: '大决战',
+    36: '青辉石·每日商品', 37: '青辉石·每周商品',
+}
+_shop_excel = None
+_shop_refresh = None
+
+
+def _shop_row(item_id: int, is_refresh: bool = False):
+    """商品 Id → 商店表整行（含 LocalizeEtcId），按是否刷新选表并互相兜底。"""
+    global _shop_excel, _shop_refresh
+    base = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))),
+                        'tables', 'full', 'ExcelDB')
+    if _shop_excel is None:
+        _shop_excel = {r['Id']: r for r in json.load(open(os.path.join(base, 'ShopExcel.json'),
+                                                          encoding='utf-8'))}
+    if _shop_refresh is None:
+        _shop_refresh = {r['Id']: r for r in json.load(open(os.path.join(base, 'ShopRefreshExcel.json'),
+                                                            encoding='utf-8'))}
+    tables = (_shop_refresh, _shop_excel) if is_refresh else (_shop_excel, _shop_refresh)
+    for t in tables:
+        row = t.get(item_id)
+        if row:
+            return row
+    return {}
+
+
+def _shop_goods_id(item_id: int, is_refresh: bool = False):
+    """商品 Id → GoodsId（购买请求要带这个）。
+
+    ShopExcel 和 ShopRefreshExcel 的 Id 有重叠（如 20000 段），必须按商店是否随机刷新来选表：
+    刷新类商店（常规道具/竞技场/青辉石每日·每周）的商品在 ShopRefreshExcel，IsRefreshGoods=true；
+    其余（总力战/大决战/演习/悬赏/熟练证书等）在 ShopExcel。
+    """
+    global _shop_excel, _shop_refresh
+    base = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))),
+                        'tables', 'full', 'ExcelDB')
+    if _shop_excel is None:
+        _shop_excel = {r['Id']: r for r in json.load(open(os.path.join(base, 'ShopExcel.json'),
+                                                          encoding='utf-8'))}
+    if _shop_refresh is None:
+        _shop_refresh = {r['Id']: r for r in json.load(open(os.path.join(base, 'ShopRefreshExcel.json'),
+                                                            encoding='utf-8'))}
+    tables = (_shop_refresh, _shop_excel) if is_refresh else (_shop_excel, _shop_refresh)
+    for t in tables:
+        row = t.get(item_id) or {}
+        gids = row.get('GoodsId')
+        if isinstance(gids, list) and gids:
+            return gids[0]
+        if isinstance(gids, int) and gids:
+            return gids
+    return None
+
+
+def _shop_period(next_date):
+    """按 NextAutoRefreshDate 距现在多久推断刷新周期（实测：0/10/36 每日、37 每周、其余每月 1 日）。"""
+    t = _iso_ts(next_date)
+    if t is None:
+        return '不自动刷新'
+    days = (t - time.time()) / 86400
+    if days <= 1.5:
+        return '每日 04:00'
+    if days <= 8:
+        return '每周'
+    if days <= 32:
+        return '每月 1 日'
+    return f'{int(days)} 天'
+
+
+@app.get('/api/shop/state')
+def shop_state(cats: str = ''):
+    want = [int(x) for x in cats.split(',') if x.strip().isdigit()] if cats else SHOP_CATEGORIES
+    _, pkt = call_session('/api/shop/list', 10002, business={'CategoryList': want})
+    shops = []
+    for s in pkt.get('ShopInfos') or []:
+        prods = []
+        is_refresh = bool(s.get('IsRefresh'))
+        for p in s.get('ShopProductList') or []:
+            row = _shop_row(p.get('ShopExcelId'), is_refresh)
+            gid = _shop_goods_id(p.get('ShopExcelId'), is_refresh)
+            meta = goods_info.get(str(gid)) or {}
+            loc = localize_etc.get(row.get('LocalizeEtcId')) or {}
+            icon = meta.get('icon') or ''
+            prods.append({
+                'shopExcelId': p.get('ShopExcelId'), 'goodsId': gid, 'isRefresh': is_refresh,
+                'limit': p.get('PurchaseCountLimit'), 'bought': p.get('PurchaseCount'),
+                'soldOut': bool(p.get('SoldOut')),
+                'name': loc.get('NameKr') or meta.get('name') or item_names.get(str(gid)) or f'#{gid}',
+                'desc': loc.get('DescriptionKr') or meta.get('desc') or '',
+                'rarity': meta.get('rarity') or '',
+                'icon': icon,
+                'iconUrl': (f'/static/icons/{icon.rsplit("/", 1)[-1]}.png' if icon else ''),
+            })
+        nxt = s.get('NextAutoRefreshDate')
+        shops.append({
+            'category': s.get('Category'),
+            'name': SHOP_CAT_NAMES.get(s.get('Category'), f'商店{s.get("Category")}'),
+            'group': s.get('ShopGroupType'), 'refresh': bool(s.get('IsRefresh')),
+            'nextRefresh': nxt,
+            'period': _shop_period(nxt),
+            'manualRefreshCount': s.get('ManualRefreshCount'),
+            'products': prods,
+        })
+    return {'shops': shops}
+
+
+class ShopBuyReq(BaseModel):
+    shopExcelId: int
+    goodsId: int
+    count: int = 1
+    isRefresh: bool = False
+
+
+@app.post('/api/shop/buy')
+def _shop_buy_one(shop_excel_id: int, goods_id: int, count: int, is_refresh: bool) -> dict:
+    _, pkt = call_session('/api/shop/buymerchandise', 10000, business={
+        'ShopUniqueId': shop_excel_id, 'GoodsId': goods_id,
+        'PurchaseCount': max(1, count), 'IsRefreshGoods': bool(is_refresh)})
+    pr = pkt.get('ParcelResultDB') or {}
+    _sync['ts'] = 0.0
+    return {'ok': True, 'rewards': _sum_parcels([pr.get('DisplaySequence')])}
+
+
+def shop_buy(req: ShopBuyReq):
+    return _shop_buy_one(req.shopExcelId, req.goodsId, req.count, req.isRefresh)
+
+
+def _refresh_shop(category: int, products=None):
+    """刷新一个商店。两种协议按类型分流（实测抓包）：
+
+    - 战术对抗赛（10）走 shop/refresh(10003) {"ShopCategoryType": 10}，消耗竞技场币；
+    - 常规道具等“随机商品”商店走 shop/buyrefreshmerchandise(10007)
+      {"ShopUniqueIds": [当前商品 id...]}，消耗青辉石（40/60/80）。
+    """
+    # 实测：buyrefreshmerchandise(10007) 并不会真正刷新商店（只回一份商品列表），
+    # 真正生效的是 shop/refresh(10003) + ShopCategoryType。
+    return call_session('/api/shop/refresh', 10003, business={'ShopCategoryType': category})
+
+
+# ---------- 商店自动购买 ----------
+# 「轮」= 每天一次的执行周期（不需要刷新商店）：每天推进一轮，直到各商品轮数跑完。
+# 例：30体×3轮 + 60体×2轮 → 第 1/2 天各买 30+60，第 3 天只买 30。
+# 保护：神名精髓I/II（1、21）与青辉石每日/每周（36、37）不参与自动购买。
+SHOP_PROTECTED = {1, 21, 36, 37}
+# 只有这两个商店能手动刷新（其余靠每日自动刷新）；手动刷新每日上限 3 次，
+# 所以最多 4 轮 = 首轮 + 3 次刷新。
+SHOP_MANUAL_REFRESH = {0, 10}
+SHOP_MAX_ROUNDS = 4
+
+
+def _autobuy_cfg() -> dict:
+    cfg = (_load_ui_state().get('shopAutobuy') or {})
+    return {
+        'enabled': bool(cfg.get('enabled')),
+        'items': cfg.get('items') or [],
+        'lastRun': cfg.get('lastRun'),
+        'manualRefresh': sorted(SHOP_MANUAL_REFRESH),
+        'maxRounds': SHOP_MAX_ROUNDS,
+    }
+
+
+@app.get('/api/shop/autobuy')
+def shop_autobuy_get():
+    cfg = _autobuy_cfg()
+    cfg['protected'] = sorted(SHOP_PROTECTED)
+    return cfg
+
+
+@app.post('/api/shop/autobuy')
+async def shop_autobuy_set(request: Request):
+    body = await request.json()
+    st = _load_ui_state()
+    cfg = st.get('shopAutobuy') or {}
+    cfg['enabled'] = bool(body.get('enabled'))
+    items = []
+    for it in body.get('items') or []:
+        try:
+            cat = int(it.get('category'))
+            sid = int(it.get('shopExcelId'))
+        except (TypeError, ValueError):
+            continue
+        if cat in SHOP_PROTECTED:
+            continue
+        items.append({
+            'shopExcelId': sid, 'category': cat,
+            'perRound': max(1, int(it.get('perRound') or 1)),
+            'rounds': max(1, int(it.get('rounds') or 1)),
+        })
+    cfg['items'] = items
+    cfg.pop('progress', None)
+    cfg.setdefault('lastRun', None)
+    st['shopAutobuy'] = cfg
+    _write_ui_state(st)
+    return {'ok': True, 'count': len(items)}
+
+
+@app.post('/api/shop/autobuy/run')
+async def shop_autobuy_run(request: Request):
+    """按「刷新轮」执行自动购买（不跨天保存进度）。
+
+    每轮：把本轮该买的买掉 → 需要下一轮时刷新商店（消耗货币）→ 再买。
+    例：30体×3轮 + 60体×2轮 = 第1轮 30+60 → 刷新 → 第2轮 30+60 → 刷新 → 第3轮 只买30。
+    只有常规道具(0)与战术对抗赛(10)能手动刷新，其余分类强制 1 轮；
+    手动刷新每日上限 3 次 → 轮数上限 4（首轮 + 3 次刷新）。
+    """
+    try:
+        body = await request.json()
+    except Exception:
+        body = {}
+    force = bool((body or {}).get('force'))
+    cfg = _autobuy_cfg()
+    if not force and not cfg['enabled']:
+        return {'ok': False, 'error': '自动购买未启用'}
+    if not cfg['items']:
+        return {'ok': True, 'skipped': '没有配置商品'}
+    today = datetime.date.today().isoformat()
+    if not force and cfg['lastRun'] == today:
+        return {'ok': True, 'skipped': f'{today} 已执行过（force 可强制再跑）'}
+
+    # 轮数夹紧：不可手动刷新的分类只能 1 轮
+    plan = []
+    for it in cfg['items']:
+        rounds = it['rounds'] if it['category'] in SHOP_MANUAL_REFRESH else 1
+        rounds = max(1, min(SHOP_MAX_ROUNDS, rounds))
+        plan.append(dict(it, rounds=rounds))
+
+    steps = []
+    bought = 0
+    refreshed = 0
+    rounds_total = max(p['rounds'] for p in plan)
+
+    for r in range(1, rounds_total + 1):
+        active = [it for it in plan if it['rounds'] >= r]
+        if not active:
+            break
+
+        if r > 1:
+            if refreshed >= 3:
+                steps.append({'ok': False, 'skipped': '手动刷新已达上限 3 次'})
+                break
+            st_now = shop_state()
+            prods_by_cat = {sh.get('category'): (sh.get('products') or [])
+                            for sh in (st_now.get('shops') or [])}
+            failed = set()
+            for cat in sorted({it['category'] for it in active}):
+                try:
+                    _refresh_shop(cat, prods_by_cat.get(cat))
+                    refreshed += 1
+                    _log_line(f'[商店] 刷新第 {r} 轮（分类 {cat}）', 'sub')
+                except Exception as e:
+                    failed.add(cat)
+                    steps.append({'ok': False, 'category': cat,
+                                  'skipped': f'刷新失败：{str(e)[:100]}'})
+                    _log_line(f'[商店] 刷新分类 {cat} 失败：{str(e)[:80]}', 'err')
+            active = [it for it in active if it['category'] not in failed]
+            if not active:
+                break
+
+        st = shop_state()
+        idx = {}
+        for sh in st.get('shops') or []:
+            for p in sh.get('products') or []:
+                idx[p['shopExcelId']] = p
+
+        for it in active:
+            sid = it['shopExcelId']
+            p = idx.get(sid)
+            if not p:
+                steps.append({'shopExcelId': sid, 'ok': False, 'round': r,
+                              'skipped': '本轮商店没有这件商品'})
+                continue
+            left = (p.get('limit') or 0) - (p.get('bought') or 0)
+            if p.get('soldOut') or left <= 0:
+                steps.append({'shopExcelId': sid, 'ok': False, 'name': p.get('name'),
+                              'round': r, 'skipped': '已售罄'})
+                continue
+            cnt = min(it['perRound'], left)
+            try:
+                res = _shop_buy_one(sid, p.get('goodsId'), cnt, p.get('isRefresh'))
+                bought += 1
+                steps.append({'shopExcelId': sid, 'ok': True, 'round': r, 'name': p.get('name'),
+                              'count': cnt, 'rewards': res.get('rewards')})
+                _log_line(f"[商店] 第 {r} 轮：{p.get('name')} ×{cnt}", 'ok')
+            except Exception as e:
+                steps.append({'shopExcelId': sid, 'ok': False, 'round': r, 'name': p.get('name'),
+                              'error': str(e)[:120]})
+                _log_line(f"[商店] 第 {r} 轮 {p.get('name')} 失败：{str(e)[:80]}", 'err')
+
+    st2 = _load_ui_state()
+    cfg2 = st2.get('shopAutobuy') or {}
+    cfg2['lastRun'] = today
+    st2['shopAutobuy'] = cfg2
+    _write_ui_state(st2)
+    _log_line(f'[商店] 自动购买完成：{bought} 件 / 刷新 {refreshed} 次（{today}）', 'sub')
+    return {'ok': True, 'steps': steps, 'bought': bought, 'refreshed': refreshed, 'date': today}
+
+
+# ---------- 神名精髓 Ⅰ（Eligma 商店·学生碎片） ----------
+# 机制（社区公认 + 数据自洽）：每买 20 片涨 1 精髓，1 起、5 封顶。
+# 商品目录不由服务端下发（shop/list 只给 ShopEligmaHistoryDBs 已购次数），
+# 所以这里按「名册 + 已购次数」自建只读视图；购买走 shop/buyeligma(10004)。
+ELIGMA_STEP = 20
+ELIGMA_CAP = 5
+
+
+def _eligma_price(bought: int) -> int:
+    return min(ELIGMA_CAP, 1 + bought // ELIGMA_STEP)
+
+
+@app.get('/api/shop/eligma')
+def shop_eligma():
+    _, pkt = call_session('/api/shop/list', 10002, business={'CategoryList': [1]})
+    hist = {}
+    for h in pkt.get('ShopEligmaHistoryDBs') or []:
+        uid = h.get('CharacterUniqueId')
+        if uid:
+            hist[int(uid)] = int(h.get('PurchaseCount') or 0)
+    roster = fetch_roster()
+    rows = []
+    for uid_s, info in roster.items():
+        uid = int(uid_s)
+        bought = hist.get(uid, 0)
+        price = _eligma_price(bought)
+        to_next = 0 if price >= ELIGMA_CAP else ELIGMA_STEP - (bought % ELIGMA_STEP)
+        name = info.get('name') or char_names.get(uid_s, f'#{uid}')
+        shard_icon = (shard_icons.get(name) or '').rsplit('/', 1)[-1]
+        rows.append({
+            'uid': uid,
+            'name': name,
+            'iconUrl': f'/static/icons/{shard_icon}.png' if shard_icon else '',
+            'star': info.get('star'),
+            'bought': bought,
+            'price': price,
+            'toNext': to_next,
+            'capped': price >= ELIGMA_CAP,
+        })
+    rows.sort(key=lambda r: (-r['bought'], r['name']))
+    return {'rows': rows, 'step': ELIGMA_STEP, 'cap': ELIGMA_CAP,
+            'note': '每买 20 片涨 1 精髓，1 起 5 封顶；只能买已拥有角色的碎片'}
+
+
+# ---------- 每日免费礼包 ----------
+# 商店里的每日免费商品：10000 信用点 + 10 行动点，每日 4:00 重置。
+# 实测 CountList 里还有 ShopCashId 1514（ResetDate 停在 2024 年，非每日），不要碰。
+GIFT_CASH_ID = 900000
+
+
+@app.get('/api/gift/state')
+def gift_state():
+    _, pkt = call_session('/api/billing/purchaselistbyyostar', 29002)
+    items = pkt.get('CountList') or []
+    item = next((x for x in items if x.get('ShopCashId') == GIFT_CASH_ID), None)
+    return {
+        'shopCashId': GIFT_CASH_ID,
+        'available': item is not None,
+        'purchased': bool(item and (item.get('PurchaseCount') or 0) > 0),
+        'resetDate': (item or {}).get('ResetDate'),
+    }
+
+
+@app.post('/api/gift/claim')
+def gift_claim():
+    try:
+        _, pkt = call_session('/api/billing/purchasefreeproduct', 29003,
+                              business={'ShopCashId': GIFT_CASH_ID})
+    except Exception as e:
+        raise HTTPException(400, f'领取免费礼包失败：{e}')
+    pr = pkt.get('ParcelResult') or {}
+    _sync['ts'] = 0.0
+    return {
+        'ok': True,
+        'rewards': _sum_parcels([pr.get('DisplaySequence')]),
+        'product': pkt.get('PurchaseProduct'),
+    }

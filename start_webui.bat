@@ -1,7 +1,31 @@
 @echo off
-rem 定位到本 bat 所在目录（通用，双击/任意 cwd 均可）
+rem chdir to this bat's folder (safe on double-click or any cwd)
+rem Keep this file pure ASCII with CRLF line endings: cmd parses .bat in the OEM
+rem codepage, so UTF-8 Chinese comments break line parsing ("'?cd' is not recognized")
 cd /d %~dp0
-rem 本机配置（路径等），存在则加载；该文件不入库（见 .gitignore）
+rem local machine config (unidbg work dir / so path); gitignored, optional
 if exist "env.local.bat" call "env.local.bat"
-uv run --with fastapi --with uvicorn --with requests --with pycryptodome python -m uvicorn webui.server:app --host 127.0.0.1 --port 8800
+
+rem Run straight from the project venv. Do NOT use "uv run --with": without a
+rem pyproject.toml those packages land in a throwaway overlay env, so every
+rem launch re-resolves and reinstalls them (the "Installed N packages" line).
+set "PY=%~dp0.venv\Scripts\python.exe"
+if not exist "%PY%" goto :bootstrap
+"%PY%" -c "import fastapi, uvicorn, requests, Crypto" 2>nul || goto :bootstrap
+goto :run
+
+:bootstrap
+echo [setup] .venv missing or incomplete, installing deps with uv ...
+if not exist "%PY%" uv venv --python 3.12 "%~dp0.venv"
+uv pip install --python "%PY%" fastapi uvicorn requests pycryptodome
+if errorlevel 1 goto :fail
+
+:run
+"%PY%" -m uvicorn webui.server:app --host 127.0.0.1 --port 8800
 pause
+exit /b
+
+:fail
+echo [error] dependency install failed, see messages above.
+pause
+exit /b 1
