@@ -1,8 +1,11 @@
 """ba_session.py — 自主会话客户端（2026-10-15 登录关破解的沉淀）。
 
 核心机制（全部实弹验证）：
-  1. 自主冷登录：历史抓包的 yostar Token 长效复用（quick-login），auth 请求用
-     新随机 key 重加密（字节级相同会命中服务器去重缓存，返回缓存响应不建会话）。
+  1. 自主冷登录：auth 请求体由内置骨架 + `yostar_token.json` 里的 uid/token 构造，
+     不依赖抓包（本地有抓包明文时优先用它，字段序更保真）。每次都换新随机 key 重加密
+     ——字节级相同会命中服务器去重缓存，返回缓存响应而不建会话。
+     实测（2026-10-27）：auth 的 11 个字段里只有 DevId（=yostar UID）、Token、
+     Protocol 被服务端校验，其余（设备信息 / ResUrl / Hash）任意值均可。
   2. 资源版本头：RESOURCE-VER/TABLE-VER 过旧时服务器报 90007 并告知最低版本，
      动态升级重试即可。
   3. REQUEST-ID 链（关键！）：auth 响应的 requestid 是下一个请求的头值；
@@ -14,7 +17,7 @@
 
 用法：
     from ba_session import Session
-    s = Session.login()                    # 冷登录（auth 重放）
+    s = Session.login()                    # 冷登录（auth 构造）
     s = Session.load('session_state.json') # 或恢复已存会话
     resp, pkt = s.call('/api/academy/getinfo', 24000)
     resp, pkt = s.call('/api/academy/attendschedule', 24001, business={'ZoneId': 61})
@@ -25,6 +28,7 @@ import base64
 import json
 import os
 import uuid
+import warnings
 
 import requests
 
@@ -33,28 +37,81 @@ import ba_crypto as bc
 HOST = 'https://gsqc-api.bluearchive-cn.com'
 API_MAP = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'api_map_v2.json')
 
-# 与 decrypt_all_v2 的明文日志同源；auth JSON 从这里取（字段序保真）
+# 与 decrypt_all_v2 的明文日志同源。存在时优先用它（字段序与真实请求完全一致），
+# 缺失则回退到内置骨架——2026-10-27 实测确认 auth 只有 3 个字段被服务端校验。
 PLAIN_LOG = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'session_plain_all.jsonl')
+YOSTAR_TOKEN = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'yostar_token.json')
+
+
+def _auth_skeleton():
+    """内置 auth 请求骨架。
+
+    2026-10-27 实测（结论见 docs/协议/自主登录.md §3）：11 个字段里服务端只校验
+    `DevId`（= yostar UID，与 Token 成对）、`Token`、`Protocol`；其余字段任意值均可，
+    空字符串也能建会话。所以设备类字段填中性值，不再依赖抓包。
+    """
+    protocol = json.load(open(API_MAP, encoding='utf-8'))['/api/account/auth']['protocol']
+    return {
+        'Protocol': protocol,
+        'DevId': '',                       # 运行时填 yostar UID
+        'OSVersion': 'Android OS 12 / API-32',
+        'DeviceUniqueId': '0' * 32,
+        'DeviceModel': 'unknown',
+        'DeviceSystemMemorySize': 4096,
+        'Token': '',                       # 运行时填 yostar Token
+        'SdkPid': 'CN-BA',
+        'SubChannel': '',
+        'ResUrl': '',
+        'Hash': (protocol << 32) | 1,      # 服务端不校验，填标准值即可
+    }
+
+
+def _yostar_credentials():
+    """读 yostar_token.json 的 (uid, token)——自主登录的产物。缺失返回 (None, None)。"""
+    try:
+        d = json.load(open(YOSTAR_TOKEN, encoding='utf-8'))
+        uid, tok = d.get('uid'), d.get('token')
+        if uid and tok:
+            return str(uid), str(tok)
+    except Exception:
+        pass
+    return None, None
 
 
 def _load_auth_template():
-    """取最近一次 account/auth 请求明文（从 PLAIN_LOG 重建，不依赖抓包目录）。"""
-    if not os.path.exists(PLAIN_LOG):
-        raise FileNotFoundError(
-            f'缺少本地抓包明文 {os.path.basename(PLAIN_LOG)}：'
-            '需先用 decrypt_all_v2.py 从自己的抓包生成（抓包目录见 AUTOBA_CAPTURE_DIR）。'
-        )
-    latest = None
-    with open(PLAIN_LOG, encoding='utf-8') as f:
-        for line in f:
-            d = json.loads(line)
-            if d['url'] == '/api/account/auth':
-                latest = d
-    if latest is None:
-        raise RuntimeError('auth 模板未找到（先跑 decrypt_all_v2.py 重建明文日志）')
-    pkt = latest['json']
-    if isinstance(pkt, str):
-        pkt = ast.literal_eval(pkt)
+    """构造 account/auth 请求体。
+
+    有本地抓包明文就用它（保真），没有就用内置骨架；两种情况都用
+    yostar_token.json 的 uid / token 覆盖 DevId / Token——这两个是服务端
+    唯一校验内容，必须与当前登录态一致。
+    """
+    pkt = None
+    if os.path.exists(PLAIN_LOG):
+        latest = None
+        with open(PLAIN_LOG, encoding='utf-8') as f:
+            for line in f:
+                d = json.loads(line)
+                if d['url'] == '/api/account/auth':
+                    latest = d
+        if latest is not None:
+            pkt = latest['json']
+            if isinstance(pkt, str):
+                pkt = ast.literal_eval(pkt)
+
+    pkt = dict(pkt) if pkt else _auth_skeleton()
+
+    uid, tok = _yostar_credentials()
+    if uid and tok:
+        pkt['DevId'] = uid
+        pkt['Token'] = tok
+    elif pkt.get('DevId') and pkt.get('Token'):
+        warnings.warn(
+            f'未找到 {os.path.basename(YOSTAR_TOKEN)}，回退使用 auth 模板自带的 DevId/Token'
+            f'（可能是历史凭据）；建议先跑 login_oracle.py 完成自主登录')
+    else:
+        raise RuntimeError(
+            f'缺少登录凭据：{YOSTAR_TOKEN} 里没有 uid/token，也没有可用的抓包模板。'
+            f'先跑 login_oracle.py 完成手机号+验证码登录。')
     return pkt
 
 

@@ -9,7 +9,7 @@
 | 文档 | 状态 | 说明 |
 |---|---|---|
 | [API](协议/API.md) | 报告（自动生成） | 全量接口文档（867 组抓包双向明文），由 `scripts/gen_api_doc.py` 产出，勿手改 |
-| [自主登录](协议/自主登录.md) | 已实现 | 手机号+验证码 → yostar Token → BA account/auth → MxToken 全链路 |
+| [自主登录](协议/自主登录.md) | 已实现 | 手机号+验证码 → yostar Token → account/auth → MxToken；auth 字段校验边界已实测 |
 | [数据版本校验](协议/数据版本校验.md) | 已实现 | 客户端表过期 / 游戏新关卡预警 |
 
 ## 模块（`模块/`）

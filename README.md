@@ -12,7 +12,7 @@
 |---|---|
 | 接口文档 | 由双向抓包明文生成的接口结构（`docs/协议/API.md` / `api_doc.json`） |
 | 加解密 | packet 结构、AES-256-CBC、请求/响应 key 的明文携带方式（`ba_crypto.py`） |
-| 会话机制 | SessionKey、REQUEST-ID 链（响应颁发下一请求 rid）、Hash=(Protocol<<32)\|N（`ba_session.py`） |
+| 会话机制 | SessionKey、REQUEST-ID 链、Hash=(Protocol<<32)\|N；auth 仅校验 DevId/Token/Protocol（2026-10-27 实测，`ba_session.py`） |
 | 离线签名 | SHA-256 + RSA-1024 PKCS#1 v1.5 的纯 Python 复现（`sign_offline.py` + `reverse/`）；unidbg 模拟执行保留为回退路径 |
 | 日常模块 | WebUI 覆盖 10 个模块：日程清票、咖啡厅、悬赏通缉、学院交流会、社交小组签到、战术对抗赛、每日免费礼包、邮箱、任务奖励、商店（11 分类） |
 
@@ -22,12 +22,12 @@
 
 ```
 ba_crypto.py        AES/packet/multipart 加解密核心
-ba_session.py       BA 会话客户端（rid 链 + N 计数 + 落盘）
+ba_session.py       BA 会话客户端（auth 构造 + rid 链 + N 计数 + 落盘）
 sign_offline.py     离线签名入口（默认纯 Python）
 reverse/            签名逆向产物：纯 Python 实现、验证脚本、基准向量、密钥 DER、研究文档
 unidbg/             unidbg 回退路径（可选，需要 Java + libairisgcore.so）
 login_oracle.py     自主登录流程（发码 / 验证码登录）
-decrypt_all_v2.py   抓包全量解密器
+decrypt_all_v2.py   抓包全量解密器（分析用；auth 已不依赖它）
 webui/              FastAPI 后端 + 单页前端（10 个日常模块）
 scripts/            数据表生成 / 接口文档生成 / 图标导出 / 隐私自检
 tables/             游戏数据表映射 + tables/full/ExcelDB 派生表
@@ -69,10 +69,14 @@ sig = offline_sign(head_json + body_json)   # mode 默认 0
 算法、两把客户端内置 RSA 私钥的提取过程与验证链见 `reverse/README.md`。
 旧 unidbg 路径保留为 `offline_sign_unidbg()`，使用方式见 `unidbg/README.md`。
 
-## 会话与抓包
+## 会话构造
 
-`ba_session.py` 的 auth 模板取自本地抓包明文：将抓包放入 `AUTOBA_CAPTURE_DIR` 指向的目录，
-运行 `decrypt_all_v2.py` 生成 `session_plain_all.jsonl`。仓库不附带任何抓包数据。
+`ba_session.py` 使用内置的 11 字段骨架构造 account/auth 请求。实测（2026-10-27）服务端只校验
+`DevId`（= yostar UID）、`Token`、`Protocol` 三个字段，设备信息 / `ResUrl` / `Hash` 任意值均可。
+`DevId` 与 `Token` 从 `yostar_token.json` 读取——即 `login_oracle.py` 手机号+验证码登录的产物。
+因此首次使用只需完成一次自主登录，不需要抓包；仓库也不附带任何抓包数据。
+
+`decrypt_all_v2.py` 仅用于分析历史抓包，auth 已不依赖它。
 
 ## 数据表与图标
 
