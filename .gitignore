@@ -1,24 +1,62 @@
-__pycache__/
+# 大型二进制/可再生数据（保留在本地，不入库）
+*.bin
+*.so
+*.db
+*.zip
+*.exe
+*.flat
+*.png
 *.pyc
+__pycache__/
 
 # 虚拟环境
 .venv/
 
-# 本机配置与凭据（不入库）
-env.local.bat
-yostar_credentials.json
-session_state.json
-*.log
+# 表数据源（派生表见 tables/full/ExcelDB，按需保留）
+tables/ExcelDB.db
+tables/Excel.zip
+tables/table_manifest.bin
+table_manifest.bin
+tables/rows_char_test/
+tools/baax.zip
 
-# 本地抓包与明文日志（使用者自备，不入库）
+# 抓包与明文语料（使用者自备，不入库）
 capture/
 session_plain_all.jsonl
 resp_plain_all.jsonl
+resp_plain_*.bin
 
-# 运行时状态与产物（不入库）
+# 运行时状态与产物
+session_state.json
+monitor_state.json
+favor_state.json
 clan_state.json
 resource_state.json
 ticket_state.json
 webui/ui_state.json
+webui/ui_state.json.tmp
 webui/logs/
 webui/static/icons/
+package-lock.json
+scripts/package-lock.json
+
+# 本机配置与凭据（不入库；示例见 env.local.bat.example）
+env.local.bat
+yostar_credentials.json
+yostar_phone.json
+yostar_token.json
+auth_fresh.json
+auth_replay_ok.json
+auth_replay_resp1.json
+getinfo_resp_live.json
+getinfo_today.json
+schedule_resp_*.json
+cafe_resp_*.jsonl
+bn64_hits.json
+privkey_hits.json
+data/tc_va.json
+data/watch_target*.json
+
+# 逆向目录的本机产物
+reverse/*.class
+reverse/trace_sign_m0.txt

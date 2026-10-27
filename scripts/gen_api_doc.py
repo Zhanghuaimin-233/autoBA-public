@@ -1,5 +1,5 @@
 """从双向明文抓包自动生成接口文档。
-产出：docs/API.md（人读）+ api_doc.json（机器读，供 apiclient 用）
+产出：docs/协议/API.md（人读）+ api_doc.json（机器读，供 apiclient 用）
 跑法：python gen_api_doc.py
 """
 import glob
@@ -10,9 +10,7 @@ import time
 from collections import defaultdict
 
 HERE = r'.'
-CAP = r'capture/ba'
-
-
+CAP = os.environ.get('AUTOBA_CAPTURE_DIR') or r'capture/ba'
 # ===== 脱敏：再生文档前把账号真值统一替换为占位 =====
 # 真值清单从本地凭据文件 yostar_credentials.json 读取（不入库，见 .gitignore），
 # 本文件自身不硬编码任何账号数据。
@@ -145,8 +143,15 @@ def short(v, n=48):
 
 
 def mask(k, v):
-    if isinstance(v, str) and k in MASK_KEYS and len(v) > 12:
-        return v[:8] + '…'
+    """敏感字段一律替换为占位符，不保留任何真值片段。
+
+    2026-10-27 修复：原实现返回 `v[:8] + '…'`，有两个问题——
+    1) 真实 token 的前 8 位本身就是有效信息，会随文档一起发布；
+    2) 先截断导致后面的 _redact() 拿完整真值做 replace 时已经匹配不到。
+    改为直接吐占位符后，_redact() 仍作为全局兜底处理其他位置出现的真值。
+    """
+    if k in MASK_KEYS and isinstance(v, str):
+        return '<REDACTED>'
     return v
 
 
@@ -245,15 +250,30 @@ def main():
                                      for k, v in sorted(resp_keys.get(url, {}).items())}
         d['first_call_N_today'] = ns[url][0][0] if ns.get(url) else None
         doc[url] = d
+    # 自检：MASK_KEYS 字段必须全部是占位符。
+    # 2026-10-27 的教训——mask() 曾返回 v[:8] + '…'，而这类截断泄漏既躲得过
+    # _redact()（已经截断，匹配不到完整真值），也躲得过 check_privacy.py
+    # （比对的是完整真值）。所以在这里直接卡死，宁可不出文档。
+    leaked = [(u, f, m.get('example')) for u, i in doc.items()
+              for f, m in (i.get('request_fields') or {}).items()
+              if f in MASK_KEYS and str(m.get('example')).strip('"') != '<REDACTED>']
+    if leaked:
+        for u, f, ex in leaked[:5]:
+            print(f'[!] {u}  {f}  example={ex!r}')
+        raise SystemExit(
+            f'[ABORT] 敏感字段未脱敏（{len(leaked)} 处），未写任何文件。'
+            f'请检查 mask() 是否被改动。')
+
     doc_s = _redact(json.dumps(doc, ensure_ascii=False, indent=1))
     open(f'{HERE}/api_doc.json', 'w', encoding='utf-8').write(doc_s)
 
-    # ===== 生成 docs/API.md =====
-    os.makedirs(f'{HERE}/docs', exist_ok=True)
-    md = io.open(f'{HERE}/docs/API.md', 'w', encoding='utf-8')
+    # ===== 生成 docs/协议/API.md =====
+    out_dir = f'{HERE}/docs/协议'
+    os.makedirs(out_dir, exist_ok=True)
+    md = io.open(f'{out_dir}/API.md', 'w', encoding='utf-8')
     w = lambda s: md.write(_redact(s))
     w('# autoBA 国服接口文档\n\n')
-    w('> 自动生成自 867 组抓包双向明文（2026-10-11 ~ 10-13，测试号 10000000000）。\n')
+    w('> **状态**：自动生成（勿手改，由 `scripts/gen_api_doc.py` 产出）｜ **数据源**：867 组抓包双向明文（2026-10-11 ~ 10-13，测试号 10000000000）\n')
     w('> 请求 Hash = (Protocol << 32) | N；N 为会话级全局计数，auth 起算 N=1。\n')
     w('> 请求/响应 key 均明文附在密文尾部（请求=b64-hex ASCII 形态，响应=原始二进制形态），IV 固定 JOSY。\n\n')
 
@@ -319,7 +339,7 @@ def main():
                 w('\n响应 packet 为空/非对象。\n')
             w('\n')
     md.close()
-    print(f'[+] docs/API.md ({os.path.getsize(f"{HERE}/docs/API.md")} B)')
+    print(f'[+] docs/协议/API.md ({os.path.getsize(f"{out_dir}/API.md")} B)')
     print(f'[+] api_doc.json ({len(doc)} 接口)')
 
 

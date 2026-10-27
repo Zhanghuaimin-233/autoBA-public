@@ -31,31 +31,31 @@ import requests
 import ba_crypto as bc
 
 HOST = 'https://gsqc-api.bluearchive-cn.com'
-CAP = r'capture/ba'
 API_MAP = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'api_map_v2.json')
-AUTH_FILE = os.path.join(CAP, '1791951528355_gsqc-api_bluearchive-cn_com_api_account_auth.json')
 
 # 与 decrypt_all_v2 的明文日志同源；auth JSON 从这里取（字段序保真）
 PLAIN_LOG = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'session_plain_all.jsonl')
 
 
 def _load_auth_template():
-    """取 auth 请求明文 JSON（最近一次测试号会话）。"""
+    """取最近一次 account/auth 请求明文（从 PLAIN_LOG 重建，不依赖抓包目录）。"""
     if not os.path.exists(PLAIN_LOG):
         raise FileNotFoundError(
-            f'缺少本地抓包明文 {os.path.basename(PLAIN_LOG)}：auth 模板需从本地抓包解密生成，'
-            '本项目不附带抓包数据（见 docs/API.md 说明）。'
+            f'缺少本地抓包明文 {os.path.basename(PLAIN_LOG)}：'
+            '需先用 decrypt_all_v2.py 从自己的抓包生成（抓包目录见 AUTOBA_CAPTURE_DIR）。'
         )
-    want = os.path.basename(AUTH_FILE).split('_')[0]
+    latest = None
     with open(PLAIN_LOG, encoding='utf-8') as f:
         for line in f:
             d = json.loads(line)
-            if d['url'] == '/api/account/auth' and d['file'].startswith(want):
-                pkt = d['json']
-                if isinstance(pkt, str):
-                    pkt = ast.literal_eval(pkt)
-                return pkt
-    raise RuntimeError('auth 模板未找到（需提供本地抓包解密的 session_plain_all.jsonl）')
+            if d['url'] == '/api/account/auth':
+                latest = d
+    if latest is None:
+        raise RuntimeError('auth 模板未找到（先跑 decrypt_all_v2.py 重建明文日志）')
+    pkt = latest['json']
+    if isinstance(pkt, str):
+        pkt = ast.literal_eval(pkt)
+    return pkt
 
 
 def probe_table_version(timeout=20):

@@ -1,5 +1,5 @@
 """ba_crypto v2 自测：与真实抓包逐层比对。
-跑法：uv run --with pycryptodome python test_ba_crypto.py
+跑法：./.venv/Scripts/python.exe test_ba_crypto.py
 """
 import base64
 import json
@@ -9,8 +9,13 @@ import os
 
 import ba_crypto as bc
 
-CAP = r'capture/ba'
-TARGET = os.path.join(CAP, '1791883383917_gsqc-api_bluearchive-cn_com_api_cafe_interact.json')
+# 抓包目录：AUTOBA_CAPTURE_DIR 优先（本机见 env.local.bat），否则相对 cwd 的 capture/ba
+CAP = os.environ.get('AUTOBA_CAPTURE_DIR') or r'capture/ba'
+# 取最新的 cafe/interact 抓包：写死时间戳会随抓包归档失效
+_cafe = sorted(glob.glob(os.path.join(CAP, '*cafe_interact.json')), key=os.path.getmtime)
+if not _cafe:
+    raise SystemExit(f'找不到 cafe_interact 抓包，检查 AUTOBA_CAPTURE_DIR={CAP!r}')
+TARGET = _cafe[-1]
 
 ok = 0
 fail = 0

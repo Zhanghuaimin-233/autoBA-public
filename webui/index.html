@@ -469,6 +469,16 @@ function _dayStr(d) {
     String(d.getDate()).padStart(2, '0');
 }
 
+// 落盘时间统一用「本地时间 + 时区偏移」，与后端 _log_line 保持一致
+// （原来这里用 toISOString() 出 UTC，正文却是本地时间，回看时对不上）
+function _localIso(d) {
+  const p = n => String(Math.abs(n)).padStart(2, '0');
+  const off = -d.getTimezoneOffset();
+  return _dayStr(d) + 'T' +
+    p(d.getHours()) + ':' + p(d.getMinutes()) + ':' + p(d.getSeconds()) +
+    (off >= 0 ? '+' : '-') + p(off / 60) + ':' + p(off % 60);
+}
+
 function mkLogEl(it) {
   const d = document.createElement('div');
   if (it.cls) d.className = it.cls;
@@ -480,7 +490,7 @@ function mkLogEl(it) {
 
 function log(s, cls) {
   const now = new Date();
-  const item = { ts: now.toISOString(), day: _dayStr(now), text: s, cls: cls || '' };
+  const item = { ts: _localIso(now), day: _dayStr(now), text: s, cls: cls || '' };
   if (LOG_VIEW === 'live') $('oplog').prepend(mkLogEl(item));
   _logQueue.push(item);
   clearTimeout(_logTimer);
@@ -1937,7 +1947,7 @@ async function arenaClaim() {
 }
 
 async function arenaClear(maxBattles) {
-  if (ARENA_CLEARING) return { ok: false, error: '正在清票中' };
+  if (ARENA_CLEARING) return { ok: false, skipped: true, error: '正在清票中' };
   try {
     const j = await api('/api/arena/clear', {
       method: 'POST', headers: {'Content-Type':'application/json'},
@@ -1990,8 +2000,10 @@ async function pollArenaClear() {
 
 async function runDailyArena() {
   const r = await arenaClear(5);
-  if (!r.ok) throw new Error(r.error || '清票启动失败');
+  if (r && r.skipped) return { ok: true, skipped: true, reason: r.error };
+  if (!r || !r.ok) throw new Error((r && r.error) || '清票启动失败');
   log(`[竞技场] 后台清票已启动（券 ${r.tickets}），等待期间继续执行后续模块`, 'sub');
+  return { ok: true };
 }
 
 // ---------- 每日免费礼包 ----------
@@ -2303,7 +2315,9 @@ async function runAutobuy(force) {
 
 async function runDailyShop() {
   const r = await runAutobuy(false);
+  if (r && r.skipped) return { ok: true, skipped: true, reason: r.error };
   if (r && r.ok === false) throw new Error(r.error || '自动购买失败');
+  return { ok: true };
 }
 
 async function runDailyGift() {
@@ -2377,6 +2391,7 @@ async function runAllDaily() {
   $('btnRunAll').disabled = true;
   log(`[一键清] 开始：${summary}`);
   const failed = [];
+  const skipped = [];
   for (const mod of order) {
     const label = MODULE_LABELS[mod] || mod;
     log(`[一键清] ▶ ${label}`);
@@ -2387,11 +2402,16 @@ async function runAllDaily() {
       else if (mod === 'bounty') await runDailyBounty();
       else if (mod === 'scrim') await runDailyScrim();
       else if (mod === 'clan') res = (await clanCheckin()) || { ok: true };
-      else if (mod === 'arena') { await runDailyArena(); }
+      else if (mod === 'arena') res = (await runDailyArena()) || { ok: true };
       else if (mod === 'gift') { await runDailyGift(); }
       else if (mod === 'mail') await runDailyMail();
       else if (mod === 'mission') await runDailyMission();
-      else if (mod === 'shop') await runDailyShop();
+      else if (mod === 'shop') res = (await runDailyShop()) || { ok: true };
+      if (res && res.skipped) {
+        skipped.push(label);
+        log(`[一键清] – ${label}（跳过：${res.reason || '无需执行'}）`, 'sub');
+        continue;
+      }
       if (res && res.ok === false) throw new Error(res.error || '未知错误');
       log(`[一键清] ✓ ${label}`, 'ok');
     } catch (e) {
@@ -2399,8 +2419,10 @@ async function runAllDaily() {
       log(`[一键清] ✗ ${label}：${e.message}`, 'err');
     }
   }
-  log(failed.length ? `[一键清] 结束，失败：${failed.join('、')}` : '[一键清] 全部完成',
-      failed.length ? 'err' : 'ok');
+  let tail = '[一键清] 全部完成';
+  if (failed.length) tail = `[一键清] 结束，失败：${failed.join('、')}`;
+  else if (skipped.length) tail = `[一键清] 全部完成（跳过：${skipped.join('、')}）`;
+  log(tail, failed.length ? 'err' : 'ok');
   if (ARENA_CLEARING) log('[一键清] 竞技场仍在后台清票（30s/场），可在卡片里看进度', 'sub');
   ALL_RUNNING = false;
   $('btnRunAll').disabled = false;

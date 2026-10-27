@@ -64,7 +64,7 @@
     ]
    }
   },
-  "first_call_N_today": null
+  "first_call_N_today": 36
  },
  "/api/academy/getinfo": {
   "protocol": 24000,
@@ -135,25 +135,25 @@
     "types": [
      "str"
     ],
-    "example": "\"1011499471\""
+    "example": "\"deadbeef00\""
    },
    "DeviceModel": {
     "types": [
      "str"
     ],
-    "example": "\"Xiaomi 24031PN0DC\""
+    "example": "\"Xiaomi 00000XXX\""
    },
    "DeviceSystemMemorySize": {
     "types": [
      "int"
     ],
-    "example": "8961"
+    "example": "8192"
    },
    "DeviceUniqueId": {
     "types": [
      "str"
     ],
-    "example": "\"d3ffbb0cf1cd97e4e6d5b7b0a7847406\""
+    "example": "\"deadbeefdeadbeefdeadbeefdeadbeef\""
    },
    "IMEI": {
     "types": [
@@ -171,7 +171,7 @@
     "types": [
      "str"
     ],
-    "example": "\"Android OS 12 / API-32 (V417IR/1747)\""
+    "example": "\"Android OS 12 / API-32\""
    },
    "ResUrl": {
     "types": [
@@ -195,7 +195,7 @@
     "types": [
      "str"
     ],
-    "example": "\"dededede…\""
+    "example": "\"<REDACTED>\""
    },
    "UserType": {
     "types": [
@@ -1081,7 +1081,7 @@
     ]
    }
   },
-  "first_call_N_today": null
+  "first_call_N_today": 19
  },
  "/api/battlepass/check": {
   "protocol": 51006,
@@ -1471,7 +1471,7 @@
     "types": [
      "int"
     ],
-    "example": "100000000001"
+    "example": "<REDACTED>1"
    }
   },
   "response_packet_keys": {
@@ -1506,7 +1506,7 @@
     ]
    }
   },
-  "first_call_N_today": null
+  "first_call_N_today": 185
  },
  "/api/cafe/interact": {
   "protocol": 20006,
@@ -1518,7 +1518,7 @@
     "types": [
      "int"
     ],
-    "example": "100000000001"
+    "example": "<REDACTED>1"
    },
    "CharacterId": {
     "types": [
@@ -1591,7 +1591,7 @@
     "types": [
      "int"
     ],
-    "example": "10000000000"
+    "example": "<REDACTED>"
    },
    "CafeDBId": {
     "types": [
@@ -1642,7 +1642,7 @@
     ]
    }
   },
-  "first_call_N_today": null
+  "first_call_N_today": 166
  },
  "/api/cafe/summoncharacter": {
   "protocol": 20015,
@@ -1654,7 +1654,7 @@
     "types": [
      "int"
     ],
-    "example": "100000000001"
+    "example": "<REDACTED>1"
    },
    "CharacterServerId": {
     "types": [
@@ -2410,6 +2410,34 @@
   },
   "first_call_N_today": 60
  },
+ "/api/craft/shiftingbeginprocess": {
+  "protocol": 21007,
+  "obf": "FI4QTHDFKM7EUWJF6NQUFJERZE",
+  "samples": 1,
+  "cn": "制造·切换节点开始（三解）",
+  "request_fields": {
+   "ConsumeRequestDB": {
+    "types": [
+     "object"
+    ],
+    "example": "{\"ConsumeItemServerIdAndCounts\": {\"23481789\": 75}, \"ConsumeE…"
+   },
+   "RecipeId": {
+    "types": [
+     "int"
+    ],
+    "example": "41"
+   },
+   "SlotId": {
+    "types": [
+     "int"
+    ],
+    "example": "0"
+   }
+  },
+  "response_packet_keys": {},
+  "first_call_N_today": 111
+ },
  "/api/craft/updatenodelevel": {
   "protocol": 21002,
   "obf": "THDJJQA6PN3YZKVSXI73VF2AA4",
@@ -2551,7 +2579,7 @@
     "types": [
      "object"
     ],
-    "example": "{\"AccountServerId\": 10000000000, \"EchelonType\": 3, \"EchelonN…"
+    "example": "{\"AccountServerId\": <REDACTED>, \"EchelonType\": 3, \"EchelonN…"
    },
    "IsPractice": {
     "types": [
@@ -2593,6 +2621,15 @@
    }
   },
   "first_call_N_today": null
+ },
+ "/api/eliminateraid/lobby": {
+  "protocol": 45001,
+  "obf": "PTLVLNEGY7WFZGPP2NEOUELMAE",
+  "samples": 1,
+  "cn": "大决战·大厅（EliminateRaid）",
+  "request_fields": {},
+  "response_packet_keys": {},
+  "first_call_N_today": 186
  },
  "/api/event/rewardincrease": {
   "protocol": 25003,
@@ -4531,6 +4568,15 @@
   },
   "first_call_N_today": null
  },
+ "/api/resetablecontent/get": {
+  "protocol": 41000,
+  "obf": "JFFWQZULOYGDGMVJPIKIB5E5YU",
+  "samples": 1,
+  "cn": "可重置内容·获取",
+  "request_fields": {},
+  "response_packet_keys": {},
+  "first_call_N_today": 304
+ },
  "/api/scenario/skip": {
   "protocol": 19003,
   "obf": "63AWLKA74BAHU6K3JNGSV7X65M",
@@ -4618,6 +4664,40 @@
    }
   },
   "first_call_N_today": null
+ },
+ "/api/shop/buymerchandise": {
+  "protocol": 10000,
+  "obf": "A6DO2RLY7GVG7DDPZ4UHOH6FSA",
+  "samples": 5,
+  "cn": "商店·购买商品（普通商店/战术对抗赛商店）",
+  "request_fields": {
+   "GoodsId": {
+    "types": [
+     "int"
+    ],
+    "example": "80058"
+   },
+   "IsRefreshGoods": {
+    "types": [
+     "bool"
+    ],
+    "example": "false"
+   },
+   "PurchaseCount": {
+    "types": [
+     "int"
+    ],
+    "example": "1"
+   },
+   "ShopUniqueId": {
+    "types": [
+     "int"
+    ],
+    "example": "8001055"
+   }
+  },
+  "response_packet_keys": {},
+  "first_call_N_today": 197
  },
  "/api/shop/buyrefreshmerchandise": {
   "protocol": 10007,
@@ -4747,6 +4827,22 @@
    }
   },
   "first_call_N_today": 42
+ },
+ "/api/shop/refresh": {
+  "protocol": 10003,
+  "obf": "2QYSTQH44UDEYSNMQ2XEYSV7TE",
+  "samples": 3,
+  "cn": "商店·刷新商品列表",
+  "request_fields": {
+   "ShopCategoryType": {
+    "types": [
+     "int"
+    ],
+    "example": "10"
+   }
+  },
+  "response_packet_keys": {},
+  "first_call_N_today": 203
  },
  "/api/toast/list": {
   "protocol": 16000,

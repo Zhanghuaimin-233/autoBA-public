@@ -17,11 +17,13 @@ goto :run
 :bootstrap
 echo [setup] .venv missing or incomplete, installing deps with uv ...
 if not exist "%PY%" uv venv --python 3.12 "%~dp0.venv"
-uv pip install --python "%PY%" fastapi uvicorn requests pycryptodome
+uv pip install --python "%PY%" -r "%~dp0requirements.txt"
 if errorlevel 1 goto :fail
 
 :run
-"%PY%" -m uvicorn webui.server:app --host 127.0.0.1 --port 8800
+rem port: AUTOBA_PORT if set (env.local.bat or shell), default 8800
+if not defined AUTOBA_PORT set "AUTOBA_PORT=8800"
+"%PY%" -m uvicorn webui.server:app --host 127.0.0.1 --port %AUTOBA_PORT%
 pause
 exit /b
 

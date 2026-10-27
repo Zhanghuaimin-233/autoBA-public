@@ -1,0 +1,7 @@
+{
+  "Version": "1.16.1",
+  "GVersionNo": "73",
+  "GBuildNo": "",
+  "DeviceModel": "Xiaomi 00000XXX",
+  "note": "客户端版本头（sdk-api 请求 Head）。游戏更新后改这里，重启 WebUI 生效；DeviceModel 为占位值，使用前请替换为自备客户端的实际机型。字段缺失时用 webui/server.py 里的内置默认值。"
+}

@@ -1,6 +1,6 @@
 # autoBA 国服接口文档
 
-> 自动生成自 867 组抓包双向明文（2026-10-11 ~ 10-13，测试号 10000000000）。
+> **状态**：报告（自动生成，勿手改；由 `scripts/gen_api_doc.py` 产出）｜ **数据源**：867 组抓包双向明文（2026-10-11 ~ 10-13，测试号 10000000000）
 > 请求 Hash = (Protocol << 32) | N；N 为会话级全局计数，auth 起算 N=1。
 > 请求/响应 key 均明文附在密文尾部（请求=b64-hex ASCII 形态，响应=原始二进制形态），IV 固定 JOSY。
 
@@ -44,9 +44,11 @@
 | [/api/craft/list](#apicraftlist) | 制造·节点列表 | 21000 |
 | [/api/craft/reward](#apicraftreward) | 制造·领取成品 | 21005 |
 | [/api/craft/selectnode](#apicraftselectnode) | 制造·选择节点 | 21001 |
+| [/api/craft/shiftingbeginprocess](#apicraftshiftingbeginprocess) | 制造·切换节点开始（三解） | 21007 |
 | [/api/craft/updatenodelevel](#apicraftupdatenodelevel) | 制造·节点升级 | 21002 |
 | [/api/echelon/list](#apiechelonlist) | 编队·列表 | 5000 |
 | [/api/echelon/save](#apiechelonsave) | 编队·保存 | 5001 |
+| [/api/eliminateraid/lobby](#apieliminateraidlobby) | 大决战·大厅（EliminateRaid） | 45001 |
 | [/api/event/rewardincrease](#apieventrewardincrease) | 账号加成信息（掉落/经验加成，刷界面时高频） | 25003 |
 | [/api/eventcontent/adventurelist](#apieventcontentadventurelist) | 活动·关卡列表 | 30000 |
 | [/api/eventcontent/collectionlist](#apieventcontentcollectionlist) | 活动·收集进度 | 30025 |
@@ -78,10 +80,13 @@
 | [/api/raid/rankingindex](#apiraidrankingindex) | 总力战·排名索引 | 17021 |
 | [/api/raid/seasonreward](#apiraidseasonreward) | 总力战·赛季奖励 | 17013 |
 | [/api/raid/sweep](#apiraidsweep) | 总力战·扫荡 | 17019 |
+| [/api/resetablecontent/get](#apiresetablecontentget) | 可重置内容·获取 | 41000 |
 | [/api/scenario/skip](#apiscenarioskip) | 剧情·跳过 | 19003 |
 | [/api/schooldungeon/list](#apischooldungeonlist) | 学院副本·列表 (？) | 38000 |
+| [/api/shop/buymerchandise](#apishopbuymerchandise) | 商店·购买商品（普通商店/战术对抗赛商店） | 10000 |
 | [/api/shop/buyrefreshmerchandise](#apishopbuyrefreshmerchandise) | 商店·手动刷新商品 | 10007 |
 | [/api/shop/list](#apishoplist) | 商店·列表（信用点/青辉石） | 10002 |
+| [/api/shop/refresh](#apishoprefresh) | 商店·刷新商品列表 | 10003 |
 | [/api/toast/list](#apitoastlist) | 弹窗通知列表 | 16000 |
 | [/api/weekdungeon/list](#apiweekdungeonlist) | 周常副本·列表（课程表）(？) | 23000 |
 
@@ -91,10 +96,12 @@
 
 **之后你干的事（按首次调用）：**
 
+- 学园日程信息（N=31）
 - 邮件·列表（N=31）
+- 账号加成信息（掉落/经验加成，刷界面时高频）（N=32）
 - 邮件·领取附件（N=32）
-- 账号加成信息（掉落/经验加成，刷界面时高频）（N=34）
 - 通行证·任务进度检查（N=35）
+- 学园日程·执行（地点+100经验，掉对应学校技术笔记）（N=36）
 - 红点检查（活动未读）（N=36）
 - 邮件·未读检查（N=37）
 - 社团·状态检查（N=39）
@@ -108,15 +115,37 @@
 - 制造·节点升级（N=59）
 - 制造·选择节点（N=60）
 - 制造·开始制造（N=65）
+- 登录认证（Token 换会话）（N=70）
+- 登录同步（批量拉取变更）（N=72）
+- 道具·列表（N=73）
+- 服务器时间同步（N=74）
+- 云存档读取（N=75）
 - 任务·批量领取奖励（N=75）
+- 通行证·信息（N=76）
+- 教程完成状态查询（N=78）
+- 任务·列表（N=79）
+- 任务·引导任务赛季（N=80）
+- 小游戏·任务列表（N=83）
+- 通行证·任务列表（N=84）
 - 活动·关卡列表（N=85）
-- 任务·列表（N=86）
+- 弹窗通知列表（N=85）
 - 活动·收集进度（N=87）
+- 出勤奖励（签到）（N=89）
+- 开放条件·活动列表（N=93）
 - 关卡开放信息（活动副本列表）（N=99）
 - 扫荡·多关卡批量扫荡（N=101）
+- 商城·商品列表查询（N=102）
 - 扫荡·保存扫荡预设（N=102）
+- 制造·切换节点开始（三解）（N=111）
 - 扫荡·执行（N=116）
 - 任务·领取奖励（单个）（N=127）
+- 咖啡厅·领取体力和信用点（N=166）
+- 咖啡厅·状态确认（N=185）
+- 大决战·大厅（EliminateRaid）（N=186）
+- 商店·购买商品（普通商店/战术对抗赛商店）（N=197）
+- 商店·刷新商品列表（N=203）
+- /api/momotalk/messagelist（N=222）
+- 可重置内容·获取（N=304）
 
 ---
 
@@ -150,7 +179,7 @@
 
 ```
 - **AcademyDB**
-  - **AccountId**: int = `10000000000`
+  - **AccountId**: int = `<REDACTED>`
   - **LastUpdate**: str = `"2026-10-11T18:25:41.763"`
   - **ZoneVisitCharacterDBs**: object
     - **1**: array
@@ -344,7 +373,7 @@
     - **Amount**: int = `25`
 - **MissionProgressDBs**
   - [0] (object):
-    - **AccountServerId**: int = `10000000000`
+    - **AccountServerId**: int = `<REDACTED>`
     - **MissionUniqueId**: int = `1508`
     - **Category**: int = `1`
     - **Complete**: bool = `true`
@@ -353,8 +382,8 @@
       - …(1 keys)
 - **ParcelResultDB**
   - **AccountDB**: object
-    - **ServerId**: int = `10000000000`
-    - **RoleId**: int = `10000000000`
+    - **ServerId**: int = `<REDACTED>`
+    - **RoleId**: int = `<REDACTED>`
     - **Nickname**: str = `"左搂邮箱右抱日奈"`
     - **CallName**: str = `"我要高炒了"`
     - **DevId**: str = `""`
@@ -408,8 +437,8 @@
 - **ServerTimeTicks**
   - `639273401268418840`
 - **SessionKey**
-  - **AccountServerId**: int = `10000000000`
-  - **MxToken**: str = `"AAAAAAAA…"`
+  - **AccountServerId**: int = `<REDACTED>`
+  - **MxToken**: str = `"<REDACTED>"`
 ```
 </details>
 
@@ -435,7 +464,7 @@
 
 ```
 - **AcademyDB**
-  - **AccountId**: int = `10000000000`
+  - **AccountId**: int = `<REDACTED>`
   - **LastUpdate**: str = `"2026-10-11T18:25:41.76339157"`
   - **ZoneVisitCharacterDBs**: object
     - **1**: array
@@ -615,7 +644,7 @@
   - **ZoneScheduleGroupRecords**: object
 - **AcademyLocationDBs**
   - [0] (object):
-    - **AccountId**: int = `10000000000`
+    - **AccountId**: int = `<REDACTED>`
     - **LocationId**: int = `1`
     - **Rank**: int = `12`
     - **Exp**: int = `0`
@@ -629,8 +658,8 @@
 - **ServerTimeTicks**
   - `639273399417794906`
 - **SessionKey**
-  - **AccountServerId**: int = `10000000000`
-  - **MxToken**: str = `"AAAAAAAA…"`
+  - **AccountServerId**: int = `<REDACTED>`
+  - **MxToken**: str = `"<REDACTED>"`
 ```
 </details>
 
@@ -648,17 +677,17 @@
 |---|---|---|
 | AccessIP | null | `null` |
 | AdvertisementId | null | `null` |
-| DevId | str | `"1011499471"` |
-| DeviceModel | str | `"Xiaomi 24031PN0DC"` |
-| DeviceSystemMemorySize | int | `8961` |
-| DeviceUniqueId | str | `"d3ffbb0cf1cd97e4e6d5b7b0a7847406"` |
+| DevId | str | `"deadbeef00"`（占位） |
+| DeviceModel | str | `"Xiaomi 00000XXX"`（占位） |
+| DeviceSystemMemorySize | int | `8192`（占位） |
+| DeviceUniqueId | str | `"deadbeefdeadbeefdeadbeefdeadbeef"`（占位） |
 | IMEI | int | `0` |
 | MarketId | null | `null` |
-| OSVersion | str | `"Android OS 12 / API-32 (V417IR/1747)"` |
+| OSVersion | str | `"Android OS 12 / API-32"` |
 | ResUrl | str | `"https://static.bluearchive-cn.com/prodm39"` |
 | SdkPid | str | `"CN-BA"` |
 | SubChannel | str | `""` |
-| Token | str | `"dededede…"` |
+| Token | str | `"<REDACTED>"` |
 | UserType | null | `null` |
 | Version | int | `0` |
 
@@ -702,11 +731,11 @@
 
 ```
 - **AccountDB**
-  - **ServerId**: int = `10000000000`
-  - **RoleId**: int = `10000000000`
+  - **ServerId**: int = `<REDACTED>`
+  - **RoleId**: int = `<REDACTED>`
   - **Nickname**: str = `"左搂邮箱右抱日奈"`
   - **CallName**: str = `"我要高炒了"`
-  - **DevId**: str = `"1000000000"`
+  - **DevId**: str = `"<REDACTED>"`
   - **State**: int = `1`
   - **Level**: int = `90`
   - **Exp**: int = `0`
@@ -793,7 +822,7 @@
   - `1`
 - **MissionProgressDBs**
   - [0] (object):
-    - **AccountServerId**: int = `10000000000`
+    - **AccountServerId**: int = `<REDACTED>`
     - **MissionUniqueId**: int = `300012`
     - **Category**: int = `3`
     - **StartDate**: str = `"2026-08-07T20:06:18.834"`
@@ -822,8 +851,8 @@
 - **ServerTimeTicks**
   - `639273399412415486`
 - **SessionKey**
-  - **AccountServerId**: int = `10000000000`
-  - **MxToken**: str = `"AAAAAAAA…"`
+  - **AccountServerId**: int = `<REDACTED>`
+  - **MxToken**: str = `"<REDACTED>"`
 - **TTSCdnUri**
   - `""`
 - **UpdateRequired**
@@ -864,8 +893,8 @@
 - **ServerTimeTicks**
   - `639273399445029297`
 - **SessionKey**
-  - **AccountServerId**: int = `10000000000`
-  - **MxToken**: str = `"AAAAAAAA…"`
+  - **AccountServerId**: int = `<REDACTED>`
+  - **MxToken**: str = `"<REDACTED>"`
 - **TutorialIds**
   - [0] (int):
     - `1`
@@ -931,7 +960,7 @@
   - **Protocol**: int = `0`
   - **SessionKey**: object
     - **AccountServerId**: int = `0`
-    - **MxToken**: str = `""`
+    - **MxToken**: str = `"<REDACTED>"`
   - **ServerTimeTicks**: int = `0`
   - **ServerNotification**: int = `0`
   - **RequestId**: str = `""`
@@ -951,7 +980,7 @@
   - **Protocol**: int = `0`
   - **SessionKey**: object
     - **AccountServerId**: int = `0`
-    - **MxToken**: str = `""`
+    - **MxToken**: str = `"<REDACTED>"`
   - **ServerTimeTicks**: int = `0`
   - **ServerNotification**: int = `0`
   - **RequestId**: str = `""`
@@ -969,7 +998,7 @@
   - **Protocol**: int = `0`
   - **SessionKey**: object
     - **AccountServerId**: int = `0`
-    - **MxToken**: str = `""`
+    - **MxToken**: str = `"<REDACTED>"`
   - **ServerTimeTicks**: int = `0`
   - **ServerNotification**: int = `0`
   - **RequestId**: str = `""`
@@ -981,18 +1010,18 @@
   - **Protocol**: int = `0`
   - **SessionKey**: object
     - **AccountServerId**: int = `0`
-    - **MxToken**: str = `""`
+    - **MxToken**: str = `"<REDACTED>"`
   - **ServerTimeTicks**: int = `0`
   - **ServerNotification**: int = `0`
   - **RequestId**: str = `""`
   - **AccountAttachmentDB**: object
-    - **AccountId**: int = `10000000000`
+    - **AccountId**: int = `<REDACTED>`
     - **EmblemUniqueId**: int = `1101080`
 - **BillingPurchaseListByYostarResponse**
   - **Protocol**: int = `0`
   - **SessionKey**: object
     - **AccountServerId**: int = `0`
-    - **MxToken**: str = `""`
+    - **MxToken**: str = `"<REDACTED>"`
   - **ServerTimeTicks**: int = `0`
   - **ServerNotification**: int = `0`
   - **RequestId**: str = `""`
@@ -1008,7 +1037,7 @@
   - **Protocol**: int = `0`
   - **SessionKey**: object
     - **AccountServerId**: int = `0`
-    - **MxToken**: str = `""`
+    - **MxToken**: str = `"<REDACTED>"`
   - **ServerTimeTicks**: int = `0`
   - **ServerNotification**: int = `0`
   - **RequestId**: str = `""`
@@ -1025,7 +1054,7 @@
   - **Protocol**: int = `0`
   - **SessionKey**: object
     - **AccountServerId**: int = `0`
-    - **MxToken**: str = `""`
+    - **MxToken**: str = `"<REDACTED>"`
   - **ServerTimeTicks**: int = `0`
   - **ServerNotification**: int = `0`
   - **RequestId**: str = `""`
@@ -1046,7 +1075,7 @@
   - **Protocol**: int = `0`
   - **SessionKey**: object
     - **AccountServerId**: int = `0`
-    - **MxToken**: str = `""`
+    - **MxToken**: str = `"<REDACTED>"`
   - **ServerTimeTicks**: int = `0`
   - **ServerNotification**: int = `0`
   - **RequestId**: str = `""`
@@ -1058,7 +1087,7 @@
   - **Protocol**: int = `0`
   - **SessionKey**: object
     - **AccountServerId**: int = `0`
-    - **MxToken**: str = `""`
+    - **MxToken**: str = `"<REDACTED>"`
   - **ServerTimeTicks**: int = `0`
   - **ServerNotification**: int = `0`
   - **RequestId**: str = `""`
@@ -1076,7 +1105,7 @@
   - **Protocol**: int = `0`
   - **SessionKey**: object
     - **AccountServerId**: int = `0`
-    - **MxToken**: str = `""`
+    - **MxToken**: str = `"<REDACTED>"`
   - **ServerTimeTicks**: int = `0`
   - **ServerNotification**: int = `0`
   - **RequestId**: str = `""`
@@ -1092,7 +1121,7 @@
     - **ClanManagerCount**: int = `0`
     - **ClanJoinOption**: int = `0`
   - **AccountClanMemberDB**: object
-    - **AccountId**: int = `10000000000`
+    - **AccountId**: int = `<REDACTED>`
     - **AccountLevel**: int = `90`
     - **AccountNickName**: str = `"左搂邮箱右抱日奈"`
     - **RepresentCharacterUniqueId**: int = `13010`
@@ -1115,7 +1144,7 @@
   - **Protocol**: int = `0`
   - **SessionKey**: object
     - **AccountServerId**: int = `0`
-    - **MxToken**: str = `""`
+    - **MxToken**: str = `"<REDACTED>"`
   - **ServerTimeTicks**: int = `0`
   - **ServerNotification**: int = `0`
   - **RequestId**: str = `""`
@@ -1127,7 +1156,7 @@
   - **Protocol**: int = `0`
   - **SessionKey**: object
     - **AccountServerId**: int = `0`
-    - **MxToken**: str = `""`
+    - **MxToken**: str = `"<REDACTED>"`
   - **ServerTimeTicks**: int = `0`
   - **ServerNotification**: int = `0`
   - **RequestId**: str = `""`
@@ -1142,7 +1171,7 @@
   - **Protocol**: int = `0`
   - **SessionKey**: object
     - **AccountServerId**: int = `0`
-    - **MxToken**: str = `""`
+    - **MxToken**: str = `"<REDACTED>"`
   - **ServerTimeTicks**: int = `0`
   - **ServerNotification**: int = `0`
   - **RequestId**: str = `""`
@@ -1154,7 +1183,7 @@
   - **Protocol**: int = `0`
   - **SessionKey**: object
     - **AccountServerId**: int = `0`
-    - **MxToken**: str = `""`
+    - **MxToken**: str = `"<REDACTED>"`
   - **ServerTimeTicks**: int = `0`
   - **ServerNotification**: int = `0`
   - **RequestId**: str = `""`
@@ -1172,7 +1201,7 @@
   - **Protocol**: int = `0`
   - **SessionKey**: object
     - **AccountServerId**: int = `0`
-    - **MxToken**: str = `""`
+    - **MxToken**: str = `"<REDACTED>"`
   - **ServerTimeTicks**: int = `0`
   - **ServerNotification**: int = `0`
   - **RequestId**: str = `""`
@@ -1184,7 +1213,7 @@
   - **Protocol**: int = `0`
   - **SessionKey**: object
     - **AccountServerId**: int = `0`
-    - **MxToken**: str = `""`
+    - **MxToken**: str = `"<REDACTED>"`
   - **ServerTimeTicks**: int = `0`
   - **ServerNotification**: int = `0`
   - **RequestId**: str = `""`
@@ -1202,7 +1231,7 @@
   - **Protocol**: int = `0`
   - **SessionKey**: object
     - **AccountServerId**: int = `0`
-    - **MxToken**: str = `""`
+    - **MxToken**: str = `"<REDACTED>"`
   - **ServerTimeTicks**: int = `0`
   - **ServerNotification**: int = `0`
   - **RequestId**: str = `""`
@@ -1214,7 +1243,7 @@
   - **Protocol**: int = `0`
   - **SessionKey**: object
     - **AccountServerId**: int = `0`
-    - **MxToken**: str = `""`
+    - **MxToken**: str = `"<REDACTED>"`
   - **ServerTimeTicks**: int = `0`
   - **ServerNotification**: int = `0`
   - **RequestId**: str = `""`
@@ -1341,7 +1370,7 @@
   - **Protocol**: int = `0`
   - **SessionKey**: object
     - **AccountServerId**: int = `0`
-    - **MxToken**: str = `""`
+    - **MxToken**: str = `"<REDACTED>"`
   - **ServerTimeTicks**: int = `0`
   - **ServerNotification**: int = `0`
   - **RequestId**: str = `""`
@@ -1350,7 +1379,7 @@
   - **Protocol**: int = `0`
   - **SessionKey**: object
     - **AccountServerId**: int = `0`
-    - **MxToken**: str = `""`
+    - **MxToken**: str = `"<REDACTED>"`
   - **ServerTimeTicks**: int = `0`
   - **ServerNotification**: int = `0`
   - **RequestId**: str = `""`
@@ -1366,7 +1395,7 @@
   - **Protocol**: int = `0`
   - **SessionKey**: object
     - **AccountServerId**: int = `0`
-    - **MxToken**: str = `""`
+    - **MxToken**: str = `"<REDACTED>"`
   - **ServerTimeTicks**: int = `0`
   - **ServerNotification**: int = `0`
   - **RequestId**: str = `""`
@@ -1380,7 +1409,7 @@
   - **Protocol**: int = `0`
   - **SessionKey**: object
     - **AccountServerId**: int = `0`
-    - **MxToken**: str = `""`
+    - **MxToken**: str = `"<REDACTED>"`
   - **ServerTimeTicks**: int = `0`
   - **ServerNotification**: int = `0`
   - **RequestId**: str = `""`
@@ -1399,13 +1428,13 @@
 - **ServerTimeTicks**
   - `639273399422168861`
 - **SessionKey**
-  - **AccountServerId**: int = `10000000000`
-  - **MxToken**: str = `"AAAAAAAA…"`
+  - **AccountServerId**: int = `<REDACTED>`
+  - **MxToken**: str = `"<REDACTED>"`
 - **ShopGachaRecruitListResponse**
   - **Protocol**: int = `0`
   - **SessionKey**: object
     - **AccountServerId**: int = `0`
-    - **MxToken**: str = `""`
+    - **MxToken**: str = `"<REDACTED>"`
   - **ServerTimeTicks**: int = `0`
   - **ServerNotification**: int = `0`
   - **RequestId**: str = `""`
@@ -1420,12 +1449,12 @@
   - **Protocol**: int = `0`
   - **SessionKey**: object
     - **AccountServerId**: int = `0`
-    - **MxToken**: str = `""`
+    - **MxToken**: str = `"<REDACTED>"`
   - **ServerTimeTicks**: int = `0`
   - **ServerNotification**: int = `0`
   - **RequestId**: str = `""`
   - **StickerBookDB**: object
-    - **AccountId**: int = `10000000000`
+    - **AccountId**: int = `<REDACTED>`
     - **UnusedStickerDBs**: array
       - …(array len=20)
     - **UsedStickerDBs**: array
@@ -1434,7 +1463,7 @@
   - **Protocol**: int = `0`
   - **SessionKey**: object
     - **AccountServerId**: int = `0`
-    - **MxToken**: str = `""`
+    - **MxToken**: str = `"<REDACTED>"`
   - **ServerTimeTicks**: int = `0`
   - **ServerNotification**: int = `0`
   - **RequestId**: str = `""`
@@ -1475,7 +1504,7 @@
   - `639273398756100528`
 - **SessionKey**
   - **AccountServerId**: int = `10016071938`
-  - **MxToken**: str = `"wc4dt5o4…"`
+  - **MxToken**: str = `"<REDACTED>"`
 ```
 </details>
 
@@ -1506,7 +1535,7 @@
 ```
 - **MissionProgressDBs**
   - [0] (object):
-    - **AccountServerId**: int = `10000000000`
+    - **AccountServerId**: int = `<REDACTED>`
     - **MissionUniqueId**: int = `82029`
     - **Category**: int = `3`
     - **StartDate**: str = `"2026-04-09T20:22:43.391"`
@@ -1514,8 +1543,8 @@
       - …(1 keys)
 - **ParcelResult**
   - **AccountDB**: object
-    - **ServerId**: int = `10000000000`
-    - **RoleId**: int = `10000000000`
+    - **ServerId**: int = `<REDACTED>`
+    - **RoleId**: int = `<REDACTED>`
     - **Nickname**: str = `"左搂邮箱右抱日奈"`
     - **CallName**: str = `"我要高炒了"`
     - **DevId**: str = `""`
@@ -1556,8 +1585,8 @@
 - **ServerTimeTicks**
   - `639273400658318638`
 - **SessionKey**
-  - **AccountServerId**: int = `10000000000`
-  - **MxToken**: str = `"AAAAAAAA…"`
+  - **AccountServerId**: int = `<REDACTED>`
+  - **MxToken**: str = `"<REDACTED>"`
 - **TimeRewardAmount**
   - `0`
 - **TimeRewardLastUpdateTime**
@@ -1590,8 +1619,8 @@
   - `"2026-10-13T14:00:00"`
 - **ParcelResult**
   - **AccountDB**: object
-    - **ServerId**: int = `10000000000`
-    - **RoleId**: int = `10000000000`
+    - **ServerId**: int = `<REDACTED>`
+    - **RoleId**: int = `<REDACTED>`
     - **Nickname**: str = `"左搂邮箱右抱日奈"`
     - **CallName**: str = `"我要高炒了"`
     - **DevId**: str = `""`
@@ -1636,8 +1665,8 @@
 - **ServerTimeTicks**
   - `639274353083225705`
 - **SessionKey**
-  - **AccountServerId**: int = `10000000000`
-  - **MxToken**: str = `"AAAAAAAA…"`
+  - **AccountServerId**: int = `<REDACTED>`
+  - **MxToken**: str = `"<REDACTED>"`
 ```
 </details>
 
@@ -1738,7 +1767,7 @@
   - **BattleEndTime**: str = `"0001-01-01T00:00:00"`
   - **Seed**: int = `5695337`
   - **AttackingUserDB**: object
-    - **AccountServerId**: int = `10000000000`
+    - **AccountServerId**: int = `<REDACTED>`
     - **RepresentCharacterUniqueId**: int = `13010`
     - **NickName**: str = `"左搂邮箱右抱日奈"`
     - **Rank**: int = `79`
@@ -1800,7 +1829,7 @@
   - **BattleType**: int = `2097152`
   - **EchelonType**: int = `0`
   - **RandomSeed**: int = `5695337`
-  - **Buid**: str = `"10000000000_1791809713963"`
+  - **Buid**: str = `"<REDACTED>_1791809713963"`
   - **BattleDurationInFrame**: int = `5400`
   - **GroundUniqueId**: int = `530300016`
   - **StageId**: int = `0`
@@ -1808,7 +1837,7 @@
   - **IsBoss**: bool = `false`
   - **IsAutoUseSkill**: bool = `true`
   - **LeftTeam**: object
-    - **AccountId**: int = `10000000000`
+    - **AccountId**: int = `<REDACTED>`
     - **TeamId**: int = `1`
     - **TeamName**: str = `"左搂邮箱右抱日奈"`
     - **LeaderCharacterServerId**: int = `770403`
@@ -1840,7 +1869,7 @@
   - **ClanAssistUseInfo**: null = `null`
 - **MissionProgressDBs**
   - [0] (object):
-    - **AccountServerId**: int = `10000000000`
+    - **AccountServerId**: int = `<REDACTED>`
     - **MissionUniqueId**: int = `82029`
     - **Category**: int = `3`
     - **StartDate**: str = `"2026-04-09T20:22:43.391"`
@@ -1858,12 +1887,12 @@
 - **ServerTimeTicks**
   - `639274353143563446`
 - **SessionKey**
-  - **AccountServerId**: int = `10000000000`
-  - **MxToken**: str = `"AAAAAAAA…"`
+  - **AccountServerId**: int = `<REDACTED>`
+  - **MxToken**: str = `"<REDACTED>"`
 - **VictoryRewards**
   - **AccountDB**: object
-    - **ServerId**: int = `10000000000`
-    - **RoleId**: int = `10000000000`
+    - **ServerId**: int = `<REDACTED>`
+    - **RoleId**: int = `<REDACTED>`
     - **Nickname**: str = `"左搂邮箱右抱日奈"`
     - **CallName**: str = `"我要高炒了"`
     - **DevId**: str = `""`
@@ -1961,8 +1990,8 @@
 - **ServerTimeTicks**
   - `639273400637453733`
 - **SessionKey**
-  - **AccountServerId**: int = `10000000000`
-  - **MxToken**: str = `"AAAAAAAA…"`
+  - **AccountServerId**: int = `<REDACTED>`
+  - **MxToken**: str = `"<REDACTED>"`
 ```
 </details>
 
@@ -2015,8 +2044,8 @@
 - **ServerTimeTicks**
   - `639274353159110077`
 - **SessionKey**
-  - **AccountServerId**: int = `10000000000`
-  - **MxToken**: str = `"AAAAAAAA…"`
+  - **AccountServerId**: int = `<REDACTED>`
+  - **MxToken**: str = `"<REDACTED>"`
 ```
 </details>
 
@@ -2051,8 +2080,8 @@
 - **ServerTimeTicks**
   - `639274353113474368`
 - **SessionKey**
-  - **AccountServerId**: int = `10000000000`
-  - **MxToken**: str = `"AAAAAAAA…"`
+  - **AccountServerId**: int = `<REDACTED>`
+  - **MxToken**: str = `"<REDACTED>"`
 ```
 </details>
 
@@ -2125,8 +2154,8 @@
 - **ServerTimeTicks**
   - `639275049060518496`
 - **SessionKey**
-  - **AccountServerId**: int = `10000000000`
-  - **MxToken**: str = `"AAAAAAAA…"`
+  - **AccountServerId**: int = `<REDACTED>`
+  - **MxToken**: str = `"<REDACTED>"`
 ```
 </details>
 
@@ -2171,7 +2200,7 @@
   - `639273396123013102`
 - **SessionKey**
   - **AccountServerId**: int = `10016071938`
-  - **MxToken**: str = `"wc4dt5o4…"`
+  - **MxToken**: str = `"<REDACTED>"`
 ```
 </details>
 
@@ -2217,8 +2246,8 @@
 - **ServerTimeTicks**
   - `639273399441541053`
 - **SessionKey**
-  - **AccountServerId**: int = `10000000000`
-  - **MxToken**: str = `"AAAAAAAA…"`
+  - **AccountServerId**: int = `<REDACTED>`
+  - **MxToken**: str = `"<REDACTED>"`
 ```
 </details>
 
@@ -2253,7 +2282,7 @@
   - …共 13 个元素
 - **ProgressDBs**
   - [0] (object):
-    - **AccountServerId**: int = `10000000000`
+    - **AccountServerId**: int = `<REDACTED>`
     - **MissionUniqueId**: int = `2000001`
     - **Category**: int = `1`
     - **Complete**: bool = `true`
@@ -2270,8 +2299,8 @@
 - **ServerTimeTicks**
   - `639273399487027733`
 - **SessionKey**
-  - **AccountServerId**: int = `10000000000`
-  - **MxToken**: str = `"AAAAAAAA…"`
+  - **AccountServerId**: int = `<REDACTED>`
+  - **MxToken**: str = `"<REDACTED>"`
 ```
 </details>
 
@@ -2304,7 +2333,7 @@
 ```
 - **AddedHistoryDBs**
   - [0] (object):
-    - **AccountServerId**: int = `10000000000`
+    - **AccountServerId**: int = `<REDACTED>`
     - **MissionUniqueId**: int = `2000001`
     - **CompleteTime**: str = `"2026-10-11T18:32:50.63218105"`
     - **Expired**: bool = `false`
@@ -2331,8 +2360,8 @@
 - **ServerTimeTicks**
   - `639273403706473148`
 - **SessionKey**
-  - **AccountServerId**: int = `10000000000`
-  - **MxToken**: str = `"AAAAAAAA…"`
+  - **AccountServerId**: int = `<REDACTED>`
+  - **MxToken**: str = `"<REDACTED>"`
 ```
 </details>
 
@@ -2372,8 +2401,8 @@
   - **LastWeeklyPassExpLimitRefreshDate**: str = `"2026-10-11T18:32:50.632"`
 - **ParcelResult**
   - **AccountDB**: object
-    - **ServerId**: int = `10000000000`
-    - **RoleId**: int = `10000000000`
+    - **ServerId**: int = `<REDACTED>`
+    - **RoleId**: int = `<REDACTED>`
     - **Nickname**: str = `"左搂邮箱右抱日奈"`
     - **CallName**: str = `"我要高炒了"`
     - **DevId**: str = `""`
@@ -2420,8 +2449,8 @@
 - **ServerTimeTicks**
   - `639273403753470882`
 - **SessionKey**
-  - **AccountServerId**: int = `10000000000`
-  - **MxToken**: str = `"AAAAAAAA…"`
+  - **AccountServerId**: int = `<REDACTED>`
+  - **MxToken**: str = `"<REDACTED>"`
 ```
 </details>
 
@@ -2458,7 +2487,7 @@
   - `null`
 - **MissionProgressDBs**
   - [0] (object):
-    - **AccountServerId**: int = `10000000000`
+    - **AccountServerId**: int = `<REDACTED>`
     - **MissionUniqueId**: int = `82029`
     - **Category**: int = `3`
     - **StartDate**: str = `"2026-04-09T20:22:43.391"`
@@ -2466,8 +2495,8 @@
       - …(1 keys)
 - **ParcelResult**
   - **AccountDB**: object
-    - **ServerId**: int = `10000000000`
-    - **RoleId**: int = `10000000000`
+    - **ServerId**: int = `<REDACTED>`
+    - **RoleId**: int = `<REDACTED>`
     - **Nickname**: str = `"左搂邮箱右抱日奈"`
     - **CallName**: str = `"我要高炒了"`
     - **DevId**: str = `""`
@@ -2514,8 +2543,8 @@
 - **ServerTimeTicks**
   - `639274360600602301`
 - **SessionKey**
-  - **AccountServerId**: int = `10000000000`
-  - **MxToken**: str = `"AAAAAAAA…"`
+  - **AccountServerId**: int = `<REDACTED>`
+  - **MxToken**: str = `"<REDACTED>"`
 ```
 </details>
 
@@ -2557,7 +2586,7 @@
   - `639273398624060043`
 - **SessionKey**
   - **AccountServerId**: int = `10016071938`
-  - **MxToken**: str = `"wc4dt5o4…"`
+  - **MxToken**: str = `"<REDACTED>"`
 ```
 </details>
 
@@ -2573,7 +2602,7 @@
 
 | 字段 | 类型 | 示例 |
 |---|---|---|
-| CafeDBId | int | `100000000001` |
+| CafeDBId | int | `<REDACTED>1` |
 
 ### 响应 packet 顶层
 
@@ -2588,9 +2617,9 @@
 
 ```
 - **CafeDB**
-  - **CafeDBId**: int = `100000000002`
+  - **CafeDBId**: int = `<REDACTED>2`
   - **CafeId**: int = `2`
-  - **AccountId**: int = `10000000000`
+  - **AccountId**: int = `<REDACTED>`
   - **CafeRank**: int = `9`
   - **LastUpdate**: str = `"2026-10-11T18:25:42.02"`
   - **LastSummonDate**: str = `"2026-10-10T23:11:34.912"`
@@ -2612,7 +2641,7 @@
     - …共 53 个元素
   - **ProductionAppliedTime**: str = `"2026-10-11T18:00:00"`
   - **ProductionDB**: object
-    - **CafeDBId**: int = `100000000002`
+    - **CafeDBId**: int = `<REDACTED>2`
     - **ComfortValue**: int = `5000`
     - **AppliedDate**: str = `"2026-10-11T18:00:00"`
     - **ProductionParcelInfos**: array
@@ -2626,8 +2655,8 @@
 - **ServerTimeTicks**
   - `639273400938641542`
 - **SessionKey**
-  - **AccountServerId**: int = `10000000000`
-  - **MxToken**: str = `"AAAAAAAA…"`
+  - **AccountServerId**: int = `<REDACTED>`
+  - **MxToken**: str = `"<REDACTED>"`
 ```
 </details>
 
@@ -2641,7 +2670,7 @@
 
 | 字段 | 类型 | 示例 |
 |---|---|---|
-| CafeDBId | int | `100000000001` |
+| CafeDBId | int | `<REDACTED>1` |
 | CharacterId | int | `10060` |
 
 ### 响应 packet 顶层
@@ -2665,9 +2694,9 @@
     - [0] (object):
       - …(6 keys)
 - **CafeDB**
-  - **CafeDBId**: int = `100000000001`
+  - **CafeDBId**: int = `<REDACTED>1`
   - **CafeId**: int = `1`
-  - **AccountId**: int = `10000000000`
+  - **AccountId**: int = `<REDACTED>`
   - **CafeRank**: int = `10`
   - **LastUpdate**: str = `"2026-10-11T18:25:42.02"`
   - **LastSummonDate**: str = `"2026-10-10T23:11:21.027"`
@@ -2689,7 +2718,7 @@
     - …共 55 个元素
   - **ProductionAppliedTime**: str = `"2026-10-11T18:00:00"`
   - **ProductionDB**: object
-    - **CafeDBId**: int = `100000000001`
+    - **CafeDBId**: int = `<REDACTED>1`
     - **ComfortValue**: int = `5500`
     - **AppliedDate**: str = `"2026-10-11T18:00:00"`
     - **ProductionParcelInfos**: array
@@ -2721,7 +2750,7 @@
     - **3**: int = `0`
 - **MissionProgressDBs**
   - [0] (object):
-    - **AccountServerId**: int = `10000000000`
+    - **AccountServerId**: int = `<REDACTED>`
     - **MissionUniqueId**: int = `1509`
     - **Category**: int = `1`
     - **Complete**: bool = `true`
@@ -2731,8 +2760,8 @@
   - …共 2 个元素
 - **ParcelResultDB**
   - **AccountDB**: object
-    - **ServerId**: int = `10000000000`
-    - **RoleId**: int = `10000000000`
+    - **ServerId**: int = `<REDACTED>`
+    - **RoleId**: int = `<REDACTED>`
     - **Nickname**: str = `"左搂邮箱右抱日奈"`
     - **CallName**: str = `"我要高炒了"`
     - **DevId**: str = `""`
@@ -2773,8 +2802,8 @@
 - **ServerTimeTicks**
   - `639273400839970240`
 - **SessionKey**
-  - **AccountServerId**: int = `10000000000`
-  - **MxToken**: str = `"AAAAAAAA…"`
+  - **AccountServerId**: int = `<REDACTED>`
+  - **MxToken**: str = `"<REDACTED>"`
 ```
 </details>
 
@@ -2788,7 +2817,7 @@
 
 | 字段 | 类型 | 示例 |
 |---|---|---|
-| AccountServerId | int | `10000000000` |
+| AccountServerId | int | `<REDACTED>` |
 | CafeDBId | int | `0` |
 
 ### 响应 packet 顶层
@@ -2807,9 +2836,9 @@
 ```
 - **CafeDBs**
   - [0] (object):
-    - **CafeDBId**: int = `100000000001`
+    - **CafeDBId**: int = `<REDACTED>1`
     - **CafeId**: int = `1`
-    - **AccountId**: int = `10000000000`
+    - **AccountId**: int = `<REDACTED>`
     - **CafeRank**: int = `10`
     - **LastUpdate**: str = `"2026-10-12T17:09:27.172"`
     - **LastSummonDate**: str = `"2026-10-10T23:11:21.027"`
@@ -2824,7 +2853,7 @@
   - …共 2 个元素
 - **MissionProgressDBs**
   - [0] (object):
-    - **AccountServerId**: int = `10000000000`
+    - **AccountServerId**: int = `<REDACTED>`
     - **MissionUniqueId**: int = `82029`
     - **Category**: int = `3`
     - **StartDate**: str = `"2026-04-09T20:22:43.391"`
@@ -2832,8 +2861,8 @@
       - …(1 keys)
 - **ParcelResultDB**
   - **AccountDB**: object
-    - **ServerId**: int = `10000000000`
-    - **RoleId**: int = `10000000000`
+    - **ServerId**: int = `<REDACTED>`
+    - **RoleId**: int = `<REDACTED>`
     - **Nickname**: str = `"左搂邮箱右抱日奈"`
     - **CallName**: str = `"我要高炒了"`
     - **DevId**: str = `""`
@@ -2875,8 +2904,8 @@
 - **ServerTimeTicks**
   - `639274341667598972`
 - **SessionKey**
-  - **AccountServerId**: int = `10000000000`
-  - **MxToken**: str = `"AAAAAAAA…"`
+  - **AccountServerId**: int = `<REDACTED>`
+  - **MxToken**: str = `"<REDACTED>"`
 ```
 </details>
 
@@ -2890,7 +2919,7 @@
 
 | 字段 | 类型 | 示例 |
 |---|---|---|
-| CafeDBId | int | `100000000001` |
+| CafeDBId | int | `<REDACTED>1` |
 | CharacterServerId | int | `1753765` |
 
 ### 响应 packet 顶层
@@ -2907,9 +2936,9 @@
 
 ```
 - **CafeDB**
-  - **CafeDBId**: int = `100000000002`
+  - **CafeDBId**: int = `<REDACTED>2`
   - **CafeId**: int = `2`
-  - **AccountId**: int = `10000000000`
+  - **AccountId**: int = `<REDACTED>`
   - **CafeRank**: int = `9`
   - **LastUpdate**: str = `"2026-10-12T17:09:27.172"`
   - **LastSummonDate**: str = `"2026-10-12T20:36:52.872571298"`
@@ -2933,16 +2962,16 @@
     - …共 53 个元素
   - **ProductionAppliedTime**: str = `"2026-10-12T20:00:00"`
   - **ProductionDB**: object
-    - **CafeDBId**: int = `100000000002`
+    - **CafeDBId**: int = `<REDACTED>2`
     - **ComfortValue**: int = `5000`
     - **AppliedDate**: str = `"2026-10-12T20:00:00"`
     - **ProductionParcelInfos**: array
       - …(array len=1)
 - **CafeDBs**
   - [0] (object):
-    - **CafeDBId**: int = `100000000001`
+    - **CafeDBId**: int = `<REDACTED>1`
     - **CafeId**: int = `1`
-    - **AccountId**: int = `10000000000`
+    - **AccountId**: int = `<REDACTED>`
     - **CafeRank**: int = `10`
     - **LastUpdate**: str = `"2026-10-12T17:09:27.172"`
     - **LastSummonDate**: str = `"2026-10-12T20:36:10.83"`
@@ -2964,8 +2993,8 @@
 - **ServerTimeTicks**
   - `639274342128793545`
 - **SessionKey**
-  - **AccountServerId**: int = `10000000000`
-  - **MxToken**: str = `"AAAAAAAA…"`
+  - **AccountServerId**: int = `<REDACTED>`
+  - **MxToken**: str = `"<REDACTED>"`
 ```
 </details>
 
@@ -2996,7 +3025,7 @@
 ```
 - **CampaignChapterClearRewardHistoryDBs**
   - [0] (object):
-    - **AccountServerId**: int = `10000000000`
+    - **AccountServerId**: int = `<REDACTED>`
     - **ChapterUniqueId**: int = `101`
     - **RewardType**: int = `1`
     - **ReceiveDate**: str = `"2023-08-05T14:06:12.558"`
@@ -3012,11 +3041,11 @@
 - **ServerTimeTicks**
   - `639274360847348132`
 - **SessionKey**
-  - **AccountServerId**: int = `10000000000`
-  - **MxToken**: str = `"AAAAAAAA…"`
+  - **AccountServerId**: int = `<REDACTED>`
+  - **MxToken**: str = `"<REDACTED>"`
 - **StageHistoryDBs**
   - [0] (object):
-    - **AccountServerId**: int = `10000000000`
+    - **AccountServerId**: int = `<REDACTED>`
     - **StoryUniqueId**: int = `0`
     - **ChapterUniqueId**: int = `101`
     - **StageUniqueId**: int = `1011101`
@@ -3032,7 +3061,7 @@
   - …共 391 个元素
 - **StrategyObjecthistoryDBs**
   - [0] (object):
-    - **AccountId**: int = `10000000000`
+    - **AccountId**: int = `<REDACTED>`
     - **StrategyObjectId**: int = `1012101`
   - …共 57 个元素
 ```
@@ -3076,8 +3105,8 @@
 - **ServerTimeTicks**
   - `639274351830118512`
 - **SessionKey**
-  - **AccountServerId**: int = `10000000000`
-  - **MxToken**: str = `"AAAAAAAA…"`
+  - **AccountServerId**: int = `<REDACTED>`
+  - **MxToken**: str = `"<REDACTED>"`
 ```
 </details>
 
@@ -3110,7 +3139,7 @@
   - `639273398818918290`
 - **SessionKey**
   - **AccountServerId**: int = `10016071938`
-  - **MxToken**: str = `"wc4dt5o4…"`
+  - **MxToken**: str = `"<REDACTED>"`
 ```
 </details>
 
@@ -3150,7 +3179,7 @@
   - **ClanManagerCount**: int = `0`
   - **ClanJoinOption**: int = `0`
 - **AccountClanMemberDB**
-  - **AccountId**: int = `10000000000`
+  - **AccountId**: int = `<REDACTED>`
   - **AccountLevel**: int = `90`
   - **AccountNickName**: str = `"左搂邮箱右抱日奈"`
   - **RepresentCharacterUniqueId**: int = `13010`
@@ -3164,7 +3193,7 @@
   - **GameLoginDate**: str = `"2026-10-12T20:41:00.044"`
   - **AppliedDate**: str = `"2025-08-16T20:23:18.32"`
   - **AttachmentDB**: object
-    - **AccountId**: int = `10000000000`
+    - **AccountId**: int = `<REDACTED>`
     - **EmblemUniqueId**: int = `1101080`
 - **ClanMemberDBs**
   - [0] (object):
@@ -3188,7 +3217,7 @@
   - (空数组)
 - **MissionProgressDBs**
   - [0] (object):
-    - **AccountServerId**: int = `10000000000`
+    - **AccountServerId**: int = `<REDACTED>`
     - **MissionUniqueId**: int = `1603`
     - **Category**: int = `9`
     - **Complete**: bool = `true`
@@ -3204,8 +3233,8 @@
 - **ServerTimeTicks**
   - `639274351796268495`
 - **SessionKey**
-  - **AccountServerId**: int = `10000000000`
-  - **MxToken**: str = `"AAAAAAAA…"`
+  - **AccountServerId**: int = `<REDACTED>`
+  - **MxToken**: str = `"<REDACTED>"`
 ```
 </details>
 
@@ -3248,8 +3277,8 @@
 - **ServerTimeTicks**
   - `639273399439675034`
 - **SessionKey**
-  - **AccountServerId**: int = `10000000000`
-  - **MxToken**: str = `"AAAAAAAA…"`
+  - **AccountServerId**: int = `<REDACTED>`
+  - **MxToken**: str = `"<REDACTED>"`
 ```
 </details>
 
@@ -3298,7 +3327,7 @@
   - …共 3 个元素
 - **CampaignStageHistoryDBs**
   - [0] (object):
-    - **AccountServerId**: int = `10000000000`
+    - **AccountServerId**: int = `<REDACTED>`
     - **StoryUniqueId**: int = `0`
     - **ChapterUniqueId**: int = `110`
     - **StageUniqueId**: int = `1102103`
@@ -3321,7 +3350,7 @@
   - `null`
 - **MissionProgressDBs**
   - [0] (object):
-    - **AccountServerId**: int = `10000000000`
+    - **AccountServerId**: int = `<REDACTED>`
     - **MissionUniqueId**: int = `2301`
     - **Category**: int = `2`
     - **StartDate**: str = `"2026-10-12T17:09:25.927"`
@@ -3330,8 +3359,8 @@
   - …共 15 个元素
 - **ParcelResult**
   - **AccountDB**: object
-    - **ServerId**: int = `10000000000`
-    - **RoleId**: int = `10000000000`
+    - **ServerId**: int = `<REDACTED>`
+    - **RoleId**: int = `<REDACTED>`
     - **Nickname**: str = `"左搂邮箱右抱日奈"`
     - **CallName**: str = `"我要高炒了"`
     - **DevId**: str = `""`
@@ -3396,8 +3425,8 @@
 - **ServerTimeTicks**
   - `639274360902787565`
 - **SessionKey**
-  - **AccountServerId**: int = `10000000000`
-  - **MxToken**: str = `"AAAAAAAA…"`
+  - **AccountServerId**: int = `<REDACTED>`
+  - **MxToken**: str = `"<REDACTED>"`
 ```
 </details>
 
@@ -3446,7 +3475,7 @@
     - **Amount**: int = `680`
   - …共 2 个元素
 - **CampaignStageHistoryDB**
-  - **AccountServerId**: int = `10000000000`
+  - **AccountServerId**: int = `<REDACTED>`
   - **StoryUniqueId**: int = `0`
   - **ChapterUniqueId**: int = `0`
   - **StageUniqueId**: int = `108362309`
@@ -3472,7 +3501,7 @@
   - …共 8 个元素
 - **MissionProgressDBs**
   - [0] (object):
-    - **AccountServerId**: int = `10000000000`
+    - **AccountServerId**: int = `<REDACTED>`
     - **MissionUniqueId**: int = `1510`
     - **Category**: int = `1`
     - **Complete**: bool = `true`
@@ -3482,8 +3511,8 @@
   - …共 3 个元素
 - **ParcelResult**
   - **AccountDB**: object
-    - **ServerId**: int = `10000000000`
-    - **RoleId**: int = `10000000000`
+    - **ServerId**: int = `<REDACTED>`
+    - **RoleId**: int = `<REDACTED>`
     - **Nickname**: str = `"左搂邮箱右抱日奈"`
     - **CallName**: str = `"我要高炒了"`
     - **DevId**: str = `""`
@@ -3535,8 +3564,8 @@
 - **ServerTimeTicks**
   - `639273400336908799`
 - **SessionKey**
-  - **AccountServerId**: int = `10000000000`
-  - **MxToken**: str = `"AAAAAAAA…"`
+  - **AccountServerId**: int = `<REDACTED>`
+  - **MxToken**: str = `"<REDACTED>"`
 ```
 </details>
 
@@ -3585,8 +3614,8 @@
 - **ServerTimeTicks**
   - `639274360905543536`
 - **SessionKey**
-  - **AccountServerId**: int = `10000000000`
-  - **MxToken**: str = `"AAAAAAAA…"`
+  - **AccountServerId**: int = `<REDACTED>`
+  - **MxToken**: str = `"<REDACTED>"`
 ```
 </details>
 
@@ -3634,8 +3663,8 @@
 - **ServerTimeTicks**
   - `639274352532232515`
 - **SessionKey**
-  - **AccountServerId**: int = `10000000000`
-  - **MxToken**: str = `"AAAAAAAA…"`
+  - **AccountServerId**: int = `<REDACTED>`
+  - **MxToken**: str = `"<REDACTED>"`
 ```
 </details>
 
@@ -3680,8 +3709,8 @@
 - **ServerTimeTicks**
   - `639273402296949499`
 - **SessionKey**
-  - **AccountServerId**: int = `10000000000`
-  - **MxToken**: str = `"AAAAAAAA…"`
+  - **AccountServerId**: int = `<REDACTED>`
+  - **MxToken**: str = `"<REDACTED>"`
 - **ShiftingCraftInfos**
   - (空数组)
 ```
@@ -3722,7 +3751,7 @@
   - (空数组)
 - **MissionProgressDBs**
   - [0] (object):
-    - **AccountServerId**: int = `10000000000`
+    - **AccountServerId**: int = `<REDACTED>`
     - **MissionUniqueId**: int = `2308`
     - **Category**: int = `2`
     - **StartDate**: str = `"2026-10-12T17:09:25.927"`
@@ -3730,8 +3759,8 @@
       - …(1 keys)
 - **ParcelResultDB**
   - **AccountDB**: object
-    - **ServerId**: int = `10000000000`
-    - **RoleId**: int = `10000000000`
+    - **ServerId**: int = `<REDACTED>`
+    - **RoleId**: int = `<REDACTED>`
     - **Nickname**: str = `"左搂邮箱右抱日奈"`
     - **CallName**: str = `"我要高炒了"`
     - **DevId**: str = `""`
@@ -3780,8 +3809,8 @@
 - **ServerTimeTicks**
   - `639274352032253617`
 - **SessionKey**
-  - **AccountServerId**: int = `10000000000`
-  - **MxToken**: str = `"AAAAAAAA…"`
+  - **AccountServerId**: int = `<REDACTED>`
+  - **MxToken**: str = `"<REDACTED>"`
 ```
 </details>
 
@@ -3828,11 +3857,26 @@
 - **ServerTimeTicks**
   - `639273402229743068`
 - **SessionKey**
-  - **AccountServerId**: int = `10000000000`
-  - **MxToken**: str = `"AAAAAAAA…"`
+  - **AccountServerId**: int = `<REDACTED>`
+  - **MxToken**: str = `"<REDACTED>"`
 ```
 </details>
 
+
+## /api/craft/shiftingbeginprocess
+
+- **中文**: 制造·切换节点开始（三解）
+- **Protocol**: 21007　**混淆名**: `FI4QTHDFKM7EUWJF6NQUFJERZE`　**样本**: 1
+
+### 请求业务字段
+
+| 字段 | 类型 | 示例 |
+|---|---|---|
+| ConsumeRequestDB | object | `{"ConsumeItemServerIdAndCounts": {"23481789": 75}, "ConsumeE…` |
+| RecipeId | int | `41` |
+| SlotId | int | `0` |
+
+响应 packet 为空/非对象。
 
 ## /api/craft/updatenodelevel
 
@@ -3949,7 +3993,7 @@
       - …(2 keys)
 - **MissionProgressDBs**
   - [0] (object):
-    - **AccountServerId**: int = `10000000000`
+    - **AccountServerId**: int = `<REDACTED>`
     - **MissionUniqueId**: int = `82129`
     - **Category**: int = `3`
     - **StartDate**: str = `"2026-08-21T22:11:16.317"`
@@ -3964,8 +4008,8 @@
 - **ServerTimeTicks**
   - `639273402194627478`
 - **SessionKey**
-  - **AccountServerId**: int = `10000000000`
-  - **MxToken**: str = `"AAAAAAAA…"`
+  - **AccountServerId**: int = `<REDACTED>`
+  - **MxToken**: str = `"<REDACTED>"`
 ```
 </details>
 
@@ -3993,7 +4037,7 @@
 ```
 - **EchelonDBs**
   - [0] (object):
-    - **AccountServerId**: int = `10000000000`
+    - **AccountServerId**: int = `<REDACTED>`
     - **EchelonType**: int = `1`
     - **EchelonNumber**: int = `1`
     - **ExtensionType**: int = `0`
@@ -4018,8 +4062,8 @@
 - **ServerTimeTicks**
   - `639273400468014014`
 - **SessionKey**
-  - **AccountServerId**: int = `10000000000`
-  - **MxToken**: str = `"AAAAAAAA…"`
+  - **AccountServerId**: int = `<REDACTED>`
+  - **MxToken**: str = `"<REDACTED>"`
 ```
 </details>
 
@@ -4034,7 +4078,7 @@
 | 字段 | 类型 | 示例 |
 |---|---|---|
 | AssistUseInfos | null | `null` |
-| EchelonDB | object | `{"AccountServerId": 10000000000, "EchelonType": 3, "EchelonN…` |
+| EchelonDB | object | `{"AccountServerId": <REDACTED>, "EchelonType": 3, "EchelonN…` |
 | IsPractice | bool | `false` |
 
 ### 响应 packet 顶层
@@ -4050,7 +4094,7 @@
 
 ```
 - **EchelonDB**
-  - **AccountServerId**: int = `10000000000`
+  - **AccountServerId**: int = `<REDACTED>`
   - **EchelonType**: int = `3`
   - **EchelonNumber**: int = `1`
   - **ExtensionType**: int = `0`
@@ -4082,11 +4126,22 @@
 - **ServerTimeTicks**
   - `639274353134636182`
 - **SessionKey**
-  - **AccountServerId**: int = `10000000000`
-  - **MxToken**: str = `"AAAAAAAA…"`
+  - **AccountServerId**: int = `<REDACTED>`
+  - **MxToken**: str = `"<REDACTED>"`
 ```
 </details>
 
+
+# eliminateraid
+
+## /api/eliminateraid/lobby
+
+- **中文**: 大决战·大厅（EliminateRaid）
+- **Protocol**: 45001　**混淆名**: `PTLVLNEGY7WFZGPP2NEOUELMAE`　**样本**: 1
+
+请求无业务字段（仅标准头）。
+
+响应 packet 为空/非对象。
 
 # event
 
@@ -4128,7 +4183,7 @@
   - `639273396130842374`
 - **SessionKey**
   - **AccountServerId**: int = `10016071938`
-  - **MxToken**: str = `"wc4dt5o4…"`
+  - **MxToken**: str = `"<REDACTED>"`
 ```
 </details>
 
@@ -4181,11 +4236,11 @@
 - **ServerTimeTicks**
   - `639273402615668512`
 - **SessionKey**
-  - **AccountServerId**: int = `10000000000`
-  - **MxToken**: str = `"AAAAAAAA…"`
+  - **AccountServerId**: int = `<REDACTED>`
+  - **MxToken**: str = `"<REDACTED>"`
 - **StageHistoryDBs**
   - [0] (object):
-    - **AccountServerId**: int = `10000000000`
+    - **AccountServerId**: int = `<REDACTED>`
     - **StoryUniqueId**: int = `0`
     - **ChapterUniqueId**: int = `0`
     - **StageUniqueId**: int = `101140`
@@ -4198,7 +4253,7 @@
   - `0`
 - **StrategyObjecthistoryDBs**
   - [0] (object):
-    - **AccountId**: int = `10000000000`
+    - **AccountId**: int = `<REDACTED>`
     - **StrategyObjectId**: int = `1012101`
   - …共 57 个元素
 ```
@@ -4241,7 +4296,7 @@
   - `639273396111403026`
 - **SessionKey**
   - **AccountServerId**: int = `10016071938`
-  - **MxToken**: str = `"wc4dt5o4…"`
+  - **MxToken**: str = `"<REDACTED>"`
 ```
 </details>
 
@@ -4287,7 +4342,7 @@
 - **RequestId**
   - `"7715f91e-e39b-44a6-b465-7af78f52d5dd"`
 - **SaveDataDB**
-  - **AccountServerId**: int = `10000000000`
+  - **AccountServerId**: int = `<REDACTED>`
   - **CreateTime**: str = `"2026-10-13T16:31:56.741126811"`
   - **StageUniqueId**: int = `108361302`
   - **ContentType**: int = `12`
@@ -4303,8 +4358,8 @@
 - **ServerTimeTicks**
   - `639275059167454055`
 - **SessionKey**
-  - **AccountServerId**: int = `10000000000`
-  - **MxToken**: str = `"AAAAAAAA…"`
+  - **AccountServerId**: int = `<REDACTED>`
+  - **MxToken**: str = `"<REDACTED>"`
 ```
 </details>
 
@@ -4337,8 +4392,8 @@
 ```
 - **ParcelResultDB**
   - **AccountDB**: object
-    - **ServerId**: int = `10000000000`
-    - **RoleId**: int = `10000000000`
+    - **ServerId**: int = `<REDACTED>`
+    - **RoleId**: int = `<REDACTED>`
     - **Nickname**: str = `"左搂邮箱右抱日奈"`
     - **CallName**: str = `"我要高炒了"`
     - **DevId**: str = `""`
@@ -4373,7 +4428,7 @@
   - `"d3919593-e066-459c-9fcd-ea486182e001"`
 - **ScenarioGroupHistoryDBs**
   - [0] (object):
-    - **AccountServerId**: int = `10000000000`
+    - **AccountServerId**: int = `<REDACTED>`
     - **ScenarioGroupUniqueId**: int = `60`
     - **ScenarioType**: int = `6`
     - **EventContentId**: int = `70000`
@@ -4386,8 +4441,8 @@
 - **ServerTimeTicks**
   - `639275059242230611`
 - **SessionKey**
-  - **AccountServerId**: int = `10000000000`
-  - **MxToken**: str = `"AAAAAAAA…"`
+  - **AccountServerId**: int = `<REDACTED>`
+  - **MxToken**: str = `"<REDACTED>"`
 ```
 </details>
 
@@ -4492,8 +4547,8 @@
   - `null`
 - **ParcelResultDB**
   - **AccountDB**: object
-    - **ServerId**: int = `10000000000`
-    - **RoleId**: int = `10000000000`
+    - **ServerId**: int = `<REDACTED>`
+    - **RoleId**: int = `<REDACTED>`
     - **Nickname**: str = `"左搂邮箱右抱日奈"`
     - **CallName**: str = `"我要高炒了"`
     - **DevId**: str = `""`
@@ -4537,8 +4592,8 @@
 - **ServerTimeTicks**
   - `639274353741636259`
 - **SessionKey**
-  - **AccountServerId**: int = `10000000000`
-  - **MxToken**: str = `"AAAAAAAA…"`
+  - **AccountServerId**: int = `<REDACTED>`
+  - **MxToken**: str = `"<REDACTED>"`
 - **ShopProductDB**
   - **EventContentId**: int = `10836`
   - **ShopExcelId**: int = `108360015`
@@ -4586,8 +4641,8 @@
 - **ServerTimeTicks**
   - `639274353647765211`
 - **SessionKey**
-  - **AccountServerId**: int = `10000000000`
-  - **MxToken**: str = `"AAAAAAAA…"`
+  - **AccountServerId**: int = `<REDACTED>`
+  - **MxToken**: str = `"<REDACTED>"`
 - **ShopInfos**
   - [0] (object):
     - **EventContentId**: int = `10836`
@@ -4634,7 +4689,7 @@
 
 ```
 - **CampaignStageHistoryDB**
-  - **AccountServerId**: int = `10000000000`
+  - **AccountServerId**: int = `<REDACTED>`
   - **StoryUniqueId**: int = `0`
   - **ChapterUniqueId**: int = `0`
   - **StageUniqueId**: int = `108361302`
@@ -4657,7 +4712,7 @@
   - …共 3 个元素
 - **MissionProgressDBs**
   - [0] (object):
-    - **AccountServerId**: int = `10000000000`
+    - **AccountServerId**: int = `<REDACTED>`
     - **MissionUniqueId**: int = `82029`
     - **Category**: int = `3`
     - **StartDate**: str = `"2026-04-09T20:22:43.391"`
@@ -4665,8 +4720,8 @@
       - …(1 keys)
 - **ParcelResultDB**
   - **AccountDB**: object
-    - **ServerId**: int = `10000000000`
-    - **RoleId**: int = `10000000000`
+    - **ServerId**: int = `<REDACTED>`
+    - **RoleId**: int = `<REDACTED>`
     - **Nickname**: str = `"左搂邮箱右抱日奈"`
     - **CallName**: str = `"我要高炒了"`
     - **DevId**: str = `""`
@@ -4718,8 +4773,8 @@
 - **ServerTimeTicks**
   - `639275059246681776`
 - **SessionKey**
-  - **AccountServerId**: int = `10000000000`
-  - **MxToken**: str = `"AAAAAAAA…"`
+  - **AccountServerId**: int = `<REDACTED>`
+  - **MxToken**: str = `"<REDACTED>"`
 ```
 </details>
 
@@ -4754,7 +4809,7 @@
   - `639273398820523364`
 - **SessionKey**
   - **AccountServerId**: int = `10016071938`
-  - **MxToken**: str = `"wc4dt5o4…"`
+  - **MxToken**: str = `"<REDACTED>"`
 ```
 </details>
 
@@ -4800,8 +4855,8 @@
 - **ServerTimeTicks**
   - `639273399436001798`
 - **SessionKey**
-  - **AccountServerId**: int = `10000000000`
-  - **MxToken**: str = `"AAAAAAAA…"`
+  - **AccountServerId**: int = `<REDACTED>`
+  - **MxToken**: str = `"<REDACTED>"`
 ```
 </details>
 
@@ -4839,7 +4894,7 @@
   - `639273398815498815`
 - **SessionKey**
   - **AccountServerId**: int = `10016071938`
-  - **MxToken**: str = `"wc4dt5o4…"`
+  - **MxToken**: str = `"<REDACTED>"`
 ```
 </details>
 
@@ -4885,8 +4940,8 @@
 - **ServerTimeTicks**
   - `639273403309886894`
 - **SessionKey**
-  - **AccountServerId**: int = `10000000000`
-  - **MxToken**: str = `"AAAAAAAA…"`
+  - **AccountServerId**: int = `<REDACTED>`
+  - **MxToken**: str = `"<REDACTED>"`
 ```
 </details>
 
@@ -4926,8 +4981,8 @@
 - **ServerTimeTicks**
   - `639274361049505993`
 - **SessionKey**
-  - **AccountServerId**: int = `10000000000`
-  - **MxToken**: str = `"AAAAAAAA…"`
+  - **AccountServerId**: int = `<REDACTED>`
+  - **MxToken**: str = `"<REDACTED>"`
 ```
 </details>
 
@@ -4966,7 +5021,7 @@
   - …共 3 个元素
 - **MissionProgressDBs**
   - [0] (object):
-    - **AccountServerId**: int = `10000000000`
+    - **AccountServerId**: int = `<REDACTED>`
     - **MissionUniqueId**: int = `82029`
     - **Category**: int = `3`
     - **StartDate**: str = `"2026-04-09T20:22:43.391"`
@@ -4974,8 +5029,8 @@
       - …(1 keys)
 - **ParcelResultDB**
   - **AccountDB**: object
-    - **ServerId**: int = `10000000000`
-    - **RoleId**: int = `10000000000`
+    - **ServerId**: int = `<REDACTED>`
+    - **RoleId**: int = `<REDACTED>`
     - **Nickname**: str = `"左搂邮箱右抱日奈"`
     - **CallName**: str = `"我要高炒了"`
     - **DevId**: str = `""`
@@ -5020,8 +5075,8 @@
 - **ServerTimeTicks**
   - `639274361058779521`
 - **SessionKey**
-  - **AccountServerId**: int = `10000000000`
-  - **MxToken**: str = `"AAAAAAAA…"`
+  - **AccountServerId**: int = `<REDACTED>`
+  - **MxToken**: str = `"<REDACTED>"`
 ```
 </details>
 
@@ -5087,7 +5142,7 @@
   - `639273396136860037`
 - **SessionKey**
   - **AccountServerId**: int = `10016071938`
-  - **MxToken**: str = `"wc4dt5o4…"`
+  - **MxToken**: str = `"<REDACTED>"`
 ```
 </details>
 
@@ -5125,7 +5180,7 @@
   - (空数组)
 - **ProgressDBs**
   - [0] (object):
-    - **AccountServerId**: int = `10000000000`
+    - **AccountServerId**: int = `<REDACTED>`
     - **MissionUniqueId**: int = `108360000`
     - **Category**: int = `7`
     - **StartDate**: str = `"2026-10-08T21:33:13.446"`
@@ -5141,8 +5196,8 @@
 - **ServerTimeTicks**
   - `639273399483150995`
 - **SessionKey**
-  - **AccountServerId**: int = `10000000000`
-  - **MxToken**: str = `"AAAAAAAA…"`
+  - **AccountServerId**: int = `<REDACTED>`
+  - **MxToken**: str = `"<REDACTED>"`
 ```
 </details>
 
@@ -5180,7 +5235,7 @@
   - …共 18 个元素
 - **MissionProgressDBs**
   - [0] (object):
-    - **AccountServerId**: int = `10000000000`
+    - **AccountServerId**: int = `<REDACTED>`
     - **MissionUniqueId**: int = `1000425`
     - **Category**: int = `4`
     - **StartDate**: str = `"2024-04-04T22:19:14.73"`
@@ -5196,8 +5251,8 @@
 - **ServerTimeTicks**
   - `639273399463034438`
 - **SessionKey**
-  - **AccountServerId**: int = `10000000000`
-  - **MxToken**: str = `"AAAAAAAA…"`
+  - **AccountServerId**: int = `<REDACTED>`
+  - **MxToken**: str = `"<REDACTED>"`
 ```
 </details>
 
@@ -5256,7 +5311,7 @@
   - `639273396088342027`
 - **SessionKey**
   - **AccountServerId**: int = `10016071938`
-  - **MxToken**: str = `"wc4dt5o4…"`
+  - **MxToken**: str = `"<REDACTED>"`
 ```
 </details>
 
@@ -5290,14 +5345,14 @@
 ```
 - **AddedHistoryDBs**
   - [0] (object):
-    - **AccountServerId**: int = `10000000000`
+    - **AccountServerId**: int = `<REDACTED>`
     - **MissionUniqueId**: int = `1514`
     - **CompleteTime**: str = `"2026-10-11T18:31:25.155401771"`
     - **Expired**: bool = `false`
   - …共 2 个元素
 - **MissionProgressDBs**
   - [0] (object):
-    - **AccountServerId**: int = `10000000000`
+    - **AccountServerId**: int = `<REDACTED>`
     - **MissionUniqueId**: int = `82029`
     - **Category**: int = `3`
     - **StartDate**: str = `"2026-04-09T20:22:43.391"`
@@ -5306,8 +5361,8 @@
   - …共 4 个元素
 - **ParcelResultDB**
   - **AccountDB**: object
-    - **ServerId**: int = `10000000000`
-    - **RoleId**: int = `10000000000`
+    - **ServerId**: int = `<REDACTED>`
+    - **RoleId**: int = `<REDACTED>`
     - **Nickname**: str = `"左搂邮箱右抱日奈"`
     - **CallName**: str = `"我要高炒了"`
     - **DevId**: str = `""`
@@ -5349,8 +5404,8 @@
 - **ServerTimeTicks**
   - `639273402851608616`
 - **SessionKey**
-  - **AccountServerId**: int = `10000000000`
-  - **MxToken**: str = `"AAAAAAAA…"`
+  - **AccountServerId**: int = `<REDACTED>`
+  - **MxToken**: str = `"<REDACTED>"`
 ```
 </details>
 
@@ -5382,14 +5437,14 @@
 
 ```
 - **AddedHistoryDB**
-  - **AccountServerId**: int = `10000000000`
+  - **AccountServerId**: int = `<REDACTED>`
   - **MissionUniqueId**: int = `1701`
   - **CompleteTime**: str = `"2026-10-13T17:29:10.401945887"`
   - **Expired**: bool = `false`
 - **ParcelResultDB**
   - **AccountDB**: object
-    - **ServerId**: int = `10000000000`
-    - **RoleId**: int = `10000000000`
+    - **ServerId**: int = `<REDACTED>`
+    - **RoleId**: int = `<REDACTED>`
     - **Nickname**: str = `"左搂邮箱右抱日奈"`
     - **CallName**: str = `"我要高炒了"`
     - **DevId**: str = `""`
@@ -5430,8 +5485,8 @@
 - **ServerTimeTicks**
   - `639275093504060621`
 - **SessionKey**
-  - **AccountServerId**: int = `10000000000`
-  - **MxToken**: str = `"AAAAAAAA…"`
+  - **AccountServerId**: int = `<REDACTED>`
+  - **MxToken**: str = `"<REDACTED>"`
 ```
 </details>
 
@@ -5471,8 +5526,8 @@
 - **ServerTimeTicks**
   - `639273399438161662`
 - **SessionKey**
-  - **AccountServerId**: int = `10000000000`
-  - **MxToken**: str = `"AAAAAAAA…"`
+  - **AccountServerId**: int = `<REDACTED>`
+  - **MxToken**: str = `"<REDACTED>"`
 ```
 </details>
 
@@ -5561,7 +5616,7 @@
   - `639273398656614226`
 - **SessionKey**
   - **AccountServerId**: int = `10016071938`
-  - **MxToken**: str = `"wc4dt5o4…"`
+  - **MxToken**: str = `"<REDACTED>"`
 ```
 </details>
 
@@ -5607,8 +5662,8 @@
 - **ServerTimeTicks**
   - `639273399802379186`
 - **SessionKey**
-  - **AccountServerId**: int = `10000000000`
-  - **MxToken**: str = `"AAAAAAAA…"`
+  - **AccountServerId**: int = `<REDACTED>`
+  - **MxToken**: str = `"<REDACTED>"`
 - **WorldRaidLocalBossDBs**
   - **821**: array
     - [0] (object):
@@ -5714,7 +5769,7 @@
   - **BattleType**: int = `2048`
   - **EchelonType**: int = `2`
   - **RandomSeed**: int = `7816843`
-  - **Buid**: str = `"10000000000_1791809982086"`
+  - **Buid**: str = `"<REDACTED>_1791809982086"`
   - **BattleDurationInFrame**: int = `7200`
   - **GroundUniqueId**: int = `211100006`
   - **StageId**: int = `1111406`
@@ -5722,7 +5777,7 @@
   - **IsBoss**: bool = `true`
   - **IsAutoUseSkill**: bool = `true`
   - **LeftTeam**: object
-    - **AccountId**: int = `10000000000`
+    - **AccountId**: int = `<REDACTED>`
     - **TeamId**: int = `2`
     - **TeamName**: str = `"Team01"`
     - **LeaderCharacterServerId**: int = `2544528`
@@ -5759,7 +5814,7 @@
   - **ClanAssistUseInfo**: null = `null`
 - **MissionProgressDBs**
   - [0] (object):
-    - **AccountServerId**: int = `10000000000`
+    - **AccountServerId**: int = `<REDACTED>`
     - **MissionUniqueId**: int = `100018`
     - **Category**: int = `3`
     - **StartDate**: str = `"2026-08-03T20:01:23.185"`
@@ -5778,7 +5833,7 @@
   - **SubPartsHPs**: null = `null`
 - **RaidDB**
   - **Owner**: object
-    - **AccountId**: int = `10000000000`
+    - **AccountId**: int = `<REDACTED>`
     - **AccountName**: str = `""`
     - **CharacterId**: int = `0`
     - **DamageCollection**: null = `null`
@@ -5804,8 +5859,8 @@
 - **ServerTimeTicks**
   - `639274355820913577`
 - **SessionKey**
-  - **AccountServerId**: int = `10000000000`
-  - **MxToken**: str = `"AAAAAAAA…"`
+  - **AccountServerId**: int = `<REDACTED>`
+  - **MxToken**: str = `"<REDACTED>"`
 ```
 </details>
 
@@ -5853,8 +5908,8 @@
   - `14216000`
 - **ParcelResultDB**
   - **AccountDB**: object
-    - **ServerId**: int = `10000000000`
-    - **RoleId**: int = `10000000000`
+    - **ServerId**: int = `<REDACTED>`
+    - **RoleId**: int = `<REDACTED>`
     - **Nickname**: str = `"左搂邮箱右抱日奈"`
     - **CallName**: str = `"我要高炒了"`
     - **DevId**: str = `""`
@@ -5903,8 +5958,8 @@
 - **ServerTimeTicks**
   - `639274360170951297`
 - **SessionKey**
-  - **AccountServerId**: int = `10000000000`
-  - **MxToken**: str = `"AAAAAAAA…"`
+  - **AccountServerId**: int = `<REDACTED>`
+  - **MxToken**: str = `"<REDACTED>"`
 ```
 </details>
 
@@ -5945,7 +6000,7 @@
   - **BattleType**: int = `2048`
   - **EchelonType**: int = `2`
   - **RandomSeed**: int = `2010826`
-  - **Buid**: str = `"10000000000_1791810262459"`
+  - **Buid**: str = `"<REDACTED>_1791810262459"`
   - **BattleDurationInFrame**: int = `7200`
   - **GroundUniqueId**: int = `211100006`
   - **StageId**: int = `1111406`
@@ -5953,7 +6008,7 @@
   - **IsBoss**: bool = `true`
   - **IsAutoUseSkill**: bool = `true`
   - **LeftTeam**: object
-    - **AccountId**: int = `10000000000`
+    - **AccountId**: int = `<REDACTED>`
     - **TeamId**: int = `2`
     - **TeamName**: str = `"Team01"`
     - **LeaderCharacterServerId**: int = `2544528`
@@ -6000,7 +6055,7 @@
   - **SubPartsHPs**: null = `null`
 - **RaidDB**
   - **Owner**: object
-    - **AccountId**: int = `10000000000`
+    - **AccountId**: int = `<REDACTED>`
     - **AccountName**: str = `""`
     - **CharacterId**: int = `0`
     - **DamageCollection**: null = `null`
@@ -6026,8 +6081,8 @@
 - **ServerTimeTicks**
   - `639274358624637409`
 - **SessionKey**
-  - **AccountServerId**: int = `10000000000`
-  - **MxToken**: str = `"AAAAAAAA…"`
+  - **AccountServerId**: int = `<REDACTED>`
+  - **MxToken**: str = `"<REDACTED>"`
 ```
 </details>
 
@@ -6106,8 +6161,8 @@
 - **ServerTimeTicks**
   - `639274353208330838`
 - **SessionKey**
-  - **AccountServerId**: int = `10000000000`
-  - **MxToken**: str = `"AAAAAAAA…"`
+  - **AccountServerId**: int = `<REDACTED>`
+  - **MxToken**: str = `"<REDACTED>"`
 ```
 </details>
 
@@ -6162,8 +6217,8 @@
 - **ServerTimeTicks**
   - `639274360520982462`
 - **SessionKey**
-  - **AccountServerId**: int = `10000000000`
-  - **MxToken**: str = `"AAAAAAAA…"`
+  - **AccountServerId**: int = `<REDACTED>`
+  - **MxToken**: str = `"<REDACTED>"`
 ```
 </details>
 
@@ -6201,8 +6256,8 @@
 - **ServerTimeTicks**
   - `639274361634026062`
 - **SessionKey**
-  - **AccountServerId**: int = `10000000000`
-  - **MxToken**: str = `"AAAAAAAA…"`
+  - **AccountServerId**: int = `<REDACTED>`
+  - **MxToken**: str = `"<REDACTED>"`
 ```
 </details>
 
@@ -6230,7 +6285,7 @@
 ```
 - **MissionProgressDBs**
   - [0] (object):
-    - **AccountServerId**: int = `10000000000`
+    - **AccountServerId**: int = `<REDACTED>`
     - **MissionUniqueId**: int = `82029`
     - **Category**: int = `3`
     - **StartDate**: str = `"2026-04-09T20:22:43.391"`
@@ -6238,8 +6293,8 @@
       - …(1 keys)
 - **ParcelResultDB**
   - **AccountDB**: object
-    - **ServerId**: int = `10000000000`
-    - **RoleId**: int = `10000000000`
+    - **ServerId**: int = `<REDACTED>`
+    - **RoleId**: int = `<REDACTED>`
     - **Nickname**: str = `"左搂邮箱右抱日奈"`
     - **CallName**: str = `"我要高炒了"`
     - **DevId**: str = `""`
@@ -6288,8 +6343,8 @@
 - **ServerTimeTicks**
   - `639274361662484689`
 - **SessionKey**
-  - **AccountServerId**: int = `10000000000`
-  - **MxToken**: str = `"AAAAAAAA…"`
+  - **AccountServerId**: int = `<REDACTED>`
+  - **MxToken**: str = `"<REDACTED>"`
 ```
 </details>
 
@@ -6323,7 +6378,7 @@
 ```
 - **MissionProgressDBs**
   - [0] (object):
-    - **AccountServerId**: int = `10000000000`
+    - **AccountServerId**: int = `<REDACTED>`
     - **MissionUniqueId**: int = `100018`
     - **Category**: int = `3`
     - **StartDate**: str = `"2026-08-03T20:01:23.185"`
@@ -6331,8 +6386,8 @@
       - …(1 keys)
 - **ParcelResultDB**
   - **AccountDB**: object
-    - **ServerId**: int = `10000000000`
-    - **RoleId**: int = `10000000000`
+    - **ServerId**: int = `<REDACTED>`
+    - **RoleId**: int = `<REDACTED>`
     - **Nickname**: str = `"左搂邮箱右抱日奈"`
     - **CallName**: str = `"我要高炒了"`
     - **DevId**: str = `""`
@@ -6385,13 +6440,24 @@
 - **ServerTimeTicks**
   - `639274360649004897`
 - **SessionKey**
-  - **AccountServerId**: int = `10000000000`
-  - **MxToken**: str = `"AAAAAAAA…"`
+  - **AccountServerId**: int = `<REDACTED>`
+  - **MxToken**: str = `"<REDACTED>"`
 - **TotalSeasonPoint**
   - `226882149`
 ```
 </details>
 
+
+# resetablecontent
+
+## /api/resetablecontent/get
+
+- **中文**: 可重置内容·获取
+- **Protocol**: 41000　**混淆名**: `JFFWQZULOYGDGMVJPIKIB5E5YU`　**样本**: 1
+
+请求无业务字段（仅标准头）。
+
+响应 packet 为空/非对象。
 
 # scenario
 
@@ -6427,8 +6493,8 @@
 - **ServerTimeTicks**
   - `639275059235633746`
 - **SessionKey**
-  - **AccountServerId**: int = `10000000000`
-  - **MxToken**: str = `"AAAAAAAA…"`
+  - **AccountServerId**: int = `<REDACTED>`
+  - **MxToken**: str = `"<REDACTED>"`
 ```
 </details>
 
@@ -6460,7 +6526,7 @@
   - `"9f0a519c-3553-4f58-8e24-dbac5a066b83"`
 - **SchoolDungeonStageHistoryDBList**
   - [0] (object):
-    - **AccountServerId**: int = `10000000000`
+    - **AccountServerId**: int = `<REDACTED>`
     - **StageUniqueId**: int = `60101`
     - **StarFlags**: array
       - …(array len=3)
@@ -6470,13 +6536,29 @@
 - **ServerTimeTicks**
   - `639274352937844190`
 - **SessionKey**
-  - **AccountServerId**: int = `10000000000`
-  - **MxToken**: str = `"AAAAAAAA…"`
+  - **AccountServerId**: int = `<REDACTED>`
+  - **MxToken**: str = `"<REDACTED>"`
 ```
 </details>
 
 
 # shop
+
+## /api/shop/buymerchandise
+
+- **中文**: 商店·购买商品（普通商店/战术对抗赛商店）
+- **Protocol**: 10000　**混淆名**: `A6DO2RLY7GVG7DDPZ4UHOH6FSA`　**样本**: 5
+
+### 请求业务字段
+
+| 字段 | 类型 | 示例 |
+|---|---|---|
+| GoodsId | int | `80058` |
+| IsRefreshGoods | bool | `false` |
+| PurchaseCount | int | `1` |
+| ShopUniqueId | int | `8001055` |
+
+响应 packet 为空/非对象。
 
 ## /api/shop/buyrefreshmerchandise
 
@@ -6576,7 +6658,7 @@
   - `null`
 - **MissionProgressDBs**
   - [0] (object):
-    - **AccountServerId**: int = `10000000000`
+    - **AccountServerId**: int = `<REDACTED>`
     - **MissionUniqueId**: int = `82129`
     - **Category**: int = `3`
     - **StartDate**: str = `"2026-08-21T22:11:16.317"`
@@ -6584,8 +6666,8 @@
       - …(1 keys)
 - **ParcelResultDB**
   - **AccountDB**: object
-    - **ServerId**: int = `10000000000`
-    - **RoleId**: int = `10000000000`
+    - **ServerId**: int = `<REDACTED>`
+    - **RoleId**: int = `<REDACTED>`
     - **Nickname**: str = `"左搂邮箱右抱日奈"`
     - **CallName**: str = `"我要高炒了"`
     - **DevId**: str = `""`
@@ -6659,8 +6741,8 @@
 - **ServerTimeTicks**
   - `639274361379863419`
 - **SessionKey**
-  - **AccountServerId**: int = `10000000000`
-  - **MxToken**: str = `"AAAAAAAA…"`
+  - **AccountServerId**: int = `<REDACTED>`
+  - **MxToken**: str = `"<REDACTED>"`
 - **ShopProductDB**
   - [0] (object):
     - **EventContentId**: int = `0`
@@ -6710,8 +6792,8 @@
 - **ServerTimeTicks**
   - `639273403112818465`
 - **SessionKey**
-  - **AccountServerId**: int = `10000000000`
-  - **MxToken**: str = `"AAAAAAAA…"`
+  - **AccountServerId**: int = `<REDACTED>`
+  - **MxToken**: str = `"<REDACTED>"`
 - **ShopEligmaHistoryDBs**
   - [0] (object):
     - **CharacterUniqueId**: int = `10000`
@@ -6732,6 +6814,19 @@
 ```
 </details>
 
+
+## /api/shop/refresh
+
+- **中文**: 商店·刷新商品列表
+- **Protocol**: 10003　**混淆名**: `2QYSTQH44UDEYSNMQ2XEYSV7TE`　**样本**: 3
+
+### 请求业务字段
+
+| 字段 | 类型 | 示例 |
+|---|---|---|
+| ShopCategoryType | int | `10` |
+
+响应 packet 为空/非对象。
 
 # toast
 
@@ -6763,8 +6858,8 @@
 - **ServerTimeTicks**
   - `639273399488242738`
 - **SessionKey**
-  - **AccountServerId**: int = `10000000000`
-  - **MxToken**: str = `"AAAAAAAA…"`
+  - **AccountServerId**: int = `<REDACTED>`
+  - **MxToken**: str = `"<REDACTED>"`
 - **ToastDBs**
   - `null`
 ```
@@ -6804,11 +6899,11 @@
 - **ServerTimeTicks**
   - `639274352670782218`
 - **SessionKey**
-  - **AccountServerId**: int = `10000000000`
-  - **MxToken**: str = `"AAAAAAAA…"`
+  - **AccountServerId**: int = `<REDACTED>`
+  - **MxToken**: str = `"<REDACTED>"`
 - **WeekDungeonStageHistoryDBList**
   - [0] (object):
-    - **AccountServerId**: int = `10000000000`
+    - **AccountServerId**: int = `<REDACTED>`
     - **StageUniqueId**: int = `30101`
     - **StarGoalRecord**: object
       - …(3 keys)

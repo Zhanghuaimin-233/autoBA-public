@@ -3,25 +3,29 @@
 功能：
   - 登录流：手机号 → 天御滑块（TCaptcha，AppID 从服务端配置拉）→ 验证码 → yostar Token
   - 会话：ba_session（rid 链 + N 计数），全局单例 + 锁串行化
-  - 业务：日程 / 咖啡厅 / 悬赏 / 交流会 / 小组 / 竞技场 / 礼包 / 邮箱 / 任务 / 商店
+  - 业务：学园日程（getinfo / attendschedule）
 
 启动：start_webui.bat（直接用项目 .venv 里的解释器，不走 uv run 的临时 overlay 环境）
-手动：.venv/Scripts/python.exe -m uvicorn webui.server:app --port 8800
+手动：./.venv/Scripts/python.exe -m uvicorn webui.server:app --port 8800
+端口：默认 8800，可用环境变量 AUTOBA_PORT 覆盖
 访问：http://127.0.0.1:8800
 """
 import json
+import logging
 import threading
 import time
 import datetime
 import itertools
 import asyncio
+from logging.handlers import TimedRotatingFileHandler
 
 from fastapi import FastAPI, HTTPException, Request
-from fastapi.responses import FileResponse
+from fastapi.responses import FileResponse, JSONResponse
 from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel
 import os
 import sys
+import uuid
 
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
@@ -31,18 +35,46 @@ from sign_offline import offline_sign
 from ba_session import Session
 
 APP_DIR = os.path.dirname(os.path.abspath(__file__))
+
+# ---------- 日志：webui/logs/server.log，按天轮转保留 14 天 ----------
+LOG_DIR = os.path.join(APP_DIR, 'logs')
+os.makedirs(LOG_DIR, exist_ok=True)
+logger = logging.getLogger('autoba')
+if not logger.handlers:                     # uvicorn --reload 会在同进程重复 import
+    logger.setLevel(logging.INFO)
+    _fh = TimedRotatingFileHandler(os.path.join(LOG_DIR, 'server.log'),
+                                   when='midnight', backupCount=14, encoding='utf-8')
+    _fh.setFormatter(logging.Formatter('%(asctime)s %(levelname)s [%(funcName)s] %(message)s',
+                                       '%Y-%m-%d %H:%M:%S'))
+    logger.addHandler(_fh)
+    _ch = logging.StreamHandler()
+    _ch.setFormatter(logging.Formatter('%(levelname)s [%(funcName)s] %(message)s'))
+    logger.addHandler(_ch)
+
 SDK_HOST = 'https://sdk-api.yostar.cn'
 # 登录凭据（yostar UID/Token/设备指纹）从项目根本地凭据文件读取，不入库（见 .gitignore）
 _CREDS_FILE = os.path.join(os.path.dirname(APP_DIR), 'yostar_credentials.json')
 try:
     _CREDS = json.load(open(_CREDS_FILE, encoding='utf-8'))
-except Exception:
+except Exception as e:
     _CREDS = {}
+    logger.warning('凭据文件未加载（%s），登录相关功能会失败：%s', _CREDS_FILE, e)
+
+# 客户端版本头：游戏更新后改 data/client_version.json 即可，不用动代码
+_CLIENT_FILE = os.path.join(os.path.dirname(APP_DIR), 'data', 'client_version.json')
+try:
+    _CLIENT = json.load(open(_CLIENT_FILE, encoding='utf-8'))
+except Exception as e:
+    _CLIENT = {}
+    logger.warning('client_version.json 未加载（%s），用内置默认版本：%s', _CLIENT_FILE, e)
+
 HEAD_TEMPLATE = {
     'PID': 'CN-BA', 'Channel': 'official', 'Platform': 'android', 'Lang': 'zh',
-    'DeviceID': _CREDS.get('DeviceID', 'deadbeefdeadbeef'), 'Version': '1.16.1', 'GVersionNo': '73',
-    'GBuildNo': '', 'DeviceModel': '24031PN0DC',
-    'RID': 'f0ec1a2b-3d4e-4f5a-6b7c-8d9e0a1b2c3d',
+    'DeviceID': _CREDS.get('DeviceID', 'deadbeefdeadbeef'),
+    'Version': _CLIENT.get('Version', '1.16.1'),
+    'GVersionNo': _CLIENT.get('GVersionNo', '73'),
+    'GBuildNo': _CLIENT.get('GBuildNo', ''),
+    'DeviceModel': _CLIENT.get('DeviceModel', 'Xiaomi 00000XXX'),
     'UID': _CREDS.get('UID', 1000000000),
     'Token': _CREDS.get('Token', 'dededededededededededededededededededede'),
 }
@@ -53,6 +85,15 @@ PEOPLE_FILE = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__fil
 API_MAP = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), 'api_map_v2.json')
 
 app = FastAPI(title='autoBA WebUI')
+
+
+@app.exception_handler(Exception)
+async def _unhandled(request: Request, exc: Exception):
+    """兜住所有未捕获异常：完整堆栈进日志，前端拿 detail（与 HTTPException 同格式）。"""
+    logger.exception('未处理异常 %s %s', request.method, request.url.path)
+    return JSONResponse({'detail': f'{type(exc).__name__}: {exc}'[:200]}, status_code=500)
+
+
 STATIC_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'static')
 os.makedirs(os.path.join(STATIC_DIR, 'icons'), exist_ok=True)
 app.mount('/static', StaticFiles(directory=STATIC_DIR), name='static')
@@ -72,8 +113,9 @@ GOODS_INFO = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file
                           'tables', 'goods_info.json')
 try:
     goods_info = json.load(open(GOODS_INFO, encoding='utf-8'))   # goodsId → {icon,name,desc,rarity}
-except Exception:
+except Exception as e:
     goods_info = {}
+    logger.warning('goods_info.json 加载失败，商店商品名/图标会缺：%s', e)
 # 学生名 → 碎片图标（item_names 里「XX的神名文字」的 icon 字段就是它）
 _SHARD_SUFFIX = '的神名文字'
 try:
@@ -82,30 +124,37 @@ try:
     shard_icons = {v['name_cn'][:-len(_SHARD_SUFFIX)]: v['icon']
                    for v in _item_meta.values()
                    if (v.get('name_cn') or '').endswith(_SHARD_SUFFIX) and v.get('icon')}
-except Exception:
+except Exception as e:
     shard_icons = {}
+    logger.warning('item_names.json 加载失败，学生碎片图标会缺：%s', e)
 # 商店表每行的 LocalizeEtcId → 中文名/描述（比 goods_info 更权威，覆盖全部商品）
 try:
     _loc_etc = json.load(open(os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))),
                                            'tables', 'full', 'ExcelDB', 'LocalizeEtcExcel.json'),
                               encoding='utf-8'))
     localize_etc = {r['Key']: r for r in _loc_etc}
-except Exception:
+except Exception as e:
     localize_etc = {}
+    logger.warning('LocalizeEtcExcel.json 加载失败，商店商品名会退回 goods_info：%s', e)
 
 
 def _sdk_post(path: str, body_obj: dict) -> dict:
     """离线签名 + sdk-api POST。"""
     body = json.dumps(body_obj, separators=(',', ':'), ensure_ascii=False)
-    head = dict(HEAD_TEMPLATE, Time=int(time.time()))
+    # RID 是请求标识，每次请求生成新的（原来是固定常量）
+    head = dict(HEAD_TEMPLATE, Time=int(time.time()), RID=str(uuid.uuid4()))
     head_json = json.dumps(head, separators=(',', ':'), ensure_ascii=False)
     with _lock:
         sig = offline_sign(head_json + body, 0)
     auth = json.dumps({'Head': head, 'Sign': sig}, separators=(',', ':'), ensure_ascii=False)
-    r = requests.post(SDK_HOST + path, data=body.encode('utf-8'), headers={
-        'Authorization': auth, 'Content-Type': 'application/json',
-        'User-Agent': 'okhttp/4.9.3'}, timeout=30)
-    return r.json()
+    try:
+        r = requests.post(SDK_HOST + path, data=body.encode('utf-8'), headers={
+            'Authorization': auth, 'Content-Type': 'application/json',
+            'User-Agent': 'okhttp/4.9.3'}, timeout=30)
+        return r.json()
+    except Exception:
+        logger.exception('sdk-api 请求失败：%s', path)
+        raise
 
 
 def get_session() -> Session:
@@ -118,9 +167,11 @@ def get_session() -> Session:
                     _session.call('/api/academy/getinfo', 24000)   # 活性探测
                     _session.save(STATE)
                     return _session
-                except Exception:
+                except Exception as e:
                     _session = None
+                    logger.warning('会话活性探测失败，重新登录：%s', e)
             _session = Session.login(state_path=STATE)
+            logger.info('已建立新会话')
         return _session
 
 
@@ -133,6 +184,7 @@ def call_session(url: str, protocol: int, business: dict | None = None):
         except RuntimeError as e:
             msg = str(e)
             if '33004' in msg or '33005' in msg or '过期' in msg or 'time over' in msg:
+                logger.warning('会话过期（%s），重新登录后重试 %s', msg[:80], url)
                 global _session
                 s2 = Session.login(state_path=STATE)
                 resp, pkt = s2.call(url, protocol, business=business)
@@ -881,10 +933,10 @@ def _write_ui_state(data: dict):
 
 
 def _log_line(text: str, cls: str = ''):
-    """后端直接写操作日志（定时任务没有前端可调）。"""
-    now = datetime.datetime.now()
+    """后端直接写操作日志（定时任务没有前端可调）。时间戳与前端一致：本地时间 + 偏移。"""
+    now = datetime.datetime.now().astimezone()
     os.makedirs(LOG_DIR, exist_ok=True)
-    entry = {'ts': now.isoformat(), 'text': text, 'cls': cls}
+    entry = {'ts': now.isoformat(timespec='seconds'), 'text': text, 'cls': cls}
     with open(os.path.join(LOG_DIR, f"{now.strftime('%Y-%m-%d')}.jsonl"), 'a',
               encoding='utf-8') as f:
         f.write(json.dumps(entry, ensure_ascii=False) + '\n')
@@ -1827,6 +1879,7 @@ def _arena_clear_worker(max_battles: int, stop_rank1: bool, claim_rewards: bool)
                       f"{'胜' if r['win'] else '负'} → 现 R{r['rank']}", 'ok' if r['win'] else 'sub')
             time.sleep(1)                            # 两场之间留一点余量
     except Exception as e:
+        logger.exception('[竞技场] 清票线程异常')
         _arena_clear['error'] = str(e)[:200]
         _log_line(f'[竞技场] 清票中断：{_arena_clear["error"]}', 'err')
     finally:
@@ -1834,6 +1887,7 @@ def _arena_clear_worker(max_battles: int, stop_rank1: bool, claim_rewards: bool)
             try:
                 _arena_clear['claimed'] = _claim_arena_rewards(True, True)
             except Exception as e:
+                logger.warning('[竞技场] 领奖失败：%s', e)
                 _arena_clear['claimed'] = {'error': str(e)[:150]}
         _arena_clear['running'] = False
         _arena_clear['finishedAt'] = datetime.datetime.now().isoformat(timespec='seconds')
@@ -2160,7 +2214,7 @@ async def shop_autobuy_run(request: Request):
     force = bool((body or {}).get('force'))
     cfg = _autobuy_cfg()
     if not force and not cfg['enabled']:
-        return {'ok': False, 'error': '自动购买未启用'}
+        return {'ok': False, 'skipped': True, 'error': '自动购买未启用'}
     if not cfg['items']:
         return {'ok': True, 'skipped': '没有配置商品'}
     today = datetime.date.today().isoformat()

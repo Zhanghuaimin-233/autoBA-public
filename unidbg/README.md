@@ -4,6 +4,7 @@
 native 签名库（`libairisgcore.so`，ARM64），直接获得 `AiriSgClient.sign()` 的结果，
 无需启动游戏或模拟器。
 
+> 默认签名实现已改为纯 Python（`reverse/sign_pure.py`）；本目录仅保留 unidbg 回退路径。
 > 仅供协议学习与研究。`libairisgcore.so` 属游戏客户端文件，**本项目不提供、不分发**，
 > 请仅使用你本机合法安装的客户端中提取的文件。
 

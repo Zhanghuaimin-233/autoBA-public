@@ -1,0 +1,28 @@
+# autoBA 运行环境（装在项目根 .venv 里）
+#
+# 首次 / 重建：
+#   uv venv --python 3.12 .venv
+#   uv pip install -r requirements.txt
+#   （start_webui.bat 检测到 .venv 缺失或不完整时会自动做这两步）
+#
+# 约定：脚本一律用 ./.venv/Scripts/python.exe 直跑，不用 `uv run --with`。
+# 本项目没有 pyproject.toml，`uv run --with pkg` 会把包装进一次性 overlay
+# 环境且不回写 .venv，于是每次启动都重新解析安装（日志里的
+# "Installed N packages in NNNms"）。
+
+# WebUI 后端（webui/server.py）
+fastapi>=0.115,<1.0
+uvicorn>=0.30,<1.0
+
+# 协议加解密 / 抓包分析（ba_crypto.py、ba_session.py、decrypt_all_v2.py ...）
+requests>=2.31,<3.0
+pycryptodome>=3.20,<4.0
+
+# ELF 静态分析（reverse/extract_keys.py、disasm.py、plt_map.py、check_em.py）
+pyelftools>=0.30,<1.0
+capstone>=5.0,<6.0
+
+# 可选依赖：不在默认环境里，用到哪个装哪个
+#   frida       scripts/dump_*.py、hook_airi_sign.py（模拟器注入，版本须与 frida-server 匹配）
+#   UnityPy     scripts/extract_icons.py（从 AssetBundle 导 UI 图标，Python <=3.12）
+#   gmssl       scripts/test_sm4_xxtea.py（SM4-CBC 假设验证）
