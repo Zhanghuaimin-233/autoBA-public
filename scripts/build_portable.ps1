@@ -98,3 +98,4 @@ if (Test-Path $zip) { Remove-Item $zip -Force }
 Write-Host '[build] creating zip ...'
 Compress-Archive -Path $stage -DestinationPath $zip -CompressionLevel Optimal
 Write-Host ("[build] done: {0} ({1:N1} MB)" -f $zip, ((Get-Item $zip).Length / 1MB))
+exit 0
