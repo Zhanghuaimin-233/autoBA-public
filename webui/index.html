@@ -17,6 +17,9 @@
           padding:16px 20px; margin-bottom:16px; }
   input { padding:8px 10px; border:1px solid var(--line); border-radius:6px;
           font-size:14px; width:220px; }
+  input[type=checkbox] { width:15px; height:15px; margin:0; padding:0;
+                         accent-color:var(--acc); vertical-align:middle; }
+  label.chk { display:inline-flex; align-items:center; gap:5px; cursor:pointer; }
   button { padding:8px 16px; border:0; border-radius:6px; background:var(--acc);
            color:#fff; font-size:14px; cursor:pointer; }
   button + button { margin-left:8px; }
@@ -25,6 +28,8 @@
   button.sm { padding:4px 10px; font-size:12px; }
   button.sm.active { background:var(--acc); color:#fff; border-color:var(--acc); }
   button.danger { background:var(--err); }
+  button.danger:disabled, button.ghost:disabled { background:#aab4c0; color:#fff;
+                                                  border-color:#aab4c0; }
   .row { display:flex; align-items:center; gap:8px; margin:8px 0; flex-wrap:wrap; }
   .msg { margin:8px 0 0; min-height:20px; }
   .ok { color:var(--ok); } .err { color:var(--err); } .sub { color:var(--sub); font-size:12px; }
@@ -444,6 +449,34 @@
     </div>
   </div>
 
+  <!-- MomoTalk 剧情 -->
+  <div class="card" id="momotalkCard" data-module="momotalk">
+    <div class="card-head">
+      <span class="drag-handle" draggable="true" title="拖动排序（越靠上越先执行）"
+            ondragstart="dragStart(event, this.closest('.card'), 'module')"
+            ondragend="dragEnd()">⠿</span>
+      <button class="fold" id="momotalkFold" onclick="toggleFold('momotalk')" title="折叠">▾</button>
+      <h2>MomoTalk 剧情</h2>
+      <span id="momotalkSummary" class="sub">尚未加载</span>
+      <span class="spacer"></span>
+      <button class="danger" id="btnMomoTalk" onclick="momotalkClaim()">领取奖励</button>
+      <button class="ghost" id="btnMomoTalkRead" onclick="momotalkReadAll()">清红点并领奖</button>
+    </div>
+    <div id="momotalkBody">
+      <div class="row" style="margin-top:10px">
+        <button class="ghost" onclick="loadMomoTalk(true)">刷新</button>
+        <label class="sub chk"><input type="checkbox" id="mtSelectAll" onchange="mtToggleAll(this.checked)"> 全选</label>
+        <span id="momotalkMsg" class="sub"></span>
+      </div>
+      <div id="momotalkView"><span class="sub">尚未加载</span></div>
+      <div id="momotalkProgress" class="sub" style="margin-top:6px"></div>
+      <div id="momotalkTotal" class="sub" style="margin-top:8px"></div>
+      <div class="sub" style="margin-top:6px">
+        领取 = 登记剧情完成 + 领奖（每条 20~120 青辉石 + 1 神名文字）。好感不足的剧情留在「卡好感」列，不会动。
+      </div>
+    </div>
+  </div>
+
   </div><!-- /main -->
 
   <aside class="side">
@@ -786,7 +819,7 @@ function ensureExpanded(key) {
   if (body && body.classList.contains('hidden')) applyFold(key, false);
 }
 function restoreFolds() {
-  ['plan', 'cafe', 'bounty', 'scrim', 'clan', 'arena', 'gift', 'mail', 'mission', 'shop'].forEach(k => {
+  ['plan', 'cafe', 'bounty', 'scrim', 'clan', 'arena', 'gift', 'mail', 'mission', 'shop', 'momotalk'].forEach(k => {
     if (localStorage.getItem('autoba.fold.' + k) === '1') applyFold(k, true);
   });
 }
@@ -862,7 +895,7 @@ async function refreshSession() {
     $('sessMsg').textContent = j.ok
       ? `有效 ✓ uid=${j.uid} rid=${j.rid} N=${j.n} zones=${j.zones}`
       : '无效: ' + j.error;
-    if (j.ok) { loadRoster(); loadCafe(); loadBounty(); loadScrim(); loadClan(); loadMail(); loadMission(); loadAutobuy(); loadShop(true); checkResource(); }
+    if (j.ok) { loadRoster(); loadCafe(); loadBounty(); loadScrim(); loadClan(); loadMail(); loadMission(); loadAutobuy(); loadShop(true); loadMomoTalk(); checkResource(); }
   } catch (e) { $('sessMsg').textContent = '探测失败: ' + e.message; }
 }
 
@@ -2013,6 +2046,162 @@ async function pollArenaClear() {
 
 // ---------- 每日免费礼包 ----------
 let GIFT = null, GIFT_RUNNING = false;
+
+// ---------- MomoTalk 剧情 ----------
+let MT = null;
+let MT_RUNNING = false;
+let MT_READING = false;
+
+async function loadMomoTalk(force) {
+  $('momotalkMsg').textContent = '读取中…';
+  try {
+    const j = await api('/api/momotalk/state');
+    MT = j;
+    renderMomoTalk();
+    $('momotalkMsg').textContent = '';
+  } catch (e) {
+    $('momotalkMsg').textContent = '读取失败: ' + e.message;
+    log('MomoTalk 读取失败: ' + e.message, 'err');
+  }
+}
+
+function renderMomoTalk() {
+  const rows = ((MT && MT.rows) || []).filter(r => r.claimable.length || r.locked.length);
+  const sm = (MT && MT.summary) || {};
+  if (!rows.length) {
+    $('momotalkSummary').textContent = '没有待领剧情';
+    $('momotalkView').innerHTML = '<span class="sub">所有剧情都已领取。</span>';
+    $('momotalkTotal').textContent = '';
+    $('btnMomoTalk').disabled = true;
+    $('btnMomoTalkRead').disabled = true;
+    return;
+  }
+  $('momotalkSummary').textContent =
+    `${sm.chars}/${sm.totalChars} 个角色 / ${sm.claimCount} 条可领 / ${sm.claimStone} 石`;
+  $('btnMomoTalk').disabled = false;
+  const trs = rows.map(r => {
+    const stone = r.claimable.reduce((a, i) => a + i.stone, 0);
+    const tip = r.locked.map(i => `${i.id}(需好感${i.favorRank})`).join(' ');
+    return `<tr data-row="${r.charId}" data-count="${r.claimable.length}" data-stone="${stone}">
+      <td><input type="checkbox" data-char="${r.charId}" onchange="mtUpdateTotal()"></td>
+      <td>${r.name}</td>
+      <td>${r.rank}</td>
+      <td><span class="sub">${r.done}/${r.total}</span></td>
+      <td>${r.claimable.length ? `<b>${r.claimable.length}</b>` : '—'}</td>
+      <td>${r.locked.length ? `<span class="sub" title="${tip}">${r.locked.length}</span>` : '—'}</td>
+      <td>${stone || '—'}</td>
+    </tr>`;
+  }).join('');
+  $('momotalkView').innerHTML =
+    `<table style="margin-top:6px"><thead><tr><th></th><th>角色</th><th>好感</th>` +
+    `<th>已完成</th><th>可领</th><th>卡好感</th><th>青辉石</th></tr></thead><tbody>${trs}</tbody></table>`;
+  mtUpdateTotal();
+}
+
+function mtToggleAll(on) {
+  document.querySelectorAll('#momotalkView input[data-char]').forEach(x => { x.checked = on; });
+  mtUpdateTotal();
+}
+
+// 底部合计：跟着勾选实时变，顺带同步「全选」的勾选态
+function mtUpdateTotal() {
+  const trs = [...document.querySelectorAll('#momotalkView tbody tr[data-row]')];
+  let n = 0, s = 0, all = trs.length > 0;
+  trs.forEach(tr => {
+    const cb = tr.querySelector('input[data-char]');
+    if (cb && cb.checked) { n += Number(tr.dataset.count) || 0; s += Number(tr.dataset.stone) || 0; }
+    else all = false;
+  });
+  const allBox = $('mtSelectAll');
+  if (allBox) allBox.checked = all;
+  const sm = (MT && MT.summary) || {};
+  const locked = sm.lockedCount
+    ? `　·　卡好感 ${sm.lockedCount} 条 / ${sm.lockedStone} 石不领` : '';
+  $('momotalkTotal').textContent = trs.length
+    ? `已选 ${n} 条 / ${s} 石${locked}　·　全部可领 ${sm.claimCount} 条 / ${sm.claimStone} 石`
+    : '';
+  // 没勾选就禁用，避免点了才提示
+  if (!MT_RUNNING) $('btnMomoTalk').disabled = n === 0;
+  if (!MT_READING) $('btnMomoTalkRead').disabled = n === 0;
+}
+
+async function momotalkClaim() {
+  if (MT_RUNNING) return;
+  const ids = [...document.querySelectorAll('#momotalkView input[data-char]:checked')]
+    .map(x => x.dataset.char);
+  if (!ids.length) { $('momotalkMsg').textContent = '没有勾选角色'; return; }
+  MT_RUNNING = true;
+  $('btnMomoTalk').disabled = true;
+  $('momotalkMsg').textContent = `领取中…（${ids.length} 个角色）`;
+  try {
+    const j = await api('/api/momotalk/claim', {
+      method: 'POST', headers: {'Content-Type':'application/json'},
+      body: JSON.stringify({ charIds: ids }),
+    });
+    const bad = (j.steps || []).filter(s => !s.ok);
+    $('momotalkMsg').textContent =
+      `已领 ${j.claimed} 条 / ${j.stone} 石` + (bad.length ? `，失败 ${bad.length}` : '');
+    log(`[MomoTalk] 领取 ${j.claimed} 条，青辉石 ${j.stone}` + (bad.length ? `，失败 ${bad.length}` : ''),
+        bad.length ? 'err' : 'ok');
+    await loadMomoTalk(true);
+  } catch (e) {
+    $('momotalkMsg').textContent = '领取失败: ' + e.message;
+    log('[MomoTalk] 领取失败: ' + e.message, 'err');
+  }
+  MT_RUNNING = false;
+  $('btnMomoTalk').disabled = false;
+}
+
+// 清红点：后台跑，前端轮询进度（长任务，20+ 分钟）
+async function momotalkReadAll() {
+  if (MT_READING) return;
+  const ids = [...document.querySelectorAll('#momotalkView input[data-char]:checked')]
+    .map(x => x.dataset.char);
+  if (!ids.length) { $('momotalkMsg').textContent = '没有勾选角色'; return; }
+  MT_READING = true;
+  $('btnMomoTalkRead').disabled = true;
+  $('momotalkProgress').textContent = '启动中…';
+  try {
+    const j = await api('/api/momotalk/readall', {
+      method: 'POST', headers: {'Content-Type':'application/json'},
+      body: JSON.stringify({ charIds: ids }),
+    });
+    if (!j.ok) throw new Error(j.error || '启动失败');
+    log(`[MomoTalk] 开始清红点（${ids.length} 个角色）`, 'sub');
+    mtPollRead();
+  } catch (e) {
+    $('momotalkProgress').textContent = '启动失败: ' + e.message;
+    log('[MomoTalk] 清红点启动失败: ' + e.message, 'err');
+    MT_READING = false;
+    $('btnMomoTalkRead').disabled = false;
+  }
+}
+
+function mtPollRead() {
+  const timer = setInterval(async () => {
+    let st;
+    try {
+      st = await api('/api/momotalk/readstatus');
+    } catch (e) {
+      clearInterval(timer); MT_READING = false; $('btnMomoTalkRead').disabled = false;
+      $('momotalkProgress').textContent = '状态读取失败: ' + e.message;
+      return;
+    }
+    $('momotalkProgress').textContent =
+      `清红点：${st.charDone}/${st.charTotal} 角色 · read ${st.readCount} 次 · ` +
+      `领 ${st.claimCount} 条 / ${st.stone} 石` +
+      (st.current ? ` · 当前 ${st.current}` : '') +
+      (st.error ? ` · 上一条失败：${st.error}` : '');
+    if (!st.running) {
+      clearInterval(timer);
+      MT_READING = false;
+      $('btnMomoTalkRead').disabled = false;
+      log(`[MomoTalk] 清红点完成：read ${st.readCount} 次，领 ${st.claimCount} 条 / ${st.stone} 石`,
+          st.error ? 'err' : 'ok');
+      await loadMomoTalk(true);
+    }
+  }, 1500);
+}
 
 async function loadGift() {
   $('giftMsg').textContent = '读取中…';

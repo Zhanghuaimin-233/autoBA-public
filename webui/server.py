@@ -35,6 +35,7 @@ import requests
 from sign_offline import offline_sign
 from ba_session import Session
 from webui import daily        # 一键清日常的执行器（业务函数由本模块注入，见文件末尾）
+from webui import momotalk     # MomoTalk 剧情收割（同上）
 
 APP_DIR = os.path.dirname(os.path.abspath(__file__))
 
@@ -2438,3 +2439,7 @@ def gift_claim():
 # 一键清日常：把本模块作为宿主注入（runner 要调各业务函数），再挂上它的路由
 daily.init(sys.modules[__name__])
 app.include_router(daily.router)
+
+# MomoTalk 剧情收割：同样注入宿主，路由挂 /api/momotalk/*
+momotalk.init(sys.modules[__name__])
+app.include_router(momotalk.router)

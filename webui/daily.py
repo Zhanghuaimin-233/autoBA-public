@@ -29,10 +29,10 @@ STATE_FILE = os.path.join(APP_DIR, 'daily_state.json')
 DAILY_LABELS = {
     'plan': '学园日程', 'cafe': '咖啡厅', 'bounty': '悬赏通缉', 'scrim': '学院交流会',
     'clan': '社交小组', 'arena': '战术对抗赛', 'gift': '免费礼包',
-    'mail': '邮箱', 'mission': '任务奖励', 'shop': '商店',
+    'mail': '邮箱', 'mission': '任务奖励', 'shop': '商店', 'momotalk': 'MomoTalk',
 }
 DAILY_DEFAULT_ORDER = ['arena', 'plan', 'cafe', 'bounty', 'scrim',
-                       'clan', 'gift', 'mail', 'mission', 'shop']
+                       'clan', 'gift', 'mail', 'mission', 'shop', 'momotalk']
 DAILY_STALE_S = 600          # 超过 10 分钟仍在 running，视为僵死
 
 # 宿主模块（webui/server.py）在启动时注入，runner 通过它调用业务函数
@@ -348,10 +348,15 @@ def _run_shop(log, dry):
     return 'ok', f"{j.get('bought', 0)} 件 / 刷新 {j.get('refreshed', 0)} 次"
 
 
+def _run_momotalk(log, dry):
+    """MomoTalk 剧情收割：逻辑在 webui/momotalk.py，这里只做转交。"""
+    return _srv.momotalk.run_claim(log, dry)
+
+
 DAILY_RUNNERS = {
     'plan': _run_plan, 'cafe': _run_cafe, 'bounty': _run_bounty, 'scrim': _run_scrim,
     'clan': _run_clan, 'arena': _run_arena, 'gift': _run_gift, 'mail': _run_mail,
-    'mission': _run_mission, 'shop': _run_shop,
+    'mission': _run_mission, 'shop': _run_shop, 'momotalk': _run_momotalk,
 }
 
 _CLS_BY_STATUS = {'ok': 'ok', 'skip': 'sub', 'fail': 'err', 'abort': 'err'}
@@ -429,6 +434,9 @@ def daily_run(req: DailyRunReq):
         return {'ok': False, 'skipped': True, 'error': '一键清正在执行中'}
     order = req.only or req.order or (_daily_pref('moduleOrder') or DAILY_DEFAULT_ORDER)
     order = [k for k in order if k in DAILY_RUNNERS]
+    if not req.only:
+        # 老配置里没有的模块（后续新增的）补到末尾，否则永远轮不到它执行
+        order += [k for k in DAILY_DEFAULT_ORDER if k not in order]
     if not order:
         return {'ok': False, 'error': '没有可执行的模块'}
     started = datetime.datetime.now().astimezone().isoformat(timespec='seconds')

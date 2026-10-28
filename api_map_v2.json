@@ -403,5 +403,25 @@
   "protocol": 45001,
   "obf": "PTLVLNEGY7WFZGPP2NEOUELMAE",
   "samples": 1
+ },
+ "/api/momotalk/messagelist": {
+  "protocol": 33001,
+  "obf": "Z6AN5B2IQCNJ7N3QA5T2MB7XFQ",
+  "samples": 6
+ },
+ "/api/momotalk/read": {
+  "protocol": 33002,
+  "obf": "BASJ5B4QPXZYOZ2V3ESRWM7DZU",
+  "samples": 11
+ },
+ "/api/momotalk/favorschedule": {
+  "protocol": 33004,
+  "obf": "V56PSQOSXN4EX4IRKZPJJNSAWQ",
+  "samples": 2
+ },
+ "/api/scenario/grouphistoryupdate": {
+  "protocol": 19002,
+  "obf": "4OSDDKZQSQI7LX4VBTUQ7HPBS4",
+  "samples": 2
  }
 }
