@@ -38,7 +38,7 @@ docs/               协议 / 模块 / 设计 / 参考文档
 
 ## 快速开始
 
-环境要求：Windows 10+，首次运行需要联网。**无需预装 Python 或 uv**——`start_webui.bat` 会自动下载固定版本的 uv（0.13.6，带 SHA256 校验），再由 uv 准备 Python 3.12 并安装 `requirements.txt`。
+环境要求：Windows 10+，首次运行需要联网。**无需预装 Python 或 uv**——`start_webui.bat` 会先检测本机 uv：已安装就直接复用；没有才下载固定版本 0.13.6 到项目内 `tools/uv/`（已 gitignore，带 SHA256 校验），再由 uv 准备 Python 3.12 并安装 `requirements.txt`。
 
 ```bat
 :: Windows：首次运行自动准备环境，之后直接启动
@@ -50,8 +50,11 @@ start_webui.bat
 兼容性说明：
 
 - 本机已有的其他 Python 版本不会被使用；项目只认 `.venv` 里的 Python 3.12。
-- 本机已有其他 uv 版本不影响运行；脚本优先使用固定版本，下载失败时才回退系统 uv。
+- 本机已装 uv：`start_webui.bat` 直接复用，不会重复下载；uv 命令不可用时才下载固定版本到项目内 `tools/uv/`。
+- 已有 `.venv` 且 Python 3.12、依赖齐全：`start_webui.bat` 直接启动，不调用引导脚本。
+- 只装了 Python 3.12、没装 uv：优先尝试 uv；uv 下载失败时回退 `python -m venv` + pip。
 - 已有 `.venv` 若不是 Python 3.12 或依赖不完整，会先备份为 `.venv.bak-<时间>` 再重建。
+- 全局安装依赖但没建 `.venv` 不会使用全局包；请按下面的手动步骤创建 `.venv`。
 - 路径包含空格或中文也能正常工作（脚本全程使用带引号的绝对路径）。
 
 手动安装与启动：

@@ -3,7 +3,7 @@
 #
 # Local usage:
 #   .\scripts\build_portable.ps1
-#   .\scripts\build_portable.ps1 -PythonSource C:\path\to\python-dir
+#   .\scripts\build_portable.ps1 -PythonSource .\python-dir
 #
 # The optional -PythonSource reuses an existing standalone Python directory
 # instead of downloading one via uv (useful for offline/local builds).
