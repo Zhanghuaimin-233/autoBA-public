@@ -30,7 +30,7 @@ login_oracle.py     自主登录流程（发码 / 验证码登录）
 decrypt_all_v2.py   抓包全量解密器（分析用；auth 已不依赖它）
 webui/              FastAPI 后端 + 单页前端（10 个日常模块）；daily.py 为一键清执行器
 tests/              单元测试（标准库 unittest）
-scripts/            数据表生成 / 接口文档生成 / 图标导出 / 隐私自检
+scripts/            数据表生成 / 接口文档生成 / 图标导出 / 隐私自检 / 环境引导与便携打包
 tables/             游戏数据表映射 + tables/full/ExcelDB 派生表
 data/               客户端版本头等可入库配置
 docs/               协议 / 模块 / 设计 / 参考文档
@@ -38,14 +38,21 @@ docs/               协议 / 模块 / 设计 / 参考文档
 
 ## 快速开始
 
-环境要求：Python 3.12、[uv](https://github.com/astral-sh/uv)；依赖清单见 `requirements.txt`。
+环境要求：Windows 10+，首次运行需要联网。**无需预装 Python 或 uv**——`start_webui.bat` 会自动下载固定版本的 uv（0.13.6，带 SHA256 校验），再由 uv 准备 Python 3.12 并安装 `requirements.txt`。
 
 ```bat
-:: Windows：首次运行自动创建 .venv 并安装依赖
+:: Windows：首次运行自动准备环境，之后直接启动
 start_webui.bat
 ```
 
 浏览器打开 http://127.0.0.1:8800；端口冲突时用环境变量 `AUTOBA_PORT` 覆盖。
+
+兼容性说明：
+
+- 本机已有的其他 Python 版本不会被使用；项目只认 `.venv` 里的 Python 3.12。
+- 本机已有其他 uv 版本不影响运行；脚本优先使用固定版本，下载失败时才回退系统 uv。
+- 已有 `.venv` 若不是 Python 3.12 或依赖不完整，会先备份为 `.venv.bak-<时间>` 再重建。
+- 路径包含空格或中文也能正常工作（脚本全程使用带引号的绝对路径）。
 
 手动安装与启动：
 
@@ -57,6 +64,14 @@ uv pip install -r requirements.txt
 
 本机路径（抓包目录、可选的 unidbg 工作目录 / `libairisgcore.so`）写入 `env.local.bat`，
 可参考 `env.local.bat.example`；`start_webui.bat` 会自动加载该文件。
+
+## 便携包（Windows x64）
+
+GitHub Releases 提供 `autoBA-portable-win64.zip`：内置 Python 3.12 与全部依赖，解压后双击
+`start_webui.bat` 即可启动，不需要安装 Python、uv 或联网装依赖（访问游戏服务器仍需联网）。
+
+打包脚本：`./scripts/build_portable.ps1`（维护者需本机安装 uv）；打 `v*` 标签或手动触发
+`.github/workflows/release-portable.yml` 会自动构建并发布 Release。
 
 ## 离线签名
 

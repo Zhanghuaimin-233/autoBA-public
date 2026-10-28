@@ -1,0 +1,40 @@
+name: portable-package
+
+on:
+  workflow_dispatch:
+  push:
+    tags:
+      - 'v*'
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    runs-on: windows-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup uv (pinned)
+        uses: astral-sh/setup-uv@v6
+        with:
+          version: "0.13.6"
+
+      - name: Build portable package
+        shell: pwsh
+        run: ./scripts/build_portable.ps1
+
+      - name: Upload artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: autoBA-portable-win64
+          path: dist/autoBA-portable-win64.zip
+          if-no-files-found: error
+
+      - name: Publish GitHub Release
+        if: startsWith(github.ref, 'refs/tags/v')
+        uses: softprops/action-gh-release@v2
+        with:
+          files: dist/autoBA-portable-win64.zip
+          generate_release_notes: true

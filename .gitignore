@@ -9,8 +9,12 @@
 *.pyc
 __pycache__/
 
-# 虚拟环境
+# 虚拟环境与打包产物
 .venv/
+.venv.bak-*/
+build/
+dist/
+tools/uv/
 
 # 表数据源（派生表见 tables/full/ExcelDB，按需保留）
 tables/ExcelDB.db
