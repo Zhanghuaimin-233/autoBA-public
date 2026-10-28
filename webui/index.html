@@ -122,7 +122,11 @@
   <h1>autoBA 控制台
   <button id="btnRunAll" onclick="runAllDaily()"
           style="margin-left:14px;vertical-align:middle;font-size:14px;padding:6px 14px">一键清日常</button>
-  <span class="sub" style="margin-left:10px;font-weight:normal">按模块拖拽顺序依次执行</span>
+  <label style="margin-left:8px;font-size:13px;font-weight:normal;vertical-align:middle;cursor:pointer"
+         title="只读状态、算计划，不发任何写请求">
+    <input type="checkbox" id="chkDailyDry" style="vertical-align:middle">演练
+  </label>
+  <span class="sub" style="margin-left:10px;font-weight:normal">按模块拖拽顺序依次执行（后端跑，关页面不中断）</span>
 </h1>
 
   <div id="resourceAlert" class="alert hidden">
@@ -900,6 +904,15 @@ async function syncPrefs() {
   } catch (e) { /* 后端不可用时纯本地 */ }
 }
 
+// 首屏兜底：把当前学生列表补写进 ui_state —— 后端一键清要靠它拿清票名单
+function ensurePickerPrefs() {
+  const p = loadPrefs();
+  const patch = {};
+  if (!Array.isArray(p.schStudents)) patch.schStudents = schPicker.ids;
+  if (!Array.isArray(p.cafeStudents)) patch.cafeStudents = cafePicker.ids;
+  if (Object.keys(patch).length) savePrefs(patch);
+}
+
 // ---------- 学生名册 / 选择器 ----------
 let ALL = [];
 
@@ -1059,7 +1072,7 @@ class StudentPicker {
 }
 
 const schPicker = new StudentPicker('schPicker', 'autoba.selected',
-  { onChange: () => invalidatePlan() });
+  { onChange: (p) => { invalidatePlan(); savePrefs({ schStudents: p.ids }); } });
 const cafePicker = new StudentPicker('cafePicker', 'autoba.cafeSelected',
   { ordered: true, onChange: (p) => { invalidateCafePlan(); savePrefs({ cafeStudents: p.ids }); } });
 
@@ -1162,12 +1175,12 @@ async function doClear() {
     const j = await api('/api/schedule/clear', {
       method: 'POST', headers: {'Content-Type':'application/json'},
       body: JSON.stringify({ students: schPicker.ids }) });
-    if (!j.steps.length) log('未执行任何 Zone：' + (j.stopped || '方案为空'), 'err');
+    if (!j.steps.length) log('未执行任何 Zone：' + (j.stopped || '方案为空'), j.stopKind === 'error' ? 'err' : 'sub');
     for (const s of j.steps) {
       const ch = s.characters.map(c => `${c.name} R${c.rank}`).join('、') || '无入账';
       log(`[${s.roundLabel}] Zone ${s.zone} ${s.locationName} → ${ch}；券余 ${s.tickets}`, 'ok');
     }
-    if (j.stopped) log('停止：' + j.stopped, 'err');
+    if (j.stopped) log('停止：' + j.stopped, j.stopKind === 'error' ? 'err' : 'sub');
     $('planMsg').textContent = `执行 ${j.steps.length} 次，券余 ${j.tickets ?? '?'}${j.stopped ? '（' + j.stopped + '）' : ''}`;
     $('planSummary').textContent = `执行 ${j.steps.length} 次 · 券余 ${j.tickets ?? '?'}`;
   } catch (e) {
@@ -1442,7 +1455,7 @@ async function doCafeRun() {
         log(`[${tag}] ${s.name} 失败：${s.error}`, 'err');
       }
     }
-    if (j.stopped) log('停止：' + j.stopped, 'err');
+    if (j.stopped) log('停止：' + j.stopped, j.stopKind === 'error' ? 'err' : 'sub');
     $('cafePlanMsg').textContent =
       `完成 ${j.steps.filter(s => s.ok).length} 步${j.stopped ? '（' + j.stopped + '）' : ''}`;
   } catch (e) {
@@ -1641,7 +1654,7 @@ async function doBountySweep() {
         log(`[悬赏] ${s.map} 失败：${s.error}`, 'err');
       }
     }
-    if (j.stopped) log('[悬赏] 停止：' + j.stopped, 'err');
+    if (j.stopped) log('[悬赏] 停止：' + j.stopped, j.stopKind === 'error' ? 'err' : 'sub');
     $('bountyMsg').textContent =
       `完成${j.tickets != null ? ` · 券余 ${j.tickets}` : ''}${j.stopped ? `（${j.stopped}）` : ''}`;
   } catch (e) {
@@ -1804,7 +1817,7 @@ async function doScrimSweep() {
         log(`[交流会] ${s.map} 失败：${s.error}`, 'err');
       }
     }
-    if (j.stopped) log('[交流会] 停止：' + j.stopped, 'err');
+    if (j.stopped) log('[交流会] 停止：' + j.stopped, j.stopKind === 'error' ? 'err' : 'sub');
     $('scrimMsg').textContent =
       `完成${j.tickets != null ? ` · 券余 ${j.tickets}` : ''}${j.stopped ? `（${j.stopped}）` : ''}`;
   } catch (e) {
@@ -1998,14 +2011,6 @@ async function pollArenaClear() {
   } catch (e) { /* 后端未重启时静默 */ }
 }
 
-async function runDailyArena() {
-  const r = await arenaClear(5);
-  if (r && r.skipped) return { ok: true, skipped: true, reason: r.error };
-  if (!r || !r.ok) throw new Error((r && r.error) || '清票启动失败');
-  log(`[竞技场] 后台清票已启动（券 ${r.tickets}），等待期间继续执行后续模块`, 'sub');
-  return { ok: true };
-}
-
 // ---------- 每日免费礼包 ----------
 let GIFT = null, GIFT_RUNNING = false;
 
@@ -2094,12 +2099,6 @@ async function claimMail() {
   }
 }
 
-async function runDailyMail() {
-  if (!MAIL) await loadMail();
-  const r = await claimMail();
-  if (r && r.ok === false) throw new Error(r.error || '领取失败');
-}
-
 // ---------- 任务奖励 ----------
 let MISSION = null, MISSION_RUNNING = false;
 const MISSION_CAT_NAMES = { 1: '日常', 2: '周常', 3: '成就' };
@@ -2148,12 +2147,6 @@ async function claimMission() {
     MISSION_RUNNING = false;
     $('btnMission').disabled = false;
   }
-}
-
-async function runDailyMission() {
-  if (!MISSION) await loadMission();
-  const r = await claimMission();
-  if (r && r.ok === false) throw new Error(r.error || '领取失败');
 }
 
 // ---------- 商店 ----------
@@ -2313,21 +2306,6 @@ async function runAutobuy(force) {
   }
 }
 
-async function runDailyShop() {
-  const r = await runAutobuy(false);
-  if (r && r.skipped) return { ok: true, skipped: true, reason: r.error };
-  if (r && r.ok === false) throw new Error(r.error || '自动购买失败');
-  return { ok: true };
-}
-
-async function runDailyGift() {
-  if (!GIFT) await loadGift();
-  if (!GIFT || !GIFT.available) { log('免费礼包：商店无此商品，跳过', 'sub'); return; }
-  if (GIFT.purchased) { log('免费礼包：今日已领，跳过', 'sub'); return; }
-  const r = await giftClaim();
-  if (r && r.ok === false) throw new Error(r.error || '领取失败');
-}
-
 // ---------- 一键清日常（按模块拖拽顺序） ----------
 let ALL_RUNNING = false;
 const MODULE_LABELS = {
@@ -2340,92 +2318,90 @@ function currentModuleOrder() {
   return [...document.querySelectorAll('.main .card[data-module]')].map(el => el.dataset.module);
 }
 
-async function runDailyBounty() {
-  if (!BOUNTY) await loadBounty();
-  if (!BOUNTY) throw new Error('悬赏状态读取失败');
-  const plan = fitCounts(bountyCounts(), BOUNTY.tickets, BOUNTY.ordered || BOUNTY.maps);
-  if (sumValues(plan) <= 0) { log('悬赏：配置为 0，跳过', 'sub'); return; }
-  log(`悬赏：执行 ${sumValues(plan)} 张`, 'sub');
-  const j = await api('/api/bounty/sweep', {
-    method: 'POST', headers: {'Content-Type':'application/json'},
-    body: JSON.stringify({ counts: plan, force: $('bountyForce').checked }) });
-  for (const s of j.steps) {
-    if (s.ok) {
-      const rw = (s.rewards || []).slice(0, 6).map(r => `${r.name}×${r.amount}`).join('、');
-      log(`[悬赏] ${s.map} ${s.stage}${s.stageLabel ? `（${s.stageLabel}）` : ''} ×${s.count} → 券余 ${s.tickets}；${rw}`, 'ok');
-    } else {
-      log(`[悬赏] ${s.map} 失败：${s.error}`, 'err');
-    }
-  }
-  if (j.stopped) log('[悬赏] 停止：' + j.stopped, 'err');
-  BOUNTY = null;
-}
-
-async function runDailyScrim() {
-  if (!SCRIM) await loadScrim();
-  if (!SCRIM) throw new Error('交流会状态读取失败');
-  const plan = fitCounts(scrimCounts(), SCRIM.tickets, SCRIM.ordered || SCRIM.maps);
-  if (sumValues(plan) <= 0) { log('交流会：配置为 0，跳过', 'sub'); return; }
-  log(`交流会：执行 ${sumValues(plan)} 张`, 'sub');
-  const j = await api('/api/scrimmage/sweep', {
-    method: 'POST', headers: {'Content-Type':'application/json'},
-    body: JSON.stringify({ counts: plan, force: $('scrimForce').checked }) });
-  for (const s of j.steps) {
-    if (s.ok) {
-      const rw = (s.rewards || []).slice(0, 6).map(r => `${r.name}×${r.amount}`).join('、');
-      log(`[交流会] ${s.map} ${s.stage}${s.stageLabel ? `（${s.stageLabel}）` : ''} ×${s.count} → 券余 ${s.tickets}；${rw}`, 'ok');
-    } else {
-      log(`[交流会] ${s.map} 失败：${s.error}`, 'err');
-    }
-  }
-  if (j.stopped) log('[交流会] 停止：' + j.stopped, 'err');
-  SCRIM = null;
-}
+// 一键清在后端执行（docs/设计/一键清日常后端化.md）：
+// 前端只负责触发 + 轮询，刷新/关页面都不中断，进度由后端 steps 反映。
+let DAILY_POLL = null;
+let _dailySeen = {}, _dailyLogSeen = {};
 
 async function runAllDaily() {
   if (ALL_RUNNING) return;
   const order = currentModuleOrder();
   const summary = order.map(k => MODULE_LABELS[k] || k).join(' → ');
-  if (!confirm(`按当前顺序执行一键清？\n\n${summary}\n\n日程/咖啡厅/签到会立刻发请求；悬赏与交流会按当前配置和余额执行；竞技场在后台清票（30s/场）。`)) return;
-  ALL_RUNNING = true;
-  $('btnRunAll').disabled = true;
-  log(`[一键清] 开始：${summary}`);
-  const failed = [];
-  const skipped = [];
-  for (const mod of order) {
-    const label = MODULE_LABELS[mod] || mod;
-    log(`[一键清] ▶ ${label}`);
-    try {
-      let res = { ok: true };
-      if (mod === 'plan') res = (await doClear()) || { ok: true };
-      else if (mod === 'cafe') res = (await doCafeRun()) || { ok: true };
-      else if (mod === 'bounty') await runDailyBounty();
-      else if (mod === 'scrim') await runDailyScrim();
-      else if (mod === 'clan') res = (await clanCheckin()) || { ok: true };
-      else if (mod === 'arena') res = (await runDailyArena()) || { ok: true };
-      else if (mod === 'gift') { await runDailyGift(); }
-      else if (mod === 'mail') await runDailyMail();
-      else if (mod === 'mission') await runDailyMission();
-      else if (mod === 'shop') res = (await runDailyShop()) || { ok: true };
-      if (res && res.skipped) {
-        skipped.push(label);
-        log(`[一键清] – ${label}（跳过：${res.reason || '无需执行'}）`, 'sub');
-        continue;
-      }
-      if (res && res.ok === false) throw new Error(res.error || '未知错误');
-      log(`[一键清] ✓ ${label}`, 'ok');
-    } catch (e) {
-      failed.push(label);
-      log(`[一键清] ✗ ${label}：${e.message}`, 'err');
-    }
+  const dry = $('chkDailyDry') && $('chkDailyDry').checked;
+  const head = dry ? '演练（只读状态、算计划，不发写请求）' : '执行';
+  if (!confirm(`${head}一键清？\n\n${summary}\n\n日程/咖啡厅/签到会立刻发请求；悬赏与交流会按当前配置和余额执行；竞技场在后台清票（30s/场）。`)) return;
+  _dailySeen = {}; _dailyLogSeen = {};
+  try {
+    const r = await api('/api/daily/run', {
+      method: 'POST', headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify({ dry, order }) });
+    if (!r.ok) { log(`[一键清] ${r.error}`, r.skipped ? 'sub' : 'err'); return; }
+    startDailyPoll();
+  } catch (e) {
+    log('[一键清] 启动失败: ' + e.message, 'err');
   }
-  let tail = '[一键清] 全部完成';
-  if (failed.length) tail = `[一键清] 结束，失败：${failed.join('、')}`;
-  else if (skipped.length) tail = `[一键清] 全部完成（跳过：${skipped.join('、')}）`;
-  log(tail, failed.length ? 'err' : 'ok');
-  if (ARENA_CLEARING) log('[一键清] 竞技场仍在后台清票（30s/场），可在卡片里看进度', 'sub');
-  ALL_RUNNING = false;
-  $('btnRunAll').disabled = false;
+}
+
+function startDailyPoll() {
+  ALL_RUNNING = true;
+  if ($('btnRunAll')) $('btnRunAll').disabled = true;
+  clearInterval(DAILY_POLL);
+  DAILY_POLL = setInterval(pollDailyOnce, 1500);
+  pollDailyOnce();
+}
+
+async function pollDailyOnce() {
+  let j;
+  try { j = await api('/api/daily/status'); } catch (e) { return; }
+  renderDaily(j);
+  if (!j.running) {
+    clearInterval(DAILY_POLL);
+    DAILY_POLL = null;
+    ALL_RUNNING = false;
+    if ($('btnRunAll')) $('btnRunAll').disabled = false;
+    if (j.stale) log('[一键清] 上次任务疑似僵死（超过 10 分钟无进展），可重新启动', 'err');
+  }
+}
+
+const DAILY_MARK = { ok: '✓', skip: '–', fail: '✗', abort: '⛔' };
+const DAILY_CLS = { ok: 'ok', skip: 'sub', fail: 'err', abort: 'err' };
+
+function renderDaily(j) {
+  (j.steps || []).forEach(s => {
+    // 先补该步明细：后端 runner 边跑边 append，轮询可能一次跨过几步
+    const lines = s.log || [];
+    const shown = _dailyLogSeen[s.key] || 0;
+    for (let i = shown; i < lines.length; i++) log(lines[i], '');
+    _dailyLogSeen[s.key] = lines.length;
+
+    const prev = _dailySeen[s.key];
+    if (prev === s.status) return;
+    _dailySeen[s.key] = s.status;
+    if (s.status === 'pending') return;
+    if (s.status === 'running') { log(`[一键清] ▶ ${s.label}`, ''); return; }
+    const tail = s.reason ? `（${s.reason}）` : '';
+    const ms = s.ms != null ? ` ${s.ms}ms` : '';
+    log(`[一键清] ${DAILY_MARK[s.status] || ''} ${s.label}${tail}${ms}`, DAILY_CLS[s.status] || '');
+  });
+}
+
+async function restoreDaily() {
+  try {
+    const j = await api('/api/daily/status');
+    if (j.running) {
+      log('[一键清] 后端正在执行，接上进度…', 'sub');
+      startDailyPoll();
+      return;
+    }
+    // 跨游戏日（凌晨 4:00 刷新）的旧状态不算「中断」：后端已清盘，日志里另有记录
+    const p = j.prev;
+    if (p && p.status === 'running' && !p.stalePeriod) {
+      const total = (p.steps || []).length;
+      const done = (p.steps || []).filter(s => s.status === 'ok' || s.status === 'skip').length;
+      const when = (p.startedAt || '').slice(0, 16).replace('T', ' ');
+      log(`[一键清] 上次执行被中断（${when}，已完成 ${done}/${total} 步），可重新点一键清`, 'sub');
+    }
+  } catch (e) { /* 后端不可用时忽略 */ }
 }
 
 // ---------- 数据版本预警 ----------
@@ -2462,7 +2438,8 @@ setupDetails();
 restoreFolds();
 applyModuleOrder();
 refreshSession();
-syncPrefs();
+syncPrefs().then(ensurePickerPrefs);
+restoreDaily();
 initLog();
 loadCafeAuto().then(() => { if (CAFE_AUTO && CAFE_AUTO.enabled) startCafeAutoPoll(); });
 </script>

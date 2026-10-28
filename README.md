@@ -14,7 +14,7 @@
 | 加解密 | packet 结构、AES-256-CBC、请求/响应 key 的明文携带方式（`ba_crypto.py`） |
 | 会话机制 | SessionKey、REQUEST-ID 链、Hash=(Protocol<<32)\|N；auth 仅校验 DevId/Token/Protocol（2026-10-27 实测，`ba_session.py`） |
 | 离线签名 | SHA-256 + RSA-1024 PKCS#1 v1.5 的纯 Python 复现（`sign_offline.py` + `reverse/`）；unidbg 模拟执行保留为回退路径 |
-| 日常模块 | WebUI 覆盖 10 个模块：日程清票、咖啡厅、悬赏通缉、学院交流会、社交小组签到、战术对抗赛、每日免费礼包、邮箱、任务奖励、商店（11 分类） |
+| 日常模块 | WebUI 覆盖 10 个模块：日程清票、咖啡厅、悬赏通缉、学院交流会、社交小组签到、战术对抗赛、每日免费礼包、邮箱、任务奖励、商店（11 分类）；一键清日常在后端串行执行，支持演练、关页面不中断 |
 
 文档按用途分类，完整索引见 [docs/README.md](docs/README.md)。
 
@@ -28,7 +28,8 @@ reverse/            签名逆向产物：纯 Python 实现、验证脚本、基�
 unidbg/             unidbg 回退路径（可选，需要 Java + libairisgcore.so）
 login_oracle.py     自主登录流程（发码 / 验证码登录）
 decrypt_all_v2.py   抓包全量解密器（分析用；auth 已不依赖它）
-webui/              FastAPI 后端 + 单页前端（10 个日常模块）
+webui/              FastAPI 后端 + 单页前端（10 个日常模块）；daily.py 为一键清执行器
+tests/              单元测试（标准库 unittest）
 scripts/            数据表生成 / 接口文档生成 / 图标导出 / 隐私自检
 tables/             游戏数据表映射 + tables/full/ExcelDB 派生表
 data/               客户端版本头等可入库配置
@@ -77,6 +78,12 @@ sig = offline_sign(head_json + body_json)   # mode 默认 0
 因此首次使用只需完成一次自主登录，不需要抓包；仓库也不附带任何抓包数据。
 
 `decrypt_all_v2.py` 仅用于分析历史抓包，auth 已不依赖它。
+
+## 测试
+
+```bash
+./.venv/Scripts/python.exe -m unittest discover -s tests -v
+```
 
 ## 数据表与图标
 

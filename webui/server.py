@@ -24,6 +24,7 @@ from fastapi.responses import FileResponse, JSONResponse
 from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel
 import os
+import re
 import sys
 import uuid
 
@@ -33,17 +34,19 @@ import requests
 
 from sign_offline import offline_sign
 from ba_session import Session
+from webui import daily        # 一键清日常的执行器（业务函数由本模块注入，见文件末尾）
 
 APP_DIR = os.path.dirname(os.path.abspath(__file__))
 
-# ---------- 日志：webui/logs/server.log，按天轮转保留 14 天 ----------
+# ---------- 日志：webui/logs/server.log，按天轮转；保留 7 天（按日期，不按份数） ----------
 LOG_DIR = os.path.join(APP_DIR, 'logs')
+LOG_RETAIN_DAYS = 7
 os.makedirs(LOG_DIR, exist_ok=True)
 logger = logging.getLogger('autoba')
 if not logger.handlers:                     # uvicorn --reload 会在同进程重复 import
     logger.setLevel(logging.INFO)
     _fh = TimedRotatingFileHandler(os.path.join(LOG_DIR, 'server.log'),
-                                   when='midnight', backupCount=14, encoding='utf-8')
+                                   when='midnight', backupCount=LOG_RETAIN_DAYS, encoding='utf-8')
     _fh.setFormatter(logging.Formatter('%(asctime)s %(levelname)s [%(funcName)s] %(message)s',
                                        '%Y-%m-%d %H:%M:%S'))
     logger.addHandler(_fh)
@@ -74,7 +77,7 @@ HEAD_TEMPLATE = {
     'Version': _CLIENT.get('Version', '1.16.1'),
     'GVersionNo': _CLIENT.get('GVersionNo', '73'),
     'GBuildNo': _CLIENT.get('GBuildNo', ''),
-    'DeviceModel': _CLIENT.get('DeviceModel', 'Xiaomi 00000XXX'),
+    'DeviceModel': _CLIENT.get('DeviceModel', '24031PN0DC'),
     'UID': _CREDS.get('UID', 1000000000),
     'Token': _CREDS.get('Token', 'dededededededededededededededededededede'),
 }
@@ -97,7 +100,6 @@ async def _unhandled(request: Request, exc: Exception):
 STATIC_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'static')
 os.makedirs(os.path.join(STATIC_DIR, 'icons'), exist_ok=True)
 app.mount('/static', StaticFiles(directory=STATIC_DIR), name='static')
-_lock = threading.Lock()          # sdk 签名调用串行化
 _sess_lock = threading.Lock()     # ba_session rid 链串行化
 _session = None                   # 懒加载的 ba_session
 
@@ -144,8 +146,8 @@ def _sdk_post(path: str, body_obj: dict) -> dict:
     # RID 是请求标识，每次请求生成新的（原来是固定常量）
     head = dict(HEAD_TEMPLATE, Time=int(time.time()), RID=str(uuid.uuid4()))
     head_json = json.dumps(head, separators=(',', ':'), ensure_ascii=False)
-    with _lock:
-        sig = offline_sign(head_json + body, 0)
+    # 签名是纯函数（reverse/sign_pure.py），无共享状态，不需要串行化
+    sig = offline_sign(head_json + body, 0)
     auth = json.dumps({'Head': head, 'Sign': sig}, separators=(',', ':'), ensure_ascii=False)
     try:
         r = requests.post(SDK_HOST + path, data=body.encode('utf-8'), headers={
@@ -491,14 +493,14 @@ def schedule_plan(req: PlanReq):
 def schedule_clear(req: PlanReq):
     """按方案顺序执行，券尽即停。"""
     built = build_plan(req.students)
-    steps, tickets, stopped = [], None, None
+    steps, tickets, stopped, stop_kind = [], None, None, None
     for item in built['plan']:
         zid = item['zone']
         try:
             resp, pkt = call_session('/api/academy/attendschedule', 24001,
                                      business={'ZoneId': zid})
         except Exception as e:
-            stopped = f'Zone {zid} 中断：{e}'
+            stopped, stop_kind = f'Zone {zid} 中断：{e}', 'error'
             break
         pr = pkt.get('ParcelResultDB') or {}
         tickets = ((pr.get('AccountCurrencyDB') or {}).get('CurrencyDict') or {}).get('6')
@@ -510,10 +512,10 @@ def schedule_clear(req: PlanReq):
                       'targets': [t['name'] for t in item['targets']],
                       'characters': chars, 'tickets': tickets})
         if tickets == 0:
-            stopped = '日程券已用尽'
+            stopped, stop_kind = '日程券已用尽', 'done'
             break
     _roster['ts'] = 0.0          # 好感变了，下次重新拉名册
-    return {'steps': steps, 'tickets': tickets, 'stopped': stopped,
+    return {'steps': steps, 'tickets': tickets, 'stopped': stopped, 'stopKind': stop_kind,
             'ticketsBefore': built['tickets'], 'planned': len(built['plan'])}
 
 
@@ -877,18 +879,18 @@ def cafe_run(req: CafePlanReq, invite: bool = True, max_invites: int = 99):
 
     built = build_cafe_plan(req.students)
     roster = built['state']['roster']
-    stopped = None
+    stopped, stop_kind = None, None
     for p in built['plan'][:max(0, max_invites)]:
         server_id = (roster.get(str(p['uid'])) or {}).get('serverId')
         if not server_id:
-            stopped = f"邀请 {p['name']} 失败：名册缺少 ServerId"
+            stopped, stop_kind = f"邀请 {p['name']} 失败：名册缺少 ServerId", 'error'
             steps.append({'type': p['action'], 'cafeId': p['cafeId'], 'uid': p['uid'],
                           'name': p['name'], 'ok': False, 'error': stopped})
             break
         try:
             _invite(p['cafeId'], server_id)
         except Exception as e:
-            stopped = f"邀请 {p['name']} 到 {p['cafeId']} 号厅失败：{str(e)[:120]}"
+            stopped, stop_kind = f"邀请 {p['name']} 到 {p['cafeId']} 号厅失败：{str(e)[:120]}", 'error'
             steps.append({'type': p['action'], 'cafeId': p['cafeId'], 'uid': p['uid'],
                           'name': p['name'], 'ok': False, 'error': str(e)[:120]})
             break
@@ -904,7 +906,7 @@ def cafe_run(req: CafePlanReq, invite: bool = True, max_invites: int = 99):
                           'name': p['name'], 'ok': False, 'error': str(e)[:120]})
     _roster['ts'] = 0.0
     _sync['ts'] = 0.0
-    return {'steps': steps, 'stopped': stopped, 'planned': len(built['plan'])}
+    return {'steps': steps, 'stopped': stopped, 'stopKind': stop_kind, 'planned': len(built['plan'])}
 
 
 # ---------- 咖啡厅自动摸头 ----------
@@ -932,10 +934,60 @@ def _write_ui_state(data: dict):
     os.replace(tmp, UI_STATE)
 
 
+_LOG_DATE_PAT = re.compile(r'^(?:(\d{4}-\d{2}-\d{2})\.jsonl|server\.log\.(\d{4}-\d{2}-\d{2}))$')
+_prune_ts = 0.0
+
+
+def _prune_old_logs() -> int:
+    """删掉超过保留期的日志：按文件名里的日期判断，不看文件个数。
+
+    覆盖两类：操作日志 `YYYY-MM-DD.jsonl`、服务日志轮转产物 `server.log.YYYY-MM-DD`。
+    只动匹配命名的文件，目录里别的东西不碰。
+    """
+    keep_from = datetime.date.today() - datetime.timedelta(days=LOG_RETAIN_DAYS - 1)
+    removed = 0
+    try:
+        names = os.listdir(LOG_DIR)
+    except OSError:
+        return 0
+    for name in names:
+        m = _LOG_DATE_PAT.match(name)
+        if not m:
+            continue
+        try:
+            d = datetime.date.fromisoformat(m.group(1) or m.group(2))
+        except ValueError:
+            continue
+        if d < keep_from:
+            try:
+                os.remove(os.path.join(LOG_DIR, name))
+                removed += 1
+            except OSError:
+                pass
+    if removed:
+        logger.info('清理过期日志 %d 个（保留 %d 天，%s 起）',
+                    removed, LOG_RETAIN_DAYS, keep_from.isoformat())
+    return removed
+
+
+def _maybe_prune_logs():
+    """每小时最多清一次（跟日志写入顺带触发，不额外起线程）。"""
+    global _prune_ts
+    now = time.time()
+    if now - _prune_ts < 3600:
+        return
+    _prune_ts = now
+    _prune_old_logs()
+
+
+_maybe_prune_logs()          # 启动时清一次，避免长期不重启时旧日志滞留
+
+
 def _log_line(text: str, cls: str = ''):
     """后端直接写操作日志（定时任务没有前端可调）。时间戳与前端一致：本地时间 + 偏移。"""
     now = datetime.datetime.now().astimezone()
     os.makedirs(LOG_DIR, exist_ok=True)
+    _maybe_prune_logs()
     entry = {'ts': now.isoformat(timespec='seconds'), 'text': text, 'cls': cls}
     with open(os.path.join(LOG_DIR, f"{now.strftime('%Y-%m-%d')}.jsonl"), 'a',
               encoding='utf-8') as f:
@@ -1468,6 +1520,8 @@ class BountySweepReq(BaseModel):
     force: bool = False
 
 
+
+
 def _sum_parcels(groups):
     agg = {}
     for grp in groups or []:
@@ -1508,7 +1562,7 @@ def bounty_sweep(req: BountySweepReq):
     if st['unknownStages'] and not req.force:
         raise HTTPException(409, f"通关历史里出现表外关卡 {st['unknownStages']}，说明本地表过期；请更新 tables 或勾选强制执")
 
-    steps, tickets, stopped = [], None, None
+    steps, tickets, stopped, stop_kind = [], None, None, None
     for m in st['maps']:
         n = counts.get(m['key'], 0)
         if n <= 0:
@@ -1520,7 +1574,7 @@ def bounty_sweep(req: BountySweepReq):
         if m['newNotCleared'] and not req.force:
             steps.append({'map': m['name'], 'ok': False, 'count': n, 'stage': m['sweepable'],
                           'error': f"最高关 {m['released']} 未三星，已停止（勾选强制执可继续刷 {m['sweepable']}）"})
-            stopped = f"{m['name']} 最高关 {m['released']} 未三星"
+            stopped, stop_kind = f"{m['name']} 最高关 {m['released']} 未三星", 'done'
             break
         try:
             _, pkt = call_session('/api/contentsweep/request', 27000, business={
@@ -1528,7 +1582,7 @@ def bounty_sweep(req: BountySweepReq):
         except Exception as e:
             steps.append({'map': m['name'], 'ok': False, 'count': n, 'stage': m['sweepable'],
                           'error': str(e)[:150]})
-            stopped = f"{m['name']} 扫荡失败"
+            stopped, stop_kind = f"{m['name']} 扫荡失败", 'error'
             break
         pr = pkt.get('ParcelResult') or {}
         cur = ((pr.get('AccountCurrencyDB') or {}).get('CurrencyDict') or {})
@@ -1539,12 +1593,12 @@ def bounty_sweep(req: BountySweepReq):
                       'stageLabel': m.get('sweepableLabel'),
                       'tickets': tickets, 'rewards': _sum_parcels(pkt.get('ClearParcels'))})
         if tickets == 0:
-            stopped = '挑战券已用尽'
+            stopped, stop_kind = '挑战券已用尽', 'done'
             break
 
     _bounty['ts'] = 0.0
     _sync['ts'] = 0.0
-    return {'steps': steps, 'tickets': tickets, 'stopped': stopped}
+    return {'steps': steps, 'tickets': tickets, 'stopped': stopped, 'stopKind': stop_kind}
 
 
 # ---------- 学院交流会 ----------
@@ -1657,7 +1711,7 @@ def scrimmage_sweep(req: BountySweepReq):
     if st['unknownStages'] and not req.force:
         raise HTTPException(409, f"通关历史里出现表外关卡 {st['unknownStages']}，说明本地表过期；请更新 tables 或勾选强制执")
 
-    steps, tickets, stopped = [], None, None
+    steps, tickets, stopped, stop_kind = [], None, None, None
     for m in st['maps']:
         n = counts.get(m['key'], 0)
         if n <= 0:
@@ -1669,7 +1723,7 @@ def scrimmage_sweep(req: BountySweepReq):
         if m['newNotCleared'] and not req.force:
             steps.append({'map': m['name'], 'ok': False, 'count': n, 'stage': m['sweepable'],
                           'error': f"最高关 {m['released']} 未三星，已停止（勾选强制执可继续刷 {m['sweepable']}）"})
-            stopped = f"{m['name']} 最高关 {m['released']} 未三星"
+            stopped, stop_kind = f"{m['name']} 最高关 {m['released']} 未三星", 'done'
             break
         try:
             _, pkt = call_session('/api/contentsweep/request', 27000, business={
@@ -1677,7 +1731,7 @@ def scrimmage_sweep(req: BountySweepReq):
         except Exception as e:
             steps.append({'map': m['name'], 'ok': False, 'count': n, 'stage': m['sweepable'],
                           'error': str(e)[:150]})
-            stopped = f"{m['name']} 扫荡失败"
+            stopped, stop_kind = f"{m['name']} 扫荡失败", 'error'
             break
         pr = pkt.get('ParcelResult') or {}
         cur = ((pr.get('AccountCurrencyDB') or {}).get('CurrencyDict') or {})
@@ -1688,12 +1742,12 @@ def scrimmage_sweep(req: BountySweepReq):
                       'stageLabel': m.get('sweepableLabel'), 'ap': m.get('ap'),
                       'tickets': tickets, 'rewards': _sum_parcels(pkt.get('ClearParcels'))})
         if tickets == 0:
-            stopped = '挑战券已用尽'
+            stopped, stop_kind = '挑战券已用尽', 'done'
             break
 
     _scrim['ts'] = 0.0
     _sync['ts'] = 0.0
-    return {'steps': steps, 'tickets': tickets, 'stopped': stopped}
+    return {'steps': steps, 'tickets': tickets, 'stopped': stopped, 'stopKind': stop_kind}
 
 
 # ---------- 战术对抗赛 ----------
@@ -2200,6 +2254,14 @@ async def shop_autobuy_set(request: Request):
 
 @app.post('/api/shop/autobuy/run')
 async def shop_autobuy_run(request: Request):
+    try:
+        body = await request.json()
+    except Exception:
+        body = {}
+    return _autobuy_run(bool((body or {}).get('force')))
+
+
+def _autobuy_run(force: bool = False) -> dict:
     """按「刷新轮」执行自动购买（不跨天保存进度）。
 
     每轮：把本轮该买的买掉 → 需要下一轮时刷新商店（消耗货币）→ 再买。
@@ -2207,11 +2269,6 @@ async def shop_autobuy_run(request: Request):
     只有常规道具(0)与战术对抗赛(10)能手动刷新，其余分类强制 1 轮；
     手动刷新每日上限 3 次 → 轮数上限 4（首轮 + 3 次刷新）。
     """
-    try:
-        body = await request.json()
-    except Exception:
-        body = {}
-    force = bool((body or {}).get('force'))
     cfg = _autobuy_cfg()
     if not force and not cfg['enabled']:
         return {'ok': False, 'skipped': True, 'error': '自动购买未启用'}
@@ -2376,3 +2433,8 @@ def gift_claim():
         'rewards': _sum_parcels([pr.get('DisplaySequence')]),
         'product': pkt.get('PurchaseProduct'),
     }
+
+
+# 一键清日常：把本模块作为宿主注入（runner 要调各业务函数），再挂上它的路由
+daily.init(sys.modules[__name__])
+app.include_router(daily.router)

@@ -18,7 +18,7 @@
 |---|---|
 | `sign_pure.py` | **当前实现**。仅依赖 `base64` / `hashlib`，内嵌两把私钥 DER，`offline_sign(text, mode)` |
 | `vectors.json` | 16 条 oracle 基准向量（8 输入 × mode 0/1），由 `gen_vectors.py` 生产 |
-| `key_mode0.der` / `key_mode1.der` | 从 `.rodata` 提取的两把 PKCS#1 私钥 |
+| `key_mode0.der` / `key_mode1.der` | 从 `.rodata` 提取的两把 PKCS#1 私钥（**提取产物，运行时不读**；生产以 `sign_pure.py` 的 `_KEY_B64` 为准，换密钥要两边同步） |
 
 ## 验证链
 

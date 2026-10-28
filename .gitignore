@@ -35,6 +35,8 @@ resource_state.json
 ticket_state.json
 webui/ui_state.json
 webui/ui_state.json.tmp
+webui/daily_state.json
+webui/daily_state.json.tmp
 webui/logs/
 webui/static/icons/
 package-lock.json
